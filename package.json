@@ -1,0 +1,36 @@
+{
+  "name": "list-tree-indentation-guides",
+  "version": "1.0.0",
+  "description": "Tree-like vertical spines and horizontal connectors for Obsidian lists.",
+  "type": "module",
+  "private": true,
+  "author": {
+    "name": "obsidiest",
+    "url": "https://github.com/obsidiest"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@codemirror/language": "6.11.3",
+    "@codemirror/lang-markdown": "6.5.2",
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "@eslint/js": "9.33.0",
+    "@eslint/json": "0.14.0",
+    "@lezer/common": "1.2.3",
+    "@types/node": "20.19.17",
+    "esbuild": "0.28.2",
+    "eslint": "9.33.0",
+    "eslint-plugin-obsidianmd": "0.4.1",
+    "obsidian": "1.13.1",
+    "typescript": "5.9.2",
+    "typescript-eslint": "8.40.0",
+    "vitest": "4.1.10"
+  }
+}

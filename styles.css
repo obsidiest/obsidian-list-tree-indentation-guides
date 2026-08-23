@@ -1,0 +1,295 @@
+/* @settings
+
+name: List Tree Indentation Guides
+id: list-tree-indentation-guides
+settings:
+  -
+    id: ltig-guide-appearance
+    title: Guide appearance
+    type: heading
+    level: 2
+  -
+    id: ltig-guide-color
+    title: Guide color
+    description: Color of vertical spines and horizontal connectors
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#777777'
+    default-dark: '#888888'
+  -
+    id: ltig-guide-opacity
+    title: Guide opacity
+    description: Opacity of every spine and connector
+    type: variable-number-slider
+    default: 0.72
+    min: 0.05
+    max: 1
+    step: 0.05
+  -
+    id: ltig-guide-thickness
+    title: Guide thickness
+    description: Stroke width of every spine and connector
+    type: variable-number-slider
+    default: 1.5
+    min: 0.5
+    max: 6
+    step: 0.1
+    format: px
+  -
+    id: ltig-guide-pattern
+    title: Guide pattern
+    description: Line pattern used by every spine and connector
+    type: class-select
+    allowEmpty: false
+    default: ltig-line-solid
+    options:
+      -
+        label: Solid
+        value: ltig-line-solid
+      -
+        label: Dashed
+        value: ltig-line-dashed
+      -
+        label: Dotted
+        value: ltig-line-dotted
+  -
+    id: ltig-guide-geometry
+    title: Guide geometry
+    type: heading
+    level: 2
+    collapsed: true
+  -
+    id: ltig-connector-length
+    title: Horizontal connector length
+    description: Distance from each vertical spine toward its list marker or content
+    type: variable-number-slider
+    default: 18
+    min: 4
+    max: 48
+    step: 1
+    format: px
+  -
+    id: ltig-marker-gap
+    title: Gap before list marker or content
+    description: Empty distance between a horizontal connector and the following marker or content
+    type: variable-number-slider
+    default: 4
+    min: 0
+    max: 24
+    step: 1
+    format: px
+  -
+    id: ltig-first-branch-rise
+    title: First-branch vertical rise
+    description: Amount a sibling spine extends above its first horizontal connector
+    type: variable-number-slider
+    default: 10
+    min: 0
+    max: 40
+    step: 1
+    format: px
+  -
+    id: ltig-connector-offset
+    title: Connector vertical offset
+    description: Moves every horizontal connector up or down relative to the list item's line center
+    type: variable-number-slider
+    default: 0
+    min: -12
+    max: 12
+    step: 0.5
+    format: px
+  -
+    id: ltig-reading-overlap
+    title: Reading-mode vertical overlap
+    description: Extends adjacent Reading-mode spine segments to bridge theme list spacing
+    type: variable-number-slider
+    default: 4
+    min: 0
+    max: 24
+    step: 1
+    format: px
+  -
+    id: ltig-list-markers
+    title: List markers
+    type: heading
+    level: 2
+    collapsed: true
+  -
+    id: ltig-show-unordered-list-bullets
+    title: Show unordered-list bullets
+    description: Retain native bullets in Live Preview and Reading mode instead of letting the tree connector act as the visible branch marker
+    type: class-toggle
+    default: false
+*/
+
+body {
+  --ltig-guide-color: var(--text-muted);
+  --ltig-guide-opacity: 0.72;
+  --ltig-guide-thickness: 1.5px;
+  --ltig-connector-length: 18px;
+  --ltig-marker-gap: 4px;
+  --ltig-first-branch-rise: 10px;
+  --ltig-connector-offset: 0px;
+  --ltig-reading-overlap: 4px;
+  --ltig-reading-connector-center: 0.75em;
+}
+
+.ltig-editor-host {
+  position: relative;
+}
+
+.ltig-editor-overlay {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ltig-guide-path {
+  fill: none;
+  stroke: var(--ltig-guide-color);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-opacity: var(--ltig-guide-opacity);
+  stroke-width: var(--ltig-guide-thickness);
+  vector-effect: non-scaling-stroke;
+}
+
+.ltig-line-dashed .ltig-guide-path {
+  stroke-dasharray: 6 4;
+}
+
+.ltig-line-dotted .ltig-guide-path {
+  stroke-dasharray: 0.01 4;
+  stroke-linecap: round;
+}
+
+body:not(.ltig-live-preview-enabled)
+  .markdown-source-view.mod-cm6.is-live-preview
+  .ltig-editor-overlay,
+body:not(.ltig-source-mode-enabled)
+  .markdown-source-view.mod-cm6:not(.is-live-preview)
+  .ltig-editor-overlay {
+  display: none;
+}
+
+.markdown-reading-view .ltig-reading-item {
+  position: relative;
+}
+
+.ltig-reading-branch {
+  position: absolute;
+  z-index: 0;
+  top: calc(0px - var(--ltig-reading-overlap));
+  bottom: calc(0px - var(--ltig-reading-overlap));
+  left: calc(
+    0px - var(--ltig-connector-length) - var(--ltig-marker-gap)
+  );
+  display: none;
+  width: var(--ltig-connector-length);
+  pointer-events: none;
+}
+
+body.ltig-reading-mode-enabled
+  .markdown-reading-view
+  .ltig-reading-branch {
+  display: block;
+}
+
+.ltig-reading-branch::before,
+.ltig-reading-branch::after {
+  position: absolute;
+  box-sizing: border-box;
+  border-color: var(--ltig-guide-color);
+  content: "";
+  opacity: var(--ltig-guide-opacity);
+  pointer-events: none;
+}
+
+.ltig-reading-branch::before {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-inline-start-style: solid;
+  border-inline-start-width: var(--ltig-guide-thickness);
+}
+
+.ltig-reading-branch::after {
+  top: calc(
+    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
+      var(--ltig-connector-offset)
+  );
+  left: 0;
+  width: var(--ltig-connector-length);
+  border-block-start-style: solid;
+  border-block-start-width: var(--ltig-guide-thickness);
+}
+
+:is(ul, ol) > li.ltig-reading-item:first-child > .ltig-reading-branch::before {
+  top: calc(
+    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
+      var(--ltig-connector-offset) - var(--ltig-first-branch-rise)
+  );
+}
+
+:is(ul, ol) > li.ltig-reading-item:last-child > .ltig-reading-branch::before {
+  bottom: auto;
+  height: calc(
+    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
+      var(--ltig-connector-offset)
+  );
+}
+
+:is(ul, ol)
+  > li.ltig-reading-item:first-child:last-child
+  > .ltig-reading-branch::before {
+  height: var(--ltig-first-branch-rise);
+}
+
+.ltig-line-dashed .ltig-reading-branch::before,
+.ltig-line-dashed .ltig-reading-branch::after {
+  border-style: dashed;
+}
+
+.ltig-line-dotted .ltig-reading-branch::before,
+.ltig-line-dotted .ltig-reading-branch::after {
+  border-style: dotted;
+}
+
+body.ltig-live-preview-enabled:not(.ltig-show-unordered-list-bullets)
+  .markdown-source-view.mod-cm6.is-live-preview
+  .list-bullet {
+  opacity: 0;
+}
+
+body.ltig-reading-mode-enabled:not(.ltig-show-unordered-list-bullets)
+  .markdown-reading-view
+  ul
+  > li.ltig-reading-item::marker {
+  color: transparent;
+}
+
+.ltig-style-settings-number-input {
+  box-sizing: border-box;
+  width: 5.5rem;
+  min-width: 5.5rem;
+  height: var(--input-height);
+  margin-inline-start: var(--size-2-2, 0.25rem);
+  padding-inline: var(--size-2-2, 0.25rem);
+  border: var(--input-border-width, 1px) solid
+    var(--background-modifier-border);
+  border-radius: var(--input-radius, var(--radius-s));
+  background: var(--background-modifier-form-field);
+  color: var(--text-normal);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.ltig-style-settings-number-input:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+  outline: none;
+}
