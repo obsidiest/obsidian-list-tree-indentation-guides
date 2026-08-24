@@ -64,6 +64,57 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
           },
         ],
       },
+      {
+        type: "group",
+        heading: "Bullet threading",
+        items: [
+          {
+            name: "Enable bullet threading",
+            desc: "Highlight the nested path to the list item currently hovered over.",
+            aliases: [
+              "logseq list path",
+              "active list item",
+              "hover thread",
+              "nested path highlight",
+            ],
+            control: {
+              type: "toggle",
+              key: "enableBulletThreading",
+              defaultValue: DEFAULT_SETTINGS.enableBulletThreading,
+            },
+          },
+          {
+            name: "Thread in Live Preview",
+            desc: "Show the active nested path while hovering list items in Live Preview when bullet threading is enabled.",
+            aliases: ["live preview thread", "editor hover path"],
+            control: {
+              type: "toggle",
+              key: "bulletThreadingInLivePreview",
+              defaultValue: DEFAULT_SETTINGS.bulletThreadingInLivePreview,
+            },
+          },
+          {
+            name: "Thread in Source mode",
+            desc: "Show the active nested path while hovering list items in Source mode when bullet threading is enabled.",
+            aliases: ["source thread", "raw markdown hover path"],
+            control: {
+              type: "toggle",
+              key: "bulletThreadingInSourceMode",
+              defaultValue: DEFAULT_SETTINGS.bulletThreadingInSourceMode,
+            },
+          },
+          {
+            name: "Thread in Reading mode",
+            desc: "Show the active nested path while hovering list items in Reading mode when bullet threading is enabled.",
+            aliases: ["reading thread", "rendered list hover path"],
+            control: {
+              type: "toggle",
+              key: "bulletThreadingInReadingMode",
+              defaultValue: DEFAULT_SETTINGS.bulletThreadingInReadingMode,
+            },
+          },
+        ],
+      },
     ];
   }
 

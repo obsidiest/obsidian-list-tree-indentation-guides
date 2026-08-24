@@ -1,12 +1,14 @@
-const READING_VIEW_SELECTOR = ".markdown-reading-view";
+const READING_VIEW_SELECTOR = ".markdown-rendered";
 const BRANCH_CLASS = "ltig-reading-branch";
 const ITEM_CLASS = "ltig-reading-item";
+const LIST_CLASS = "ltig-reading-list";
 
 export function decorateReadingLists(root: ParentNode): number {
   const lists = collectElements(root, "ul, ol");
   let decorated = 0;
 
   for (const list of lists) {
+    list.classList.add(LIST_CLASS);
     for (const child of Array.from(list.children)) {
       if (child.tagName !== "LI") {
         continue;
@@ -48,6 +50,11 @@ export function removeReadingGuides(ownerDocument: Document): void {
     ownerDocument.querySelectorAll<HTMLElement>(`.${ITEM_CLASS}`),
   )) {
     item.classList.remove(ITEM_CLASS);
+  }
+  for (const list of Array.from(
+    ownerDocument.querySelectorAll<HTMLElement>(`.${LIST_CLASS}`),
+  )) {
+    list.classList.remove(LIST_CLASS);
   }
 }
 

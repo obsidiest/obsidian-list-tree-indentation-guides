@@ -1,9 +1,9 @@
 {
   "id": "list-tree-indentation-guides",
   "name": "List Tree Indentation Guides",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minAppVersion": "1.13.0",
-  "description": "Render tree-like vertical spines and horizontal connectors for ordered and unordered lists in editor and Reading modes.",
+  "description": "Render tree-like list guides and optional Logseq-style hover threading in editor and Reading modes.",
   "author": "obsidiest",
   "authorUrl": "https://github.com/obsidiest",
   "isDesktopOnly": false

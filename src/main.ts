@@ -13,6 +13,10 @@ import {
 } from "./types";
 
 const MODE_CLASSES = [
+  "ltig-bullet-threading-enabled",
+  "ltig-thread-live-preview-enabled",
+  "ltig-thread-reading-mode-enabled",
+  "ltig-thread-source-mode-enabled",
   "ltig-live-preview-enabled",
   "ltig-reading-mode-enabled",
   "ltig-source-mode-enabled",
@@ -88,6 +92,22 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
   }
 
   private applyModeClasses(ownerDocument: Document): void {
+    ownerDocument.body.classList.toggle(
+      "ltig-bullet-threading-enabled",
+      this.settings.enableBulletThreading,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-live-preview-enabled",
+      this.settings.bulletThreadingInLivePreview,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-source-mode-enabled",
+      this.settings.bulletThreadingInSourceMode,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-reading-mode-enabled",
+      this.settings.bulletThreadingInReadingMode,
+    );
     ownerDocument.body.classList.toggle(
       "ltig-live-preview-enabled",
       this.settings.renderInLivePreview,

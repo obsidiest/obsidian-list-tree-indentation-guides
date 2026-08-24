@@ -19,21 +19,27 @@ The implementation is scoped to rendered list items and visible CodeMirror list 
 
 - Connected tree guides for ordered, unordered, mixed, and task lists.
 - Independent rendering toggles for Live Preview, Source mode, and Reading mode.
+- Optional Logseq-style bullet threading that highlights the complete ancestor path to the hovered list item.
+- A global threading toggle plus independent Live Preview, Source, and Reading-mode threading toggles.
 - Searchable settings, including aliases for common mode names.
 - Pop-out-window support.
 - Minimal-theme-compatible styling based on Obsidian variables.
 - Style Settings customization with exact numeric entry alongside every slider.
-- Optional suppression of unordered-list bullets so connectors can serve as the visible branch marker.
+- Unordered-list markers are visible by default and can be suppressed from Style Settings.
 
 ## Plugin settings
 
-All three settings are enabled by default and are searchable from Obsidian's Settings search.
+Every plugin setting is searchable from Obsidian's Settings search. Tree-guide rendering is enabled in all three modes by default. Bullet threading is disabled by default; its three mode preferences are enabled so they take effect immediately if the global feature is enabled.
 
 | Setting | Purpose |
 | --- | --- |
 | Render in Live Preview | Shows guides in the editable Live Preview view. |
 | Render in Source mode | Shows guides alongside raw Markdown list syntax. |
 | Render in Reading mode | Shows guides in rendered Markdown. |
+| Enable bullet threading | Highlights the nested path to the list item currently hovered over. |
+| Thread in Live Preview | Allows threading in Live Preview when the global feature is enabled. |
+| Thread in Source mode | Allows threading in Source mode when the global feature is enabled. |
+| Thread in Reading mode | Allows threading in Reading mode when the global feature is enabled. |
 
 ## Style Settings
 
@@ -48,7 +54,12 @@ Install and enable the community plugin **Style Settings** to customize:
 - Connector vertical offset.
 - Reading-mode vertical overlap.
 - Solid, dashed, or dotted guide pattern.
-- Visibility of unordered-list bullets in Live Preview and Reading mode.
+- Dash and dot spacing.
+- Visibility of unordered-list bullets in Live Preview and Reading mode (enabled by default).
+- Thread opacity, thickness, line caps, and corner radius.
+- Thread connector length, marker gap, and vertical offset.
+- Eight independently themed thread colors; deeper levels reuse the eighth color.
+- Reading-mode thread row height, segment overlap, parent reach, and marker offset.
 
 Every numerical Style Settings slider receives a synchronized editable field. Typed in-range decimals are preserved exactly, including transient input such as `1.` while editing; invalid or incomplete values revert only when editing finishes.
 
@@ -87,6 +98,10 @@ git diff --exit-code -- main.js
 ```
 
 The release workflow validates the clean build, confirms that committed `main.js` is current, creates the three standard Obsidian release assets, and publishes GitHub artifact attestations for each asset.
+
+## Acknowledgements
+
+The bullet-threading interaction and rendered-list geometry are adapted from the MIT-licensed [obsidiest/obsidian-bullet](https://github.com/obsidiest/obsidian-bullet) fork.
 
 ## License
 

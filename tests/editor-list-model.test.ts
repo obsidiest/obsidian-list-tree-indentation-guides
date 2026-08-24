@@ -1,7 +1,10 @@
 import { markdown } from "@codemirror/lang-markdown";
 import { EditorState } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
-import { collectEditorListGroups } from "src/editor-guides";
+import {
+  buildRoundedThreadPath,
+  collectEditorListGroups,
+} from "src/editor-guides";
 
 function groupsFor(markdownSource: string) {
   const state = EditorState.create({
@@ -50,5 +53,40 @@ describe("editor list model", () => {
     expect(
       source.slice(groups[0]?.items[0]?.contentFrom).startsWith("[ ] Planned"),
     ).toBe(true);
+  });
+
+  it("assigns stable depths and parents for a hovered nested path", () => {
+    const source = [
+      "- Root",
+      "  - Child",
+      "    1. Grandchild",
+      "  - Sibling child",
+      "- Second root",
+    ].join("\n");
+    const groups = groupsFor(source);
+    const items = groups
+      .flatMap((group) => group.items)
+      .sort((left, right) => left.markerFrom - right.markerFrom);
+
+    expect(items.map((item) => item.depth)).toEqual([1, 2, 3, 2, 1]);
+    expect(items.map((item) => item.parentMarkerFrom)).toEqual([
+      null,
+      items[0]?.markerFrom,
+      items[1]?.markerFrom,
+      items[0]?.markerFrom,
+      null,
+    ]);
+  });
+
+  it("builds a rounded editor thread elbow without changing its endpoints", () => {
+    expect(
+      buildRoundedThreadPath({
+        endX: 80,
+        endY: 60,
+        radius: 8,
+        startX: 40,
+        startY: 20,
+      }),
+    ).toBe("M 40 20 V 52 Q 40 60 48 60 H 80");
   });
 });

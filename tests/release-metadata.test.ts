@@ -43,11 +43,25 @@ describe("release metadata", () => {
     const sliderIds = [
       "ltig-guide-opacity",
       "ltig-guide-thickness",
+      "ltig-guide-dash-length",
+      "ltig-guide-dash-gap",
+      "ltig-guide-dot-gap",
       "ltig-connector-length",
       "ltig-marker-gap",
       "ltig-first-branch-rise",
       "ltig-connector-offset",
       "ltig-reading-overlap",
+      "ltig-reading-connector-center",
+      "ltig-thread-opacity",
+      "ltig-thread-thickness",
+      "ltig-thread-corner-radius",
+      "ltig-thread-connector-length",
+      "ltig-thread-marker-gap",
+      "ltig-thread-vertical-offset",
+      "ltig-thread-reading-item-height",
+      "ltig-thread-reading-segment-reach",
+      "ltig-thread-reading-join-reach",
+      "ltig-thread-reading-marker-y-shift",
     ];
     for (const id of sliderIds) {
       const settingStart = styles.indexOf(`id: ${id}`);
@@ -55,6 +69,56 @@ describe("release metadata", () => {
       expect(styles.slice(settingStart, settingStart + 450)).toContain(
         "type: variable-number-slider",
       );
+    }
+  });
+
+  it("defaults list markers to visible and exposes every thread color", async () => {
+    const styles = await readProjectFile("styles.css");
+    const markerSetting = styles.indexOf(
+      "id: ltig-show-unordered-list-bullets",
+    );
+    expect(markerSetting).toBeGreaterThanOrEqual(0);
+    expect(styles.slice(markerSetting, markerSetting + 400)).toContain(
+      "default: true",
+    );
+    for (let depth = 1; depth <= 8; depth += 1) {
+      expect(styles).toContain(`id: ltig-thread-color-${depth}`);
+      expect(styles).toContain(`--ltig-thread-color-${depth}`);
+    }
+  });
+
+  it("uses the viewport overlay fix and mode-scoped threading", async () => {
+    const editor = await readProjectFile("src/editor-guides.ts");
+    const main = await readProjectFile("src/main.ts");
+    const styles = await readProjectFile("styles.css");
+
+    expect(editor).toContain("ownerDocument.body.appendChild(this.overlay)");
+    expect(styles).toContain("position: fixed");
+    expect(styles).toContain(
+      "body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled",
+    );
+    for (const className of [
+      "ltig-thread-live-preview-enabled",
+      "ltig-thread-source-mode-enabled",
+      "ltig-thread-reading-mode-enabled",
+    ]) {
+      expect(main).toContain(className);
+    }
+  });
+
+  it("publishes every plugin setting through the searchable definition API", async () => {
+    const settings = await readProjectFile("src/settings.ts");
+    expect(settings).toContain("getSettingDefinitions()");
+    for (const key of [
+      "renderInLivePreview",
+      "renderInSourceMode",
+      "renderInReadingMode",
+      "enableBulletThreading",
+      "bulletThreadingInLivePreview",
+      "bulletThreadingInSourceMode",
+      "bulletThreadingInReadingMode",
+    ]) {
+      expect(settings).toContain(`key: "${key}"`);
     }
   });
 });
