@@ -13,7 +13,7 @@ Example
    └─ Example
 ```
 
-The implementation is scoped to rendered list items and visible CodeMirror list syntax. It does not run vault-wide DOM queries on every editor change.
+The implementation is scoped to rendered list items and CodeMirror's visible `HyperMD-list-line-N` rows. It measures the markers already rendered by Obsidian, coalesces editor updates to animation frames, and never scans the vault.
 
 ## Features
 

@@ -1,80 +1,73 @@
-import { markdown } from "@codemirror/lang-markdown";
-import { EditorState } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
 import {
   buildRoundedThreadPath,
-  collectEditorListGroups,
+  buildVisibleListModel,
+  type VisibleListRow,
 } from "src/editor-guides";
 
-function groupsFor(markdownSource: string) {
-  const state = EditorState.create({
-    doc: markdownSource,
-    extensions: [markdown()],
-  });
-  return collectEditorListGroups(state);
+function modelForDepths(depths: readonly number[]) {
+  return buildVisibleListModel(depths.map((depth) => ({ depth })));
 }
 
-describe("editor list model", () => {
+describe("visible editor list model", () => {
   it("collects sibling groups independently at every nesting level", () => {
-    const groups = groupsFor(
-      [
-        "- Parent",
-        "  - Child one",
-        "  - Child two",
-        "- Second parent",
-        "  1. Ordered child",
-        "  2. Ordered child two",
-      ].join("\n"),
-    );
+    const model = modelForDepths([1, 2, 2, 1, 2, 2]);
 
-    expect(groups).toHaveLength(3);
-    expect(groups.map((group) => group.items.length)).toEqual([2, 2, 2]);
-    expect(groups.map((group) => group.ordered)).toEqual([false, false, true]);
-  });
-
-  it("finds content positions after bullet and ordered-list whitespace", () => {
-    const source = "- Example\n\n10. Tenth";
-    const groups = groupsFor(source);
-
-    expect(
-      source.slice(groups[0]?.items[0]?.contentFrom).startsWith("Example"),
-    ).toBe(true);
-    expect(
-      source.slice(groups[1]?.items[0]?.contentFrom).startsWith("Tenth"),
-    ).toBe(true);
-  });
-
-  it("supports task-list items without treating the checkbox as a list mark", () => {
-    const source = "- [ ] Planned\n- [x] Finished";
-    const groups = groupsFor(source);
-
-    expect(groups).toHaveLength(1);
-    expect(groups[0]?.items).toHaveLength(2);
-    expect(
-      source.slice(groups[0]?.items[0]?.contentFrom).startsWith("[ ] Planned"),
-    ).toBe(true);
+    expect(model.groups).toHaveLength(3);
+    expect(model.groups.map((group) => group.itemIndices)).toEqual([
+      [0, 3],
+      [1, 2],
+      [4, 5],
+    ]);
   });
 
   it("assigns stable depths and parents for a hovered nested path", () => {
-    const source = [
-      "- Root",
-      "  - Child",
-      "    1. Grandchild",
-      "  - Sibling child",
-      "- Second root",
-    ].join("\n");
-    const groups = groupsFor(source);
-    const items = groups
-      .flatMap((group) => group.items)
-      .sort((left, right) => left.markerFrom - right.markerFrom);
+    const model = modelForDepths([1, 2, 3, 2, 1]);
 
-    expect(items.map((item) => item.depth)).toEqual([1, 2, 3, 2, 1]);
-    expect(items.map((item) => item.parentMarkerFrom)).toEqual([
+    expect(model.items.map((item) => item.depth)).toEqual([1, 2, 3, 2, 1]);
+    expect(model.items.map((item) => item.parentIndex)).toEqual([
       null,
-      items[0]?.markerFrom,
-      items[1]?.markerFrom,
-      items[0]?.markerFrom,
+      0,
+      1,
+      0,
       null,
+    ]);
+  });
+
+  it("starts new list groups after a definite non-list boundary", () => {
+    const rows: VisibleListRow[] = [
+      { depth: 1 },
+      { depth: 2 },
+      { breakBefore: true, depth: 1 },
+      { depth: 2 },
+    ];
+    const model = buildVisibleListModel(rows);
+
+    expect(model.groups.map((group) => group.itemIndices)).toEqual([
+      [0],
+      [1],
+      [2],
+      [3],
+    ]);
+    expect(model.items.map((item) => item.parentIndex)).toEqual([
+      null,
+      0,
+      null,
+      2,
+    ]);
+  });
+
+  it("keeps deep visible rows usable when their parent is above the viewport", () => {
+    const model = modelForDepths([3, 4, 3]);
+
+    expect(model.items.map((item) => item.parentIndex)).toEqual([
+      null,
+      0,
+      null,
+    ]);
+    expect(model.groups.map((group) => group.itemIndices)).toEqual([
+      [0, 2],
+      [1],
     ]);
   });
 

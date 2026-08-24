@@ -1,40 +1,36 @@
-import { syntaxTree } from "@codemirror/language";
-import type { EditorState, Extension } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import {
   EditorView,
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import type { SyntaxNode } from "@lezer/common";
 import { buildGuidePath, clamp, median } from "./guide-geometry";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
-const LIST_NODE_NAMES = new Set(["BulletList", "OrderedList"]);
-const LIST_ITEM_NODE_NAME = "ListItem";
-const LIST_MARK_NODE_NAMES = new Set(["ListMark", "TaskMarker"]);
+const LIST_LINE_CLASS_PREFIX = "HyperMD-list-line-";
 const THREAD_COLOR_COUNT = 8;
 let overlaySequence = 0;
 
-export interface EditorListItem {
-  contentFrom: number;
+export interface VisibleListRow {
+  breakBefore?: boolean;
   depth: number;
-  markerFrom: number;
-  parentMarkerFrom: number | null;
 }
 
-export interface EditorListGroup {
+export interface VisibleListItemModel {
   depth: number;
-  from: number;
-  items: readonly EditorListItem[];
-  ordered: boolean;
-  to: number;
+  groupIndex: number;
+  parentIndex: number | null;
 }
 
-interface RenderedConnector {
-  endX: number;
-  markerFrom: number;
-  startX: number;
-  y: number;
+export interface VisibleListGroup {
+  depth: number;
+  itemIndices: number[];
+  parentIndex: number | null;
+}
+
+export interface VisibleListModel {
+  groups: VisibleListGroup[];
+  items: VisibleListItemModel[];
 }
 
 interface CoordinateRect {
@@ -42,6 +38,19 @@ interface CoordinateRect {
   left: number;
   right: number;
   top: number;
+}
+
+interface MeasuredListRow extends VisibleListRow {
+  element: HTMLElement;
+  lineRect: CoordinateRect;
+  markerRect: CoordinateRect;
+}
+
+interface RenderedConnector {
+  endX: number;
+  itemIndex: number;
+  startX: number;
+  y: number;
 }
 
 interface GuideStyleGeometry {
@@ -87,73 +96,57 @@ export function createEditorGuidesExtension(): Extension {
   );
 }
 
-export function collectEditorListGroups(state: EditorState): EditorListGroup[] {
-  const groups: EditorListGroup[] = [];
-  const tree = syntaxTree(state);
+/**
+ * Build parent and sibling-group relationships from Obsidian's visible list
+ * line depths. This intentionally does not depend on a Markdown syntax tree:
+ * Obsidian's editor DOM is the source of truth for what is actually rendered.
+ */
+export function buildVisibleListModel(
+  rows: readonly VisibleListRow[],
+): VisibleListModel {
+  const groups: VisibleListGroup[] = [];
+  const items: VisibleListItemModel[] = [];
+  const currentGroupAtDepth = new Map<number, number>();
+  const lastItemAtDepth = new Map<number, number>();
 
-  const visitForLists = (node: SyntaxNode): void => {
-    if (LIST_NODE_NAMES.has(node.name)) {
-      parseList(node, 1);
-      return;
+  for (let itemIndex = 0; itemIndex < rows.length; itemIndex += 1) {
+    const row = rows[itemIndex];
+    if (row === undefined) {
+      continue;
     }
-    for (let child = node.firstChild; child !== null; child = child.nextSibling) {
-      visitForLists(child);
+    const depth = Math.max(1, Math.trunc(row.depth));
+    if (row.breakBefore === true) {
+      currentGroupAtDepth.clear();
+      lastItemAtDepth.clear();
     }
-  };
+    removeDeeperEntries(currentGroupAtDepth, depth);
+    removeDeeperEntries(lastItemAtDepth, depth);
 
-  const visitNestedLists = (node: SyntaxNode, depth: number): void => {
-    for (let child = node.firstChild; child !== null; child = child.nextSibling) {
-      if (LIST_NODE_NAMES.has(child.name)) {
-        parseList(child, depth);
-      } else {
-        visitNestedLists(child, depth);
-      }
-    }
-  };
-
-  const parseList = (listNode: SyntaxNode, depth: number): void => {
-    const ordered = listNode.name === "OrderedList";
-    const items: EditorListItem[] = [];
-    const itemNodes: SyntaxNode[] = [];
-    for (
-      let child = listNode.firstChild;
-      child !== null;
-      child = child.nextSibling
+    const parentIndex =
+      depth === 1 ? null : (lastItemAtDepth.get(depth - 1) ?? null);
+    let groupIndex = currentGroupAtDepth.get(depth);
+    const currentGroup =
+      groupIndex === undefined ? undefined : groups[groupIndex];
+    if (
+      groupIndex === undefined ||
+      currentGroup === undefined ||
+      currentGroup.parentIndex !== parentIndex
     ) {
-      if (child.name !== LIST_ITEM_NODE_NAME) {
-        continue;
-      }
-      itemNodes.push(child);
-      const marker = findListMarker(child);
-      if (marker !== null) {
-        const line = state.doc.lineAt(marker.to);
-        const afterMarker = state.doc.sliceString(marker.to, line.to);
-        const whitespaceLength = afterMarker.match(/^[\t ]*/u)?.[0].length ?? 0;
-        items.push({
-          contentFrom: marker.to + whitespaceLength,
-          depth,
-          markerFrom: marker.from,
-          parentMarkerFrom: null,
-        });
-      }
-    }
-    if (items.length > 0) {
+      groupIndex = groups.length;
       groups.push({
         depth,
-        from: listNode.from,
-        items,
-        ordered,
-        to: listNode.to,
+        itemIndices: [],
+        parentIndex,
       });
+      currentGroupAtDepth.set(depth, groupIndex);
     }
-    for (const itemNode of itemNodes) {
-      visitNestedLists(itemNode, depth + 1);
-    }
-  };
 
-  visitForLists(tree.topNode);
-  assignParentMarkers(groups);
-  return groups;
+    groups[groupIndex]?.itemIndices.push(itemIndex);
+    items.push({ depth, groupIndex, parentIndex });
+    lastItemAtDepth.set(depth, itemIndex);
+  }
+
+  return { groups, items };
 }
 
 export function buildRoundedThreadPath({
@@ -183,13 +176,12 @@ export function buildRoundedThreadPath({
 class EditorGuideOverlay {
   private animationFrame: number | null = null;
   private readonly bodyObserver: MutationObserver | null;
-  private groups: EditorListGroup[];
-  private hoveredMarkerFrom: number | null = null;
-  private itemsByLine = new Map<number, EditorListItem>();
-  private itemsByMarker = new Map<number, EditorListItem>();
+  private readonly contentObserver: MutationObserver | null;
+  private hoveredLine: HTMLElement | null = null;
   private readonly modeObserver: MutationObserver | null;
   private readonly overlay: SVGSVGElement;
   private readonly overlayClipId: string;
+  private readonly overlayHost: HTMLElement;
   private readonly pointerLeaveHandler: () => void;
   private readonly pointerMoveHandler: (event: PointerEvent) => void;
   private readonly resizeHandler: () => void;
@@ -200,23 +192,22 @@ class EditorGuideOverlay {
   public constructor(private readonly view: EditorView) {
     const ownerDocument = view.dom.ownerDocument;
     const ownerWindow = ownerDocument.defaultView;
+    this.sourceView = view.dom.closest<HTMLElement>(
+      ".markdown-source-view.mod-cm6",
+    );
+    this.overlayHost = this.sourceView ?? view.dom;
+    this.overlayHost.classList.add("ltig-editor-overlay-host");
     this.overlayClipId = `ltig-editor-clip-${overlaySequence++}`;
     this.overlay = ownerDocument.createElementNS(SVG_NAMESPACE, "svg");
     this.overlay.classList.add("ltig-editor-overlay");
     this.overlay.setAttribute("aria-hidden", "true");
     this.overlay.setAttribute("focusable", "false");
-    ownerDocument.body.appendChild(this.overlay);
-
-    this.groups = collectEditorListGroups(view.state);
-    this.rebuildItemIndexes();
-    this.sourceView = view.dom.closest<HTMLElement>(
-      ".markdown-source-view.mod-cm6",
-    );
+    this.overlayHost.appendChild(this.overlay);
 
     this.scrollHandler = () => this.scheduleRender();
     this.resizeHandler = () => this.scheduleRender();
-    this.pointerLeaveHandler = () => this.setHoveredMarker(null);
-    this.pointerMoveHandler = (event) => this.updateHoveredMarker(event);
+    this.pointerLeaveHandler = () => this.setHoveredLine(null);
+    this.pointerMoveHandler = (event) => this.updateHoveredLine(event);
     view.scrollDOM.addEventListener("scroll", this.scrollHandler, {
       passive: true,
     });
@@ -229,20 +220,24 @@ class EditorGuideOverlay {
     ownerWindow?.addEventListener("resize", this.resizeHandler, {
       passive: true,
     });
-    ownerWindow?.addEventListener("scroll", this.scrollHandler, {
-      capture: true,
-      passive: true,
-    });
 
     const Observer = ownerWindow?.MutationObserver;
     if (Observer === undefined) {
       this.bodyObserver = null;
+      this.contentObserver = null;
       this.modeObserver = null;
     } else {
       this.bodyObserver = new Observer(() => this.scheduleRender());
       this.bodyObserver.observe(ownerDocument.body, {
         attributes: true,
         attributeFilter: ["class", "style"],
+      });
+      this.contentObserver = new Observer(() => this.scheduleRender());
+      this.contentObserver.observe(view.contentDOM, {
+        attributes: true,
+        attributeFilter: ["class"],
+        childList: true,
+        subtree: true,
       });
       this.modeObserver = new Observer(() => this.scheduleRender());
       if (this.sourceView !== null) {
@@ -262,23 +257,15 @@ class EditorGuideOverlay {
       );
       this.resizeObserver.observe(view.dom);
       this.resizeObserver.observe(view.contentDOM);
+      if (this.sourceView !== null) {
+        this.resizeObserver.observe(this.sourceView);
+      }
     }
 
     this.scheduleRender();
   }
 
   public update(update: ViewUpdate): void {
-    const syntaxChanged = syntaxTree(update.startState) !== syntaxTree(update.state);
-    if (update.docChanged || syntaxChanged) {
-      this.groups = collectEditorListGroups(update.state);
-      this.rebuildItemIndexes();
-      if (
-        this.hoveredMarkerFrom !== null &&
-        !this.itemsByMarker.has(this.hoveredMarkerFrom)
-      ) {
-        this.hoveredMarkerFrom = null;
-      }
-    }
     if (
       update.docChanged ||
       update.geometryChanged ||
@@ -296,14 +283,19 @@ class EditorGuideOverlay {
       this.animationFrame = null;
     }
     this.bodyObserver?.disconnect();
+    this.contentObserver?.disconnect();
     this.modeObserver?.disconnect();
     this.resizeObserver?.disconnect();
     this.view.scrollDOM.removeEventListener("scroll", this.scrollHandler);
     this.view.dom.removeEventListener("pointermove", this.pointerMoveHandler);
     this.view.dom.removeEventListener("pointerleave", this.pointerLeaveHandler);
     ownerWindow?.removeEventListener("resize", this.resizeHandler);
-    ownerWindow?.removeEventListener("scroll", this.scrollHandler, true);
     this.overlay.remove();
+    if (
+      this.overlayHost.querySelector(":scope > .ltig-editor-overlay") === null
+    ) {
+      this.overlayHost.classList.remove("ltig-editor-overlay-host");
+    }
   }
 
   private scheduleRender(): void {
@@ -325,9 +317,8 @@ class EditorGuideOverlay {
       this.sourceView ??
       this.view.dom.closest<HTMLElement>(".markdown-source-view.mod-cm6");
     const ownerDocument = this.view.dom.ownerDocument;
-    const ownerWindow = ownerDocument.defaultView;
-    if (sourceView === null || ownerWindow === null) {
-      this.overlay.replaceChildren();
+    if (sourceView === null) {
+      this.clearOverlay();
       return;
     }
 
@@ -341,27 +332,47 @@ class EditorGuideOverlay {
         ? ownerDocument.body.classList.contains(
             "ltig-thread-live-preview-enabled",
           )
-        : ownerDocument.body.classList.contains("ltig-thread-source-mode-enabled"));
+        : ownerDocument.body.classList.contains(
+            "ltig-thread-source-mode-enabled",
+          ));
     if (!guidesEnabled && !threadingEnabled) {
-      this.overlay.replaceChildren();
+      this.clearOverlay();
       return;
     }
 
-    const viewportWidth = ownerWindow.innerWidth;
-    const viewportHeight = ownerWindow.innerHeight;
+    const hostRect = this.overlayHost.getBoundingClientRect();
     const editorRect = this.view.dom.getBoundingClientRect();
-    const clipTop = clamp(editorRect.top, 0, viewportHeight);
-    const clipBottom = clamp(editorRect.bottom, 0, viewportHeight);
-    const clipLeft = clamp(editorRect.left, 0, viewportWidth);
-    const clipRight = clamp(editorRect.right, 0, viewportWidth);
-    if (clipRight <= clipLeft || clipBottom <= clipTop) {
-      this.overlay.replaceChildren();
+    const overlayWidth = hostRect.width;
+    const overlayHeight = hostRect.height;
+    const clipTop = clamp(editorRect.top - hostRect.top, 0, overlayHeight);
+    const clipBottom = clamp(
+      editorRect.bottom - hostRect.top,
+      0,
+      overlayHeight,
+    );
+    const clipLeft = clamp(editorRect.left - hostRect.left, 0, overlayWidth);
+    const clipRight = clamp(editorRect.right - hostRect.left, 0, overlayWidth);
+    if (
+      overlayWidth <= 0 ||
+      overlayHeight <= 0 ||
+      clipRight <= clipLeft ||
+      clipBottom <= clipTop
+    ) {
+      this.clearOverlay();
       return;
     }
 
-    this.overlay.setAttribute("viewBox", `0 0 ${viewportWidth} ${viewportHeight}`);
-    this.overlay.setAttribute("width", String(viewportWidth));
-    this.overlay.setAttribute("height", String(viewportHeight));
+    const rows = this.collectVisibleRows(isLivePreview);
+    if (rows.length === 0) {
+      this.clearOverlay();
+      return;
+    }
+    const model = buildVisibleListModel(rows);
+
+    this.overlay.classList.remove("ltig-editor-overlay-hidden");
+    this.overlay.setAttribute("viewBox", `0 0 ${overlayWidth} ${overlayHeight}`);
+    this.overlay.setAttribute("width", String(overlayWidth));
+    this.overlay.setAttribute("height", String(overlayHeight));
 
     const fragment = ownerDocument.createDocumentFragment();
     const definitions = ownerDocument.createElementNS(SVG_NAMESPACE, "defs");
@@ -379,26 +390,25 @@ class EditorGuideOverlay {
     const paths = ownerDocument.createElementNS(SVG_NAMESPACE, "g");
     paths.setAttribute("clip-path", `url(#${this.overlayClipId})`);
     const style = readGuideStyleGeometry(this.view.dom);
-    const hideUnorderedBullets =
-      isLivePreview &&
-      !ownerDocument.body.classList.contains(
-        "ltig-show-unordered-list-bullets",
-      );
-
     if (guidesEnabled) {
       this.renderGuidePaths(
         paths,
+        rows,
+        model,
         style,
-        hideUnorderedBullets,
+        hostRect,
         clipTop,
         clipBottom,
       );
     }
-    if (threadingEnabled && this.hoveredMarkerFrom !== null) {
+    if (threadingEnabled) {
       this.renderThreadPaths(
         paths,
+        rows,
+        model,
         style.direction,
         readThreadStyleGeometry(this.view.dom),
+        hostRect,
         clipTop,
         clipBottom,
       );
@@ -408,25 +418,66 @@ class EditorGuideOverlay {
     this.overlay.replaceChildren(fragment);
   }
 
+  private clearOverlay(): void {
+    this.overlay.replaceChildren();
+    this.overlay.classList.add("ltig-editor-overlay-hidden");
+  }
+
+  private collectVisibleRows(isLivePreview: boolean): MeasuredListRow[] {
+    const rows: MeasuredListRow[] = [];
+    let breakBefore = false;
+    for (const line of Array.from(
+      this.view.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
+    )) {
+      const depth = readListDepth(line);
+      if (depth === null) {
+        if (isHardListBoundary(line)) {
+          breakBefore = true;
+        }
+        continue;
+      }
+      const lineRect = toCoordinateRect(line.getBoundingClientRect());
+      rows.push({
+        breakBefore,
+        depth,
+        element: line,
+        lineRect,
+        markerRect: measureMarkerRect(line, lineRect, isLivePreview),
+      });
+      breakBefore = false;
+    }
+    return rows;
+  }
+
   private renderGuidePaths(
     container: SVGGElement,
+    rows: readonly MeasuredListRow[],
+    model: VisibleListModel,
     style: GuideStyleGeometry,
-    hideUnorderedBullets: boolean,
+    hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
   ): void {
     const ownerDocument = this.view.dom.ownerDocument;
-    for (const group of this.groups) {
-      if (!this.groupIntersectsVisibleRanges(group)) {
-        continue;
-      }
-      const rendered = this.renderedConnectors(
-        group,
-        style,
-        hideUnorderedBullets,
-        clipTop,
-        clipBottom,
-      );
+    for (const group of model.groups) {
+      const rendered = group.itemIndices
+        .map((itemIndex) =>
+          this.connectorFor(
+            rows[itemIndex],
+            itemIndex,
+            style.connectorLength,
+            style.markerGap,
+            style.connectorOffset,
+            style.direction,
+            hostRect,
+          ),
+        )
+        .filter(
+          (connector): connector is RenderedConnector =>
+            connector !== null &&
+            connector.y >= clipTop - 32 &&
+            connector.y <= clipBottom + 32,
+        );
       if (rendered.length === 0) {
         continue;
       }
@@ -437,16 +488,16 @@ class EditorGuideOverlay {
       if (spineX === null || first === undefined || last === undefined) {
         continue;
       }
-      const firstGroupItem = group.items[0];
-      const lastGroupItem = group.items.at(-1);
-      const startY =
-        firstGroupItem?.markerFrom === first.markerFrom
-          ? clamp(first.y - style.firstBranchRise, clipTop, clipBottom)
-          : clipTop;
-      const endY =
-        lastGroupItem?.markerFrom === last.markerFrom
-          ? clamp(last.y, clipTop, clipBottom)
-          : clipBottom;
+      const startsAboveViewport =
+        first.itemIndex !== group.itemIndices[0] ||
+        this.hasDeeperRowsBefore(rows, first.itemIndex, group.depth);
+      const endsBelowViewport = last.itemIndex !== group.itemIndices.at(-1);
+      const startY = startsAboveViewport
+        ? clipTop
+        : clamp(first.y - style.firstBranchRise, clipTop, clipBottom);
+      const endY = endsBelowViewport
+        ? clipBottom
+        : clamp(last.y, clipTop, clipBottom);
 
       const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
       path.classList.add("ltig-guide-path");
@@ -461,48 +512,106 @@ class EditorGuideOverlay {
       );
       container.appendChild(path);
     }
+
+    this.renderMissingAncestorSpines(
+      container,
+      rows,
+      model,
+      style,
+      hostRect,
+      clipTop,
+      clipBottom,
+    );
+  }
+
+  private renderMissingAncestorSpines(
+    container: SVGGElement,
+    rows: readonly MeasuredListRow[],
+    model: VisibleListModel,
+    style: GuideStyleGeometry,
+    hostRect: DOMRect,
+    clipTop: number,
+    clipBottom: number,
+  ): void {
+    const first = rows[0];
+    if (first === undefined || first.depth <= 2) {
+      return;
+    }
+    const indentWidth = inferIndentWidth(rows);
+    const firstConnector = this.connectorFor(
+      first,
+      0,
+      style.connectorLength,
+      style.markerGap,
+      style.connectorOffset,
+      style.direction,
+      hostRect,
+    );
+    if (firstConnector === null) {
+      return;
+    }
+    const ownerDocument = this.view.dom.ownerDocument;
+    for (let depth = 2; depth < first.depth; depth += 1) {
+      if (model.groups.some((group) => group.depth === depth)) {
+        continue;
+      }
+      const depthDifference = first.depth - depth;
+      const spineX =
+        style.direction === "rtl"
+          ? firstConnector.startX + depthDifference * indentWidth
+          : firstConnector.startX - depthDifference * indentWidth;
+      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+      path.classList.add("ltig-guide-path", "ltig-guide-path-continuation");
+      path.setAttribute(
+        "d",
+        `M ${spineX} ${clipTop} V ${clipBottom}`,
+      );
+      container.prepend(path);
+    }
   }
 
   private renderThreadPaths(
     container: SVGGElement,
+    rows: readonly MeasuredListRow[],
+    model: VisibleListModel,
     direction: "ltr" | "rtl",
     style: ThreadStyleGeometry,
+    hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
   ): void {
-    const hovered = this.itemsByMarker.get(this.hoveredMarkerFrom ?? -1);
-    if (hovered === undefined) {
+    const hoveredIndex = this.resolveHoveredIndex(rows);
+    if (hoveredIndex === null) {
       return;
     }
-    const chain = this.collectAncestorChain(hovered);
+    const chain = collectAncestorIndices(model.items, hoveredIndex);
     const ownerDocument = this.view.dom.ownerDocument;
-    for (let index = 1; index < chain.length; index += 1) {
-      const parent = chain[index - 1];
-      const child = chain[index];
+    for (let chainIndex = 1; chainIndex < chain.length; chainIndex += 1) {
+      const parentIndex = chain[chainIndex - 1];
+      const childIndex = chain[chainIndex];
+      const parent = parentIndex === undefined ? undefined : rows[parentIndex];
+      const child = childIndex === undefined ? undefined : rows[childIndex];
       if (parent === undefined || child === undefined) {
         continue;
       }
-      const childRect = this.safeCoordsAtPos(child.markerFrom);
-      if (childRect === null) {
-        continue;
-      }
-      const parentRect = this.safeCoordsAtPos(parent.markerFrom);
-      const childY = clamp(
-        (childRect.top + childRect.bottom) / 2 + style.verticalOffset,
-        clipTop,
-        clipBottom,
-      );
       const parentY = clamp(
-        parentRect === null
-          ? clipTop
-          : (parentRect.top + parentRect.bottom) / 2 + style.verticalOffset,
+        markerCenterY(parent.markerRect) - hostRect.top + style.verticalOffset,
         clipTop,
         clipBottom,
       );
+      const childY = clamp(
+        markerCenterY(child.markerRect) - hostRect.top + style.verticalOffset,
+        clipTop,
+        clipBottom,
+      );
+      const markerEdge =
+        direction === "rtl"
+          ? child.markerRect.right - hostRect.left
+          : child.markerRect.left - hostRect.left;
       const endX =
         direction === "rtl"
-          ? childRect.right + style.markerGap
-          : childRect.left - style.markerGap;
+          ? markerEdge + style.markerGap
+          : markerEdge - style.markerGap;
       const spineX =
         direction === "rtl"
           ? endX + style.connectorLength
@@ -510,7 +619,10 @@ class EditorGuideOverlay {
       const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
       path.classList.add(
         "ltig-thread-path",
-        `ltig-thread-depth-${Math.min(index, THREAD_COLOR_COUNT)}`,
+        `ltig-thread-depth-${Math.min(
+          Math.max(1, child.depth - 1),
+          THREAD_COLOR_COUNT,
+        )}`,
       );
       path.setAttribute(
         "d",
@@ -526,148 +638,253 @@ class EditorGuideOverlay {
     }
   }
 
-  private renderedConnectors(
-    group: EditorListGroup,
-    style: GuideStyleGeometry,
-    hideUnorderedBullets: boolean,
-    clipTop: number,
-    clipBottom: number,
-  ): RenderedConnector[] {
-    const connectors: RenderedConnector[] = [];
-    for (const item of group.items) {
-      if (!this.positionIsVisible(item.markerFrom)) {
-        continue;
-      }
-      const markerRect = this.safeCoordsAtPos(item.markerFrom);
-      if (markerRect === null) {
-        continue;
-      }
-      const y =
-        (markerRect.top + markerRect.bottom) / 2 + style.connectorOffset;
-      const markerHeight = markerRect.bottom - markerRect.top;
-      if (y < clipTop - markerHeight || y > clipBottom + markerHeight) {
-        continue;
-      }
-
-      const endpointPosition =
-        !group.ordered && hideUnorderedBullets
-          ? item.contentFrom
-          : item.markerFrom;
-      const endpointRect = this.safeCoordsAtPos(endpointPosition) ?? markerRect;
-      const endX =
-        style.direction === "rtl"
-          ? endpointRect.right + style.markerGap
-          : endpointRect.left - style.markerGap;
-      connectors.push({
-        endX,
-        markerFrom: item.markerFrom,
-        startX:
-          style.direction === "rtl"
-            ? endX + style.connectorLength
-            : endX - style.connectorLength,
-        y: clamp(y, clipTop, clipBottom),
-      });
-    }
-    return connectors;
-  }
-
-  private groupIntersectsVisibleRanges(group: EditorListGroup): boolean {
-    return this.view.visibleRanges.some(
-      (range) => range.to >= group.from && range.from <= group.to,
-    );
-  }
-
-  private positionIsVisible(position: number): boolean {
-    return this.view.visibleRanges.some(
-      (range) => position >= range.from && position <= range.to,
-    );
-  }
-
-  private safeCoordsAtPos(position: number): CoordinateRect | null {
-    try {
-      return this.view.coordsAtPos(position, 1);
-    } catch {
+  private connectorFor(
+    row: MeasuredListRow | undefined,
+    itemIndex: number,
+    connectorLength: number,
+    markerGap: number,
+    verticalOffset: number,
+    direction: "ltr" | "rtl",
+    hostRect: DOMRect,
+  ): RenderedConnector | null {
+    if (row === undefined) {
       return null;
     }
+    const markerEdge =
+      direction === "rtl"
+        ? row.markerRect.right - hostRect.left
+        : row.markerRect.left - hostRect.left;
+    const endX =
+      direction === "rtl" ? markerEdge + markerGap : markerEdge - markerGap;
+    return {
+      endX,
+      itemIndex,
+      startX:
+        direction === "rtl"
+          ? endX + connectorLength
+          : endX - connectorLength,
+      y: markerCenterY(row.markerRect) - hostRect.top + verticalOffset,
+    };
   }
 
-  private rebuildItemIndexes(): void {
-    this.itemsByLine = new Map();
-    this.itemsByMarker = new Map();
-    for (const item of flattenItems(this.groups)) {
-      this.itemsByMarker.set(item.markerFrom, item);
-      const lineNumber = this.view.state.doc.lineAt(item.markerFrom).number;
-      this.itemsByLine.set(lineNumber, item);
+  private hasDeeperRowsBefore(
+    rows: readonly MeasuredListRow[],
+    itemIndex: number,
+    depth: number,
+  ): boolean {
+    for (let index = itemIndex - 1; index >= 0; index -= 1) {
+      const row = rows[index];
+      if (row === undefined || row.breakBefore === true || row.depth < depth) {
+        return false;
+      }
+      if (row.depth === depth) {
+        return false;
+      }
+      if (row.depth > depth) {
+        return true;
+      }
     }
+    return false;
   }
 
-  private updateHoveredMarker(event: PointerEvent): void {
-    const position = this.view.posAtCoords({ x: event.clientX, y: event.clientY });
-    if (position === null) {
-      this.setHoveredMarker(null);
+  private resolveHoveredIndex(rows: readonly MeasuredListRow[]): number | null {
+    if (this.hoveredLine !== null) {
+      const directIndex = rows.findIndex(
+        (row) => row.element === this.hoveredLine,
+      );
+      if (directIndex >= 0) {
+        return directIndex;
+      }
+    }
+    const hoveredIndex = rows.findIndex((row) => row.element.matches(":hover"));
+    return hoveredIndex >= 0 ? hoveredIndex : null;
+  }
+
+  private updateHoveredLine(event: PointerEvent): void {
+    const target = event.target;
+    const ElementConstructor =
+      this.view.dom.ownerDocument.defaultView?.Element;
+    const line =
+      ElementConstructor !== undefined && target instanceof ElementConstructor
+        ? target.closest<HTMLElement>(".cm-line.HyperMD-list-line")
+        : null;
+    this.setHoveredLine(
+      line !== null && this.view.contentDOM.contains(line) ? line : null,
+    );
+  }
+
+  private setHoveredLine(line: HTMLElement | null): void {
+    if (this.hoveredLine === line) {
       return;
     }
-    const lineNumber = this.view.state.doc.lineAt(position).number;
-    this.setHoveredMarker(this.itemsByLine.get(lineNumber)?.markerFrom ?? null);
-  }
-
-  private setHoveredMarker(markerFrom: number | null): void {
-    if (this.hoveredMarkerFrom === markerFrom) {
-      return;
-    }
-    this.hoveredMarkerFrom = markerFrom;
+    this.hoveredLine = line;
     this.scheduleRender();
   }
-
-  private collectAncestorChain(item: EditorListItem): EditorListItem[] {
-    const chain: EditorListItem[] = [];
-    let current: EditorListItem | undefined = item;
-    while (current !== undefined) {
-      chain.push(current);
-      current =
-        current.parentMarkerFrom === null
-          ? undefined
-          : this.itemsByMarker.get(current.parentMarkerFrom);
-    }
-    return chain.reverse();
-  }
 }
 
-function findListMarker(item: SyntaxNode): SyntaxNode | null {
-  for (let child = item.firstChild; child !== null; child = child.nextSibling) {
-    if (LIST_MARK_NODE_NAMES.has(child.name)) {
-      return child;
+function collectAncestorIndices(
+  items: readonly VisibleListItemModel[],
+  itemIndex: number,
+): number[] {
+  const chain: number[] = [];
+  const visited = new Set<number>();
+  let currentIndex: number | null = itemIndex;
+  while (
+    currentIndex !== null &&
+    currentIndex >= 0 &&
+    currentIndex < items.length &&
+    !visited.has(currentIndex)
+  ) {
+    visited.add(currentIndex);
+    chain.push(currentIndex);
+    currentIndex = items[currentIndex]?.parentIndex ?? null;
+  }
+  return chain.reverse();
+}
+
+function readListDepth(line: HTMLElement): number | null {
+  for (const className of Array.from(line.classList)) {
+    if (!className.startsWith(LIST_LINE_CLASS_PREFIX)) {
+      continue;
     }
-    if (!LIST_NODE_NAMES.has(child.name)) {
-      const nested = findListMarker(child);
-      if (nested !== null) {
-        return nested;
+    const parsed = Number.parseInt(
+      className.slice(LIST_LINE_CLASS_PREFIX.length),
+      10,
+    );
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  if (!line.classList.contains("HyperMD-list-line")) {
+    return null;
+  }
+  return Math.max(
+    1,
+    line.querySelectorAll(".cm-hmd-list-indent > .cm-indent").length + 1,
+  );
+}
+
+function isHardListBoundary(line: HTMLElement): boolean {
+  if (line.textContent?.trim() === "") {
+    return false;
+  }
+  return !line.classList.contains("HyperMD-list-line");
+}
+
+function measureMarkerRect(
+  line: HTMLElement,
+  lineRect: CoordinateRect,
+  isLivePreview: boolean,
+): CoordinateRect {
+  const selectors = isLivePreview
+    ? [
+        ".list-bullet",
+        ".cm-formatting-list-ol",
+        ".cm-formatting-list",
+        ".task-list-item-checkbox",
+      ]
+    : [
+        ".cm-formatting-list",
+        ".cm-formatting-list-ul",
+        ".cm-formatting-list-ol",
+        ".list-bullet",
+      ];
+  for (const selector of selectors) {
+    const marker = line.querySelector<HTMLElement>(selector);
+    if (marker === null) {
+      continue;
+    }
+    const markerRect = toCoordinateRect(marker.getBoundingClientRect());
+    if (rectHasUsablePosition(markerRect)) {
+      return normalizeMarkerHeight(markerRect, lineRect);
+    }
+  }
+
+  const indent = line.querySelector<HTMLElement>(
+    ".cm-hmd-list-indent > .cm-indent:last-child",
+  );
+  if (indent !== null) {
+    const indentRect = toCoordinateRect(indent.getBoundingClientRect());
+    if (rectHasUsablePosition(indentRect)) {
+      return {
+        bottom: lineRect.bottom,
+        left: indentRect.right,
+        right: indentRect.right,
+        top: lineRect.top,
+      };
+    }
+  }
+
+  return {
+    bottom: lineRect.bottom,
+    left: lineRect.left,
+    right: lineRect.left,
+    top: lineRect.top,
+  };
+}
+
+function normalizeMarkerHeight(
+  markerRect: CoordinateRect,
+  lineRect: CoordinateRect,
+): CoordinateRect {
+  if (markerRect.bottom > markerRect.top) {
+    return markerRect;
+  }
+  return {
+    ...markerRect,
+    bottom: lineRect.bottom,
+    top: lineRect.top,
+  };
+}
+
+function rectHasUsablePosition(rect: CoordinateRect): boolean {
+  return (
+    Number.isFinite(rect.left) &&
+    Number.isFinite(rect.right) &&
+    Number.isFinite(rect.top) &&
+    Number.isFinite(rect.bottom) &&
+    rect.right >= rect.left &&
+    rect.bottom >= rect.top
+  );
+}
+
+function toCoordinateRect(rect: DOMRect): CoordinateRect {
+  return {
+    bottom: rect.bottom,
+    left: rect.left,
+    right: rect.right,
+    top: rect.top,
+  };
+}
+
+function markerCenterY(rect: CoordinateRect): number {
+  return (rect.top + rect.bottom) / 2;
+}
+
+function inferIndentWidth(rows: readonly MeasuredListRow[]): number {
+  const candidates: number[] = [];
+  for (const row of rows) {
+    for (const indent of Array.from(
+      row.element.querySelectorAll<HTMLElement>(".cm-indent"),
+    )) {
+      const width = indent.getBoundingClientRect().width;
+      if (Number.isFinite(width) && width > 4) {
+        candidates.push(width);
       }
     }
   }
-  return null;
+  return median(candidates) ?? 32;
 }
 
-function assignParentMarkers(groups: readonly EditorListGroup[]): void {
-  const lastAtDepth = new Map<number, EditorListItem>();
-  for (const item of flattenItems(groups)) {
-    for (const depth of Array.from(lastAtDepth.keys())) {
-      if (depth > item.depth) {
-        lastAtDepth.delete(depth);
-      }
+function removeDeeperEntries(
+  entries: Map<number, number>,
+  depth: number,
+): void {
+  for (const entryDepth of Array.from(entries.keys())) {
+    if (entryDepth > depth) {
+      entries.delete(entryDepth);
     }
-    item.parentMarkerFrom =
-      item.depth === 1 ? null : (lastAtDepth.get(item.depth - 1)?.markerFrom ?? null);
-    lastAtDepth.set(item.depth, item);
   }
-}
-
-function flattenItems(
-  groups: readonly EditorListGroup[],
-): EditorListItem[] {
-  return groups
-    .flatMap((group) => [...group.items])
-    .sort((left, right) => left.markerFrom - right.markerFrom);
 }
 
 function readGuideStyleGeometry(element: HTMLElement): GuideStyleGeometry {

@@ -87,13 +87,15 @@ describe("release metadata", () => {
     }
   });
 
-  it("uses the viewport overlay fix and mode-scoped threading", async () => {
+  it("uses the visible-DOM editor overlay and mode-scoped threading", async () => {
     const editor = await readProjectFile("src/editor-guides.ts");
     const main = await readProjectFile("src/main.ts");
     const styles = await readProjectFile("styles.css");
 
-    expect(editor).toContain("ownerDocument.body.appendChild(this.overlay)");
-    expect(styles).toContain("position: fixed");
+    expect(editor).toContain("this.overlayHost.appendChild(this.overlay)");
+    expect(editor).toContain('querySelectorAll<HTMLElement>(".cm-line")');
+    expect(editor).not.toContain("syntaxTree");
+    expect(styles).toContain("position: absolute");
     expect(styles).toContain(
       "body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled",
     );

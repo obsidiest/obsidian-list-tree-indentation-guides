@@ -402,15 +402,34 @@ body {
   --ltig-thread-color-8: #e64fa3;
 }
 
+.ltig-editor-overlay-host {
+  position: relative;
+}
+
 .ltig-editor-overlay {
-  position: fixed;
-  z-index: 20;
+  position: absolute;
+  z-index: 5;
   inset: 0;
   display: block;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   pointer-events: none;
+}
+
+.ltig-editor-overlay-hidden {
+  display: none;
+}
+
+body.ltig-live-preview-enabled
+  .markdown-source-view.mod-cm6.is-live-preview
+  .cm-hmd-list-indent
+  :is(.cm-indent, .cm-indent-spacing)::before,
+body.ltig-source-mode-enabled
+  .markdown-source-view.mod-cm6:not(.is-live-preview)
+  .cm-hmd-list-indent
+  :is(.cm-indent, .cm-indent-spacing)::before {
+  opacity: 0;
 }
 
 .ltig-guide-path {
