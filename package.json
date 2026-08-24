@@ -1,6 +1,6 @@
 {
   "name": "list-tree-indentation-guides",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Tree-like vertical spines and horizontal connectors for Obsidian lists.",
   "type": "module",
   "private": true,

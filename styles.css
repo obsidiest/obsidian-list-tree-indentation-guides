@@ -170,7 +170,7 @@ settings:
   -
     id: ltig-thread-opacity
     title: Thread opacity
-    description: Opacity of the highlighted nested path
+    description: Opacity of active-item and all-branches threading
     type: variable-number-slider
     default: 1
     min: 0.05
@@ -179,7 +179,7 @@ settings:
   -
     id: ltig-thread-thickness
     title: Thread thickness
-    description: Stroke weight of the highlighted nested path
+    description: Stroke weight of active-item and all-branches threading
     type: variable-number-slider
     default: 4
     min: 0.5
@@ -189,7 +189,7 @@ settings:
   -
     id: ltig-thread-corner-radius
     title: Thread corner radius
-    description: Roundness of each highlighted elbow
+    description: Roundness of each highlighted threading elbow
     type: variable-number-slider
     default: 8
     min: 0
@@ -222,7 +222,7 @@ settings:
   -
     id: ltig-thread-connector-length
     title: Thread connector length
-    description: Horizontal reach of each highlighted elbow
+    description: Horizontal reach of each highlighted threading elbow
     type: variable-number-slider
     default: 28
     min: 4
@@ -232,7 +232,7 @@ settings:
   -
     id: ltig-thread-marker-gap
     title: Thread marker gap
-    description: Empty distance between a highlighted thread and its list marker
+    description: Empty distance between threading and its list marker
     type: variable-number-slider
     default: 4
     min: 0
@@ -706,7 +706,7 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   --ltig-reading-thread-child-color: var(--ltig-thread-color-8);
 }
 
-body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-active-item-enabled
   .markdown-rendered
   li:hover
   > :is(ul, ol)
@@ -738,7 +738,7 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   pointer-events: none;
 }
 
-body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-active-item-enabled
   .markdown-rendered
   li:hover
   > :is(ul, ol)
@@ -771,6 +771,106 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   content: "";
   opacity: var(--ltig-thread-opacity);
   pointer-events: none;
+}
+
+/* Highlight every branch below the top-level rendered list under the pointer. */
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item
+  > .ltig-reading-branch {
+  left: calc(
+    0px - var(--ltig-thread-connector-length) -
+      var(--ltig-thread-marker-gap)
+  );
+  display: block;
+  width: var(--ltig-thread-connector-length);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item
+  > .ltig-reading-branch::before,
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item
+  > .ltig-reading-branch::after {
+  border-color: var(--ltig-reading-thread-color);
+  opacity: var(--ltig-thread-opacity);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item
+  > .ltig-reading-branch::before {
+  border-inline-start-width: var(--ltig-thread-thickness);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item:first-child
+  > .ltig-reading-branch::before {
+  top: calc(
+    var(--ltig-thread-reading-item-height) / 2 * -1 -
+      var(--ltig-thread-thickness) / 2 -
+      var(--ltig-thread-reading-join-reach) +
+      var(--ltig-thread-reading-marker-y-shift) + var(--ltig-reading-overlap)
+  );
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item:first-child:last-child
+  > .ltig-reading-branch::before {
+  height: calc(
+    var(--ltig-reading-connector-center) + var(--ltig-connector-offset) +
+      var(--ltig-thread-reading-item-height) / 2 +
+      var(--ltig-thread-thickness) / 2 +
+      var(--ltig-thread-reading-join-reach) -
+      var(--ltig-thread-reading-marker-y-shift)
+  );
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item
+  > .ltig-reading-branch::after {
+  width: var(--ltig-thread-connector-length);
+  border-block-start-width: var(--ltig-thread-thickness);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item:last-child
+  > .ltig-reading-branch::before {
+  width: var(--ltig-thread-connector-length);
+  border-block-end: var(--ltig-thread-thickness) solid
+    var(--ltig-reading-thread-color);
+  border-end-start-radius: var(--ltig-thread-corner-radius);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled
+  .markdown-rendered
+  .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
+  .ltig-reading-list
+  > .ltig-reading-item:last-child
+  > .ltig-reading-branch::after {
+  display: none;
 }
 
 .ltig-style-settings-number-input {

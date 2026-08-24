@@ -19,7 +19,9 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 - Connected tree guides for ordered, unordered, mixed, and task lists.
 - Independent rendering toggles for Live Preview, Source mode, and Reading mode.
-- Optional Logseq-style bullet threading that highlights the complete ancestor path to the hovered list item.
+- Separate list blocks remain visually separate by default, with an optional continuation/gutter-spine setting.
+- Optional Logseq-style bullet threading that responds across the full hovered list-item row.
+- Independent active-item-path and all-branches threading subfeatures.
 - A global threading toggle plus independent Live Preview, Source, and Reading-mode threading toggles.
 - Searchable settings, including aliases for common mode names.
 - Pop-out-window support.
@@ -29,14 +31,17 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 ## Plugin settings
 
-Every plugin setting is searchable from Obsidian's Settings search. Tree-guide rendering is enabled in all three modes by default. Bullet threading is disabled by default; its three mode preferences are enabled so they take effect immediately if the global feature is enabled.
+Every plugin setting is searchable from Obsidian's Settings search. Tree-guide rendering is enabled in all three modes by default. Connecting separate list blocks is disabled by default. Bullet threading is globally disabled by default; Active List Item Threading and the three mode preferences are enabled so they take effect immediately if the global feature is enabled, while All Branches of an Active Bullet List Threading is disabled by default.
 
 | Setting | Purpose |
 | --- | --- |
 | Render in Live Preview | Shows guides in the editable Live Preview view. |
 | Render in Source mode | Shows guides alongside raw Markdown list syntax. |
 | Render in Reading mode | Shows guides in rendered Markdown. |
-| Enable bullet threading | Highlights the nested path to the list item currently hovered over. |
+| Connect separate list blocks | Lets continuation/gutter spines bridge non-list content between editor list blocks. Disabled by default. |
+| Enable bullet threading | Enables Logseq-style hover highlighting. |
+| Active List Item Threading | Highlights the complete ancestor path to the hovered list item. Enabled by default. |
+| All Branches of an Active Bullet List Threading | Highlights every branch in the hovered item’s list block. Disabled by default. |
 | Thread in Live Preview | Allows threading in Live Preview when the global feature is enabled. |
 | Thread in Source mode | Allows threading in Source mode when the global feature is enabled. |
 | Thread in Reading mode | Allows threading in Reading mode when the global feature is enabled. |
@@ -56,7 +61,7 @@ Install and enable the community plugin **Style Settings** to customize:
 - Solid, dashed, or dotted guide pattern.
 - Dash and dot spacing.
 - Visibility of unordered-list bullets in Live Preview and Reading mode (enabled by default).
-- Thread opacity, thickness, line caps, and corner radius.
+- Active-item and all-branches thread opacity, thickness, line caps, and corner radius.
 - Thread connector length, marker gap, and vertical offset.
 - Eight independently themed thread colors; deeper levels reuse the eighth color.
 - Reading-mode thread row height, segment overlap, parent reach, and marker offset.

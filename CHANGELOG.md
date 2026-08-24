@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.3 - 2026-08-24
+
+- Stop guide groups and viewport-continuation spines at definite non-list boundaries so separate list blocks no longer appear connected by default.
+- Add a searchable **Connect separate list blocks** setting, disabled by default, for users who intentionally want continuation/gutter spines to bridge those boundaries.
+- Make editor bullet threading respond to the full vertical hit area of every visible list-item row instead of depending on which child DOM element receives the pointer event.
+- Add **Active List Item Threading**, enabled by default, and **All Branches of an Active Bullet List Threading**, disabled by default.
+- Apply existing Style Settings thread colors, opacity, thickness, caps, corner radius, connector geometry, and Reading-mode geometry to the new threading behavior.
+- Preserve viewport-bounded rendering, mixed-list and pop-out support, searchable settings, synchronized precise Style Settings inputs, and attested release assets.
+
 ## 1.0.2 - 2026-08-24
 
 - Replace the editor syntax-tree dependency with a viewport-bounded model of Obsidian's rendered `HyperMD-list-line-N` rows so guides reliably receive path data in Live Preview and Source mode.

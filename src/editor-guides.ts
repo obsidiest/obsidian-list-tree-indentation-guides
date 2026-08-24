@@ -17,12 +17,14 @@ export interface VisibleListRow {
 }
 
 export interface VisibleListItemModel {
+  blockIndex: number;
   depth: number;
   groupIndex: number;
   parentIndex: number | null;
 }
 
 export interface VisibleListGroup {
+  blockIndex: number;
   depth: number;
   itemIndices: number[];
   parentIndex: number | null;
@@ -37,6 +39,11 @@ interface CoordinateRect {
   bottom: number;
   left: number;
   right: number;
+  top: number;
+}
+
+export interface ListRowHitBox {
+  bottom: number;
   top: number;
 }
 
@@ -76,6 +83,16 @@ interface ThreadPathGeometry {
   startY: number;
 }
 
+interface ThreadGroupPathGeometry {
+  connectors: readonly {
+    endX: number;
+    y: number;
+  }[];
+  radius: number;
+  spineX: number;
+  startY: number;
+}
+
 export function createEditorGuidesExtension(): Extension {
   return ViewPlugin.fromClass(
     class {
@@ -103,11 +120,13 @@ export function createEditorGuidesExtension(): Extension {
  */
 export function buildVisibleListModel(
   rows: readonly VisibleListRow[],
+  connectSeparateListBlocks = false,
 ): VisibleListModel {
   const groups: VisibleListGroup[] = [];
   const items: VisibleListItemModel[] = [];
   const currentGroupAtDepth = new Map<number, number>();
   const lastItemAtDepth = new Map<number, number>();
+  let blockIndex = 0;
 
   for (let itemIndex = 0; itemIndex < rows.length; itemIndex += 1) {
     const row = rows[itemIndex];
@@ -115,7 +134,10 @@ export function buildVisibleListModel(
       continue;
     }
     const depth = Math.max(1, Math.trunc(row.depth));
-    if (row.breakBefore === true) {
+    if (row.breakBefore === true && !connectSeparateListBlocks) {
+      if (itemIndex > 0) {
+        blockIndex += 1;
+      }
       currentGroupAtDepth.clear();
       lastItemAtDepth.clear();
     }
@@ -130,10 +152,12 @@ export function buildVisibleListModel(
     if (
       groupIndex === undefined ||
       currentGroup === undefined ||
+      currentGroup.blockIndex !== blockIndex ||
       currentGroup.parentIndex !== parentIndex
     ) {
       groupIndex = groups.length;
       groups.push({
+        blockIndex,
         depth,
         itemIndices: [],
         parentIndex,
@@ -142,11 +166,46 @@ export function buildVisibleListModel(
     }
 
     groups[groupIndex]?.itemIndices.push(itemIndex);
-    items.push({ depth, groupIndex, parentIndex });
+    items.push({ blockIndex, depth, groupIndex, parentIndex });
     lastItemAtDepth.set(depth, itemIndex);
   }
 
   return { groups, items };
+}
+
+export function findListRowAtClientY(
+  rows: readonly ListRowHitBox[],
+  clientY: number,
+): number | null {
+  if (!Number.isFinite(clientY)) {
+    return null;
+  }
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (
+      row !== undefined &&
+      clientY >= Math.min(row.top, row.bottom) &&
+      clientY <= Math.max(row.top, row.bottom)
+    ) {
+      return index;
+    }
+  }
+  return null;
+}
+
+export function isDefiniteListBlockBoundary(sourceLine: string): boolean {
+  let remainder = sourceLine;
+  while (true) {
+    const quotePrefix = /^[ \t]{0,3}>[ \t]?/u.exec(remainder);
+    if (quotePrefix === null) {
+      break;
+    }
+    remainder = remainder.slice(quotePrefix[0].length);
+  }
+  if (remainder.trim() === "") {
+    return false;
+  }
+  return !/^[ \t]/u.test(remainder);
 }
 
 export function buildRoundedThreadPath({
@@ -173,11 +232,39 @@ export function buildRoundedThreadPath({
   ].join(" ");
 }
 
+export function buildRoundedThreadGroupPath({
+  connectors,
+  radius,
+  spineX,
+  startY,
+}: ThreadGroupPathGeometry): string {
+  const lastConnector = connectors.at(-1);
+  if (lastConnector === undefined) {
+    return "";
+  }
+  const commands = [
+    buildRoundedThreadPath({
+      endX: lastConnector.endX,
+      endY: lastConnector.y,
+      radius,
+      startX: spineX,
+      startY,
+    }),
+  ];
+  for (const connector of connectors.slice(0, -1)) {
+    commands.push(
+      `M ${spineX} ${connector.y} H ${connector.endX}`,
+    );
+  }
+  return commands.join(" ");
+}
+
 class EditorGuideOverlay {
   private animationFrame: number | null = null;
   private readonly bodyObserver: MutationObserver | null;
   private readonly contentObserver: MutationObserver | null;
   private hoveredLine: HTMLElement | null = null;
+  private lastMeasuredRows: readonly MeasuredListRow[] = [];
   private readonly modeObserver: MutationObserver | null;
   private readonly overlay: SVGSVGElement;
   private readonly overlayClipId: string;
@@ -328,6 +415,12 @@ class EditorGuideOverlay {
       : ownerDocument.body.classList.contains("ltig-source-mode-enabled");
     const threadingEnabled =
       ownerDocument.body.classList.contains("ltig-bullet-threading-enabled") &&
+      (ownerDocument.body.classList.contains(
+        "ltig-thread-active-item-enabled",
+      ) ||
+        ownerDocument.body.classList.contains(
+          "ltig-thread-all-branches-enabled",
+        )) &&
       (isLivePreview
         ? ownerDocument.body.classList.contains(
             "ltig-thread-live-preview-enabled",
@@ -363,11 +456,15 @@ class EditorGuideOverlay {
     }
 
     const rows = this.collectVisibleRows(isLivePreview);
+    this.lastMeasuredRows = rows;
     if (rows.length === 0) {
       this.clearOverlay();
       return;
     }
-    const model = buildVisibleListModel(rows);
+    const connectSeparateListBlocks = ownerDocument.body.classList.contains(
+      "ltig-connect-separate-list-blocks-enabled",
+    );
+    const model = buildVisibleListModel(rows, connectSeparateListBlocks);
 
     this.overlay.classList.remove("ltig-editor-overlay-hidden");
     this.overlay.setAttribute("viewBox", `0 0 ${overlayWidth} ${overlayHeight}`);
@@ -399,6 +496,7 @@ class EditorGuideOverlay {
         hostRect,
         clipTop,
         clipBottom,
+        connectSeparateListBlocks,
       );
     }
     if (threadingEnabled) {
@@ -411,6 +509,12 @@ class EditorGuideOverlay {
         hostRect,
         clipTop,
         clipBottom,
+        ownerDocument.body.classList.contains(
+          "ltig-thread-active-item-enabled",
+        ),
+        ownerDocument.body.classList.contains(
+          "ltig-thread-all-branches-enabled",
+        ),
       );
     }
 
@@ -419,6 +523,7 @@ class EditorGuideOverlay {
   }
 
   private clearOverlay(): void {
+    this.lastMeasuredRows = [];
     this.overlay.replaceChildren();
     this.overlay.classList.add("ltig-editor-overlay-hidden");
   }
@@ -430,23 +535,40 @@ class EditorGuideOverlay {
       this.view.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
     )) {
       const depth = readListDepth(line);
+      const sourceLine = this.readSourceLine(line);
       if (depth === null) {
-        if (isHardListBoundary(line)) {
+        if (isHardListBoundary(line, sourceLine)) {
           breakBefore = true;
         }
         continue;
       }
       const lineRect = toCoordinateRect(line.getBoundingClientRect());
+      const markerRect = measureMarkerRect(line, lineRect, isLivePreview);
+      if (markerRect === null) {
+        if (isHardListBoundary(line, sourceLine)) {
+          breakBefore = true;
+        }
+        continue;
+      }
       rows.push({
         breakBefore,
         depth,
         element: line,
         lineRect,
-        markerRect: measureMarkerRect(line, lineRect, isLivePreview),
+        markerRect,
       });
       breakBefore = false;
     }
     return rows;
+  }
+
+  private readSourceLine(line: HTMLElement): string {
+    try {
+      const position = this.view.posAtDOM(line);
+      return this.view.state.doc.lineAt(position).text;
+    } catch {
+      return line.textContent ?? "";
+    }
   }
 
   private renderGuidePaths(
@@ -457,6 +579,7 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    connectSeparateListBlocks: boolean,
   ): void {
     const ownerDocument = this.view.dom.ownerDocument;
     for (const group of model.groups) {
@@ -490,7 +613,12 @@ class EditorGuideOverlay {
       }
       const startsAboveViewport =
         first.itemIndex !== group.itemIndices[0] ||
-        this.hasDeeperRowsBefore(rows, first.itemIndex, group.depth);
+        this.hasDeeperRowsBefore(
+          rows,
+          first.itemIndex,
+          group.depth,
+          connectSeparateListBlocks,
+        );
       const endsBelowViewport = last.itemIndex !== group.itemIndices.at(-1);
       const startY = startsAboveViewport
         ? clipTop
@@ -521,6 +649,7 @@ class EditorGuideOverlay {
       hostRect,
       clipTop,
       clipBottom,
+      connectSeparateListBlocks,
     );
   }
 
@@ -532,9 +661,14 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    connectSeparateListBlocks: boolean,
   ): void {
     const first = rows[0];
-    if (first === undefined || first.depth <= 2) {
+    if (
+      first === undefined ||
+      first.depth <= 2 ||
+      (first.breakBefore === true && !connectSeparateListBlocks)
+    ) {
       return;
     }
     const indentWidth = inferIndentWidth(rows);
@@ -579,9 +713,28 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    activeListItemThreading: boolean,
+    allBranchesThreading: boolean,
   ): void {
     const hoveredIndex = this.resolveHoveredIndex(rows);
     if (hoveredIndex === null) {
+      return;
+    }
+    if (allBranchesThreading) {
+      this.renderAllBranchThreadPaths(
+        container,
+        rows,
+        model,
+        hoveredIndex,
+        direction,
+        style,
+        hostRect,
+        clipTop,
+        clipBottom,
+      );
+      return;
+    }
+    if (!activeListItemThreading) {
       return;
     }
     const chain = collectAncestorIndices(model.items, hoveredIndex);
@@ -617,13 +770,7 @@ class EditorGuideOverlay {
           ? endX + style.connectorLength
           : endX - style.connectorLength;
       const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
-      path.classList.add(
-        "ltig-thread-path",
-        `ltig-thread-depth-${Math.min(
-          Math.max(1, child.depth - 1),
-          THREAD_COLOR_COUNT,
-        )}`,
-      );
+      addThreadPathClasses(path, child.depth);
       path.setAttribute(
         "d",
         buildRoundedThreadPath({
@@ -634,6 +781,76 @@ class EditorGuideOverlay {
           startY: parentY,
         }),
       );
+      container.appendChild(path);
+    }
+  }
+
+  private renderAllBranchThreadPaths(
+    container: SVGGElement,
+    rows: readonly MeasuredListRow[],
+    model: VisibleListModel,
+    hoveredIndex: number,
+    direction: "ltr" | "rtl",
+    style: ThreadStyleGeometry,
+    hostRect: DOMRect,
+    clipTop: number,
+    clipBottom: number,
+  ): void {
+    const activeBlockIndex = model.items[hoveredIndex]?.blockIndex;
+    if (activeBlockIndex === undefined) {
+      return;
+    }
+    const ownerDocument = this.view.dom.ownerDocument;
+    for (const group of model.groups) {
+      if (
+        group.blockIndex !== activeBlockIndex ||
+        group.parentIndex === null
+      ) {
+        continue;
+      }
+      const parent = rows[group.parentIndex];
+      if (parent === undefined) {
+        continue;
+      }
+      const connectors = group.itemIndices
+        .map((itemIndex) =>
+          this.connectorFor(
+            rows[itemIndex],
+            itemIndex,
+            style.connectorLength,
+            style.markerGap,
+            style.verticalOffset,
+            direction,
+            hostRect,
+          ),
+        )
+        .filter(
+          (connector): connector is RenderedConnector =>
+            connector !== null &&
+            connector.y >= clipTop - 32 &&
+            connector.y <= clipBottom + 32,
+        );
+      const spineX = median(connectors.map((connector) => connector.startX));
+      if (spineX === null || connectors.length === 0) {
+        continue;
+      }
+      const parentY = clamp(
+        markerCenterY(parent.markerRect) - hostRect.top + style.verticalOffset,
+        clipTop,
+        clipBottom,
+      );
+      const pathData = buildRoundedThreadGroupPath({
+        connectors: connectors.map(({ endX, y }) => ({ endX, y })),
+        radius: style.cornerRadius,
+        spineX,
+        startY: parentY,
+      });
+      if (pathData === "") {
+        continue;
+      }
+      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+      addThreadPathClasses(path, group.depth);
+      path.setAttribute("d", pathData);
       container.appendChild(path);
     }
   }
@@ -671,10 +888,15 @@ class EditorGuideOverlay {
     rows: readonly MeasuredListRow[],
     itemIndex: number,
     depth: number,
+    connectSeparateListBlocks: boolean,
   ): boolean {
     for (let index = itemIndex - 1; index >= 0; index -= 1) {
       const row = rows[index];
-      if (row === undefined || row.breakBefore === true || row.depth < depth) {
+      if (
+        row === undefined ||
+        (row.breakBefore === true && !connectSeparateListBlocks) ||
+        row.depth < depth
+      ) {
         return false;
       }
       if (row.depth === depth) {
@@ -701,15 +923,12 @@ class EditorGuideOverlay {
   }
 
   private updateHoveredLine(event: PointerEvent): void {
-    const target = event.target;
-    const ElementConstructor =
-      this.view.dom.ownerDocument.defaultView?.Element;
-    const line =
-      ElementConstructor !== undefined && target instanceof ElementConstructor
-        ? target.closest<HTMLElement>(".cm-line.HyperMD-list-line")
-        : null;
+    const index = findListRowAtClientY(
+      this.lastMeasuredRows.map((row) => row.lineRect),
+      event.clientY,
+    );
     this.setHoveredLine(
-      line !== null && this.view.contentDOM.contains(line) ? line : null,
+      index === null ? null : (this.lastMeasuredRows[index]?.element ?? null),
     );
   }
 
@@ -720,6 +939,16 @@ class EditorGuideOverlay {
     this.hoveredLine = line;
     this.scheduleRender();
   }
+}
+
+function addThreadPathClasses(path: SVGPathElement, depth: number): void {
+  path.classList.add(
+    "ltig-thread-path",
+    `ltig-thread-depth-${Math.min(
+      Math.max(1, depth - 1),
+      THREAD_COLOR_COUNT,
+    )}`,
+  );
 }
 
 function collectAncestorIndices(
@@ -764,18 +993,21 @@ function readListDepth(line: HTMLElement): number | null {
   );
 }
 
-function isHardListBoundary(line: HTMLElement): boolean {
-  if (line.textContent?.trim() === "") {
+function isHardListBoundary(line: HTMLElement, sourceLine: string): boolean {
+  if (sourceLine.trim() === "") {
     return false;
   }
-  return !line.classList.contains("HyperMD-list-line");
+  return (
+    !line.classList.contains("HyperMD-list-line") ||
+    isDefiniteListBlockBoundary(sourceLine)
+  );
 }
 
 function measureMarkerRect(
   line: HTMLElement,
   lineRect: CoordinateRect,
   isLivePreview: boolean,
-): CoordinateRect {
+): CoordinateRect | null {
   const selectors = isLivePreview
     ? [
         ".list-bullet",
@@ -789,15 +1021,21 @@ function measureMarkerRect(
         ".cm-formatting-list-ol",
         ".list-bullet",
       ];
+  let markerFound = false;
   for (const selector of selectors) {
     const marker = line.querySelector<HTMLElement>(selector);
     if (marker === null) {
       continue;
     }
+    markerFound = true;
     const markerRect = toCoordinateRect(marker.getBoundingClientRect());
     if (rectHasUsablePosition(markerRect)) {
       return normalizeMarkerHeight(markerRect, lineRect);
     }
+  }
+
+  if (!markerFound) {
+    return null;
   }
 
   const indent = line.querySelector<HTMLElement>(

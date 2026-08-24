@@ -14,9 +14,12 @@ import {
 
 const MODE_CLASSES = [
   "ltig-bullet-threading-enabled",
+  "ltig-thread-active-item-enabled",
+  "ltig-thread-all-branches-enabled",
   "ltig-thread-live-preview-enabled",
   "ltig-thread-reading-mode-enabled",
   "ltig-thread-source-mode-enabled",
+  "ltig-connect-separate-list-blocks-enabled",
   "ltig-live-preview-enabled",
   "ltig-reading-mode-enabled",
   "ltig-source-mode-enabled",
@@ -97,6 +100,14 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
       this.settings.enableBulletThreading,
     );
     ownerDocument.body.classList.toggle(
+      "ltig-thread-active-item-enabled",
+      this.settings.activeListItemThreading,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-all-branches-enabled",
+      this.settings.allBranchesOfActiveBulletListThreading,
+    );
+    ownerDocument.body.classList.toggle(
       "ltig-thread-live-preview-enabled",
       this.settings.bulletThreadingInLivePreview,
     );
@@ -107,6 +118,10 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     ownerDocument.body.classList.toggle(
       "ltig-thread-reading-mode-enabled",
       this.settings.bulletThreadingInReadingMode,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-connect-separate-list-blocks-enabled",
+      this.settings.connectSeparateListBlocks,
     );
     ownerDocument.body.classList.toggle(
       "ltig-live-preview-enabled",

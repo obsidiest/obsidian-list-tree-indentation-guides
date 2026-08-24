@@ -62,6 +62,21 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               defaultValue: DEFAULT_SETTINGS.renderInReadingMode,
             },
           },
+          {
+            name: "Connect separate list blocks",
+            desc: "Allow continuation or gutter spines to bridge non-list content between separate list blocks in Live Preview and Source mode.",
+            aliases: [
+              "gutter guide",
+              "continuation spine",
+              "bridge separate lists",
+              "connect disconnected lists",
+            ],
+            control: {
+              type: "toggle",
+              key: "connectSeparateListBlocks",
+              defaultValue: DEFAULT_SETTINGS.connectSeparateListBlocks,
+            },
+          },
         ],
       },
       {
@@ -70,7 +85,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
         items: [
           {
             name: "Enable bullet threading",
-            desc: "Highlight the nested path to the list item currently hovered over.",
+            desc: "Enable Logseq-style hover highlighting for list-tree branches.",
             aliases: [
               "logseq list path",
               "active list item",
@@ -81,6 +96,35 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "enableBulletThreading",
               defaultValue: DEFAULT_SETTINGS.enableBulletThreading,
+            },
+          },
+          {
+            name: "Active List Item Threading",
+            desc: "Highlight the complete nested path to whichever list item is currently hovered over.",
+            aliases: [
+              "active bullet path",
+              "hovered list item ancestors",
+              "current item thread",
+            ],
+            control: {
+              type: "toggle",
+              key: "activeListItemThreading",
+              defaultValue: DEFAULT_SETTINGS.activeListItemThreading,
+            },
+          },
+          {
+            name: "All Branches of an Active Bullet List Threading",
+            desc: "Highlight every nested branch in the same list block as the currently hovered list item.",
+            aliases: [
+              "whole list threading",
+              "all active list branches",
+              "entire bullet tree highlight",
+            ],
+            control: {
+              type: "toggle",
+              key: "allBranchesOfActiveBulletListThreading",
+              defaultValue:
+                DEFAULT_SETTINGS.allBranchesOfActiveBulletListThreading,
             },
           },
           {
