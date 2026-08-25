@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { parseCompleteInRangeNumber } from "src/style-settings-precision";
+import {
+  normalizeHexColor,
+  parseCompleteInRangeNumber,
+} from "src/style-settings-precision";
 
 describe("Style Settings precise numeric inputs", () => {
   it("accepts arbitrary in-range decimals between slider ticks", () => {
@@ -24,5 +27,18 @@ describe("Style Settings precise numeric inputs", () => {
   it("rejects out-of-range and non-finite values", () => {
     expect(parseCompleteInRangeNumber("7", "0", "6")).toBeNull();
     expect(parseCompleteInRangeNumber("Infinity", "0", "6")).toBeNull();
+  });
+});
+
+describe("Style Settings persistent color inputs", () => {
+  it("normalizes complete three- and six-digit hex colors", () => {
+    expect(normalizeHexColor(" #AbC ")).toBe("#aabbcc");
+    expect(normalizeHexColor("#12Af90")).toBe("#12af90");
+  });
+
+  it("rejects values a native color input cannot represent", () => {
+    expect(normalizeHexColor("red")).toBeNull();
+    expect(normalizeHexColor("#12345")).toBeNull();
+    expect(normalizeHexColor("#11223344")).toBeNull();
   });
 });

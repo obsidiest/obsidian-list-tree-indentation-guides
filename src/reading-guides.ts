@@ -3,6 +3,11 @@ const BRANCH_CLASS = "ltig-reading-branch";
 const HEAD_CLASS = "ltig-reading-list-head";
 const ITEM_CLASS = "ltig-reading-item";
 const LIST_CLASS = "ltig-reading-list";
+const LIST_ACTIVE_ITEM_THREADING_CLASS =
+  "ltig-reading-active-item-threading";
+const LIST_ALL_BRANCHES_THREADING_CLASS =
+  "ltig-reading-all-branches-threading";
+const ORPHAN_LIST_CLASS = "ltig-reading-orphan-list";
 const LIST_WITH_HEAD_CLASS = "ltig-reading-list-with-head";
 
 export function decorateReadingLists(root: ParentNode): number {
@@ -11,16 +16,48 @@ export function decorateReadingLists(root: ParentNode): number {
 
   for (const list of lists) {
     list.classList.add(LIST_CLASS);
-    list.classList.remove(LIST_WITH_HEAD_CLASS);
+    list.classList.remove(
+      LIST_ACTIVE_ITEM_THREADING_CLASS,
+      LIST_ALL_BRANCHES_THREADING_CLASS,
+      LIST_WITH_HEAD_CLASS,
+      ORPHAN_LIST_CLASS,
+    );
     const previous = list.previousElementSibling;
-    if (
-      !list.closest(`.${ITEM_CLASS}`) &&
+    const isTopLevelList = !list.closest(`.${ITEM_CLASS}`);
+    const hasListHead =
+      isTopLevelList &&
       previous !== null &&
       !previous.matches("ul, ol") &&
-      previous.textContent?.trim() !== ""
-    ) {
+      previous.textContent?.trim() !== "";
+    if (hasListHead) {
       previous.classList.add(HEAD_CLASS);
       list.classList.add(LIST_WITH_HEAD_CLASS);
+    } else if (isTopLevelList) {
+      list.classList.add(ORPHAN_LIST_CLASS);
+    }
+    if (isTopLevelList) {
+      const ownerBody = list.ownerDocument.body;
+      const orphanThreadingEnabled =
+        !hasListHead &&
+        ownerBody.classList.contains("ltig-thread-orphan-enabled");
+      list.classList.toggle(
+        LIST_ACTIVE_ITEM_THREADING_CLASS,
+        hasListHead
+          ? ownerBody.classList.contains("ltig-thread-active-item-enabled")
+          : orphanThreadingEnabled &&
+              ownerBody.classList.contains(
+                "ltig-thread-orphan-active-item-enabled",
+              ),
+      );
+      list.classList.toggle(
+        LIST_ALL_BRANCHES_THREADING_CLASS,
+        hasListHead
+          ? ownerBody.classList.contains("ltig-thread-all-branches-enabled")
+          : orphanThreadingEnabled &&
+              ownerBody.classList.contains(
+                "ltig-thread-orphan-all-branches-enabled",
+              ),
+      );
     }
     for (const child of Array.from(list.children)) {
       if (child.tagName !== "LI") {
@@ -72,7 +109,13 @@ export function removeReadingGuides(ownerDocument: Document): void {
   for (const list of Array.from(
     ownerDocument.querySelectorAll<HTMLElement>(`.${LIST_CLASS}`),
   )) {
-    list.classList.remove(LIST_CLASS, LIST_WITH_HEAD_CLASS);
+    list.classList.remove(
+      LIST_ACTIVE_ITEM_THREADING_CLASS,
+      LIST_ALL_BRANCHES_THREADING_CLASS,
+      LIST_CLASS,
+      LIST_WITH_HEAD_CLASS,
+      ORPHAN_LIST_CLASS,
+    );
   }
 }
 

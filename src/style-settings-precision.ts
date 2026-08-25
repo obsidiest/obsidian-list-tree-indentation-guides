@@ -8,6 +8,13 @@ const STYLE_SETTINGS_SECTION_SELECTOR = [
   '.style-settings-heading[data-id$="@@list-tree-indentation-guides"]',
 ].join(", ");
 const NUMBER_INPUT_CLASS = "ltig-style-settings-number-input";
+const COLOR_INPUT_CLASS = "ltig-style-settings-color-input";
+const STYLE_COLOR_DEFAULTS = new Map<string, string>([
+  ["ltig-thread-fallback-color-light", "#777777"],
+  ["ltig-thread-fallback-color-dark", "#888888"],
+  ["ltig-thread-override-color-light", "#777777"],
+  ["ltig-thread-override-color-dark", "#888888"],
+]);
 
 type QueryableNode = ParentNode & {
   matches?: (selector: string) => boolean;
@@ -28,7 +35,7 @@ export class StyleSettingsPrecisionControls {
       return;
     }
 
-    enhanceStyleSettingsNumberControls(ownerDocument);
+    enhanceStyleSettingsControls(ownerDocument);
 
     const Observer =
       ownerDocument.defaultView?.MutationObserver ??
@@ -39,7 +46,7 @@ export class StyleSettingsPrecisionControls {
 
     const observer = new Observer((mutations) => {
       if (mutations.some(isRelevantStyleSettingsMutation)) {
-        enhanceStyleSettingsNumberControls(ownerDocument);
+        enhanceStyleSettingsControls(ownerDocument);
       }
     });
     observer.observe(ownerDocument.body, {
@@ -57,6 +64,11 @@ export class StyleSettingsPrecisionControls {
     }
     this.observers.clear();
   }
+}
+
+function enhanceStyleSettingsControls(root: ParentNode): void {
+  enhanceStyleSettingsNumberControls(root);
+  enhanceStyleSettingsColorControls(root);
 }
 
 export function enhanceStyleSettingsNumberControls(root: ParentNode): number {
@@ -150,6 +162,95 @@ export function enhanceStyleSettingsNumberControls(root: ParentNode): number {
   return enhanced;
 }
 
+/**
+ * Style Settings' Pickr-backed color controls can fail to commit on some
+ * Obsidian/Windows combinations. These four controls intentionally use
+ * Style Settings' reliable variable-text persistence and add a native color
+ * input beside it. Updating either control keeps the other synchronized.
+ */
+export function enhanceStyleSettingsColorControls(root: ParentNode): number {
+  let enhanced = 0;
+
+  for (const row of findColorRows(root)) {
+    const settingId = readStyleSettingId(row);
+    const fallback =
+      settingId === null ? undefined : STYLE_COLOR_DEFAULTS.get(settingId);
+    const control = row.querySelector<HTMLElement>(".setting-item-control");
+    const textInput = control?.querySelector<HTMLInputElement>(
+      'input[type="text"]:not(.ltig-style-settings-number-input)',
+    );
+    if (
+      fallback === undefined ||
+      control === undefined ||
+      control === null ||
+      textInput === undefined ||
+      textInput === null ||
+      control.querySelector(`.${COLOR_INPUT_CLASS}`) !== null
+    ) {
+      continue;
+    }
+
+    const ownerDocument = textInput.ownerDocument;
+    const colorInput = control.createEl("input");
+    colorInput.type = "color";
+    colorInput.className = COLOR_INPUT_CLASS;
+    colorInput.value = normalizeHexColor(textInput.value) ?? fallback;
+    const settingName = row
+      .querySelector(".setting-item-name")
+      ?.textContent?.trim();
+    colorInput.setAttribute(
+      "aria-label",
+      settingName === undefined || settingName === ""
+        ? "Choose color"
+        : `${settingName} picker`,
+    );
+    colorInput.setAttribute("title", "Choose color");
+
+    const EventConstructor = ownerDocument.defaultView?.Event ?? Event;
+    const commitColor = (commit: boolean): void => {
+      textInput.value = colorInput.value.toLowerCase();
+      textInput.dispatchEvent(
+        new EventConstructor("input", { bubbles: true }),
+      );
+      if (commit) {
+        textInput.dispatchEvent(
+          new EventConstructor("change", { bubbles: true }),
+        );
+      }
+    };
+    const syncFromText = (): void => {
+      const normalized = normalizeHexColor(textInput.value);
+      if (normalized !== null) {
+        colorInput.value = normalized;
+      }
+    };
+
+    colorInput.addEventListener("input", () => commitColor(false));
+    colorInput.addEventListener("change", () => commitColor(true));
+    textInput.addEventListener("input", syncFromText);
+    textInput.addEventListener("change", syncFromText);
+
+    const resetButton = control.querySelector<HTMLElement>(".clickable-icon");
+    resetButton?.addEventListener("click", () => {
+      const schedule = ownerDocument.defaultView?.setTimeout ?? setTimeout;
+      schedule(syncFromText, 0);
+    });
+    control.insertBefore(colorInput, textInput);
+    enhanced += 1;
+  }
+
+  return enhanced;
+}
+
+export function normalizeHexColor(value: string): string | null {
+  const normalized = value.trim().toLowerCase();
+  const shortMatch = /^#([\da-f])([\da-f])([\da-f])$/u.exec(normalized);
+  if (shortMatch !== null) {
+    return `#${shortMatch[1]}${shortMatch[1]}${shortMatch[2]}${shortMatch[2]}${shortMatch[3]}${shortMatch[3]}`;
+  }
+  return /^#[\da-f]{6}$/u.test(normalized) ? normalized : null;
+}
+
 export function parseCompleteInRangeNumber(
   value: string,
   minimumValue: string,
@@ -229,6 +330,50 @@ function findSliderRows(root: ParentNode): Element[] {
   }
 
   return Array.from(rows);
+}
+
+function findColorRows(root: ParentNode): Element[] {
+  const rows = new Set<Element>();
+  const candidate = root as QueryableNode;
+
+  if (candidate.matches?.(STYLE_SETTING_MARKER_SELECTOR) === true) {
+    addColorSettingRow(candidate as unknown as Element, rows);
+  }
+  for (const marker of Array.from(
+    root.querySelectorAll<Element>(STYLE_SETTING_MARKER_SELECTOR),
+  )) {
+    addColorSettingRow(marker, rows);
+  }
+  return Array.from(rows);
+}
+
+function addColorSettingRow(marker: Element, rows: Set<Element>): void {
+  const row = marker.matches(".setting-item")
+    ? marker
+    : marker.closest(".setting-item");
+  if (row !== null && readStyleSettingId(row) !== null) {
+    rows.add(row);
+  }
+}
+
+function readStyleSettingId(row: Element): string | null {
+  const dataIds = [
+    row.getAttribute("data-id"),
+    ...Array.from(row.querySelectorAll<Element>("[data-id]"), (element) =>
+      element.getAttribute("data-id"),
+    ),
+  ];
+  for (const dataId of dataIds) {
+    if (dataId === null) {
+      continue;
+    }
+    for (const settingId of STYLE_COLOR_DEFAULTS.keys()) {
+      if (dataId === settingId || dataId.endsWith(`@@${settingId}`)) {
+        return settingId;
+      }
+    }
+  }
+  return null;
 }
 
 function addSettingRow(marker: Element, rows: Set<Element>): void {

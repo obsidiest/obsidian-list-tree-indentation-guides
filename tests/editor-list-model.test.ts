@@ -108,7 +108,7 @@ describe("visible editor list model", () => {
       { boundaryBefore: "content", depth: 1 },
     ];
     const model = buildVisibleListModel(rows, {
-      treatBlankLineSeparatedListBlocksAsOne: true,
+      threadBlankLineSeparatedListBlocks: true,
     });
 
     expect(model.items.map((item) => item.blockIndex)).toEqual([0, 0, 1]);
@@ -156,6 +156,18 @@ describe("visible editor list model", () => {
         startY: 20,
       }),
     ).toBe("M 40 20 V 52 Q 40 60 48 60 H 80");
+  });
+
+  it("builds an orphan root item as a clean horizontal thread", () => {
+    expect(
+      buildRoundedThreadPath({
+        endX: 80,
+        endY: 20,
+        radius: 8,
+        startX: 40,
+        startY: 20,
+      }),
+    ).toBe("M 40 20 H 80");
   });
 
   it("builds all-branches threading with one shared spine and every elbow", () => {

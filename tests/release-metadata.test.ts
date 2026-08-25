@@ -98,8 +98,11 @@ describe("release metadata", () => {
     }
   });
 
-  it("offers fallback and override controls for every bullet-thread color", async () => {
+  it("offers persistent fallback and override controls for every list-thread color", async () => {
     const styles = await readProjectFile("styles.css");
+    const precisionControls = await readProjectFile(
+      "src/style-settings-precision.ts",
+    );
     const fallback = styles.indexOf("id: ltig-thread-fallback-colors-enabled");
     const override = styles.indexOf("id: ltig-thread-override-colors-enabled");
 
@@ -107,16 +110,22 @@ describe("release metadata", () => {
     expect(styles.slice(fallback, fallback + 350)).toContain("default: true");
     expect(override).toBeGreaterThanOrEqual(0);
     expect(styles.slice(override, override + 350)).toContain("default: false");
-    expect(styles).toContain("id: ltig-thread-fallback-color");
-    for (const mode of ["light", "dark"]) {
-      const id = `ltig-thread-override-color-${mode}`;
-      const setting = styles.indexOf(`id: ${id}`);
-      expect(setting).toBeGreaterThanOrEqual(0);
-      expect(styles.slice(setting, setting + 350)).toContain(
-        "type: variable-color",
-      );
-      expect(styles).toContain(`--${id}`);
+    for (const kind of ["fallback", "override"]) {
+      for (const mode of ["light", "dark"]) {
+        const id = `ltig-thread-${kind}-color-${mode}`;
+        const setting = styles.indexOf(`id: ${id}`);
+        expect(setting).toBeGreaterThanOrEqual(0);
+        expect(styles.slice(setting, setting + 350)).toContain(
+          "type: variable-text",
+        );
+        expect(styles).toContain(`--${id}`);
+        expect(precisionControls).toContain(`["${id}",`);
+      }
     }
+    expect(precisionControls).toContain('colorInput.type = "color"');
+    expect(precisionControls).toContain(
+      'new EventConstructor("input", { bubbles: true })',
+    );
     expect(styles).toContain(
       "--ltig-thread-override-color: var(--ltig-thread-override-color-dark)",
     );
@@ -124,7 +133,7 @@ describe("release metadata", () => {
       "--ltig-thread-override-color: var(--ltig-thread-override-color-light)",
     );
     expect(styles).toContain(
-      "title: Static List Tree Indentation Guide Appearance",
+      "title: List Static Tree Indentation Guide Appearance",
     );
   });
 
@@ -133,13 +142,21 @@ describe("release metadata", () => {
 
     expect(types).toContain("activeListItemThreading: true");
     expect(types).toContain(
-      "allBranchesOfActiveBulletListThreading: false",
+      "allBranchesOfActiveListThreading: false",
+    );
+    expect(types).toContain("activeOrphanListThreading: true");
+    expect(types).toContain("activeOrphanListItemThreading: true");
+    expect(types).toContain(
+      "allBranchesOfActiveOrphanListThreading: false",
     );
     expect(types).toContain("connectSeparateListBlocks: false");
-    expect(types).toContain("bulletThreadingFromNonListHead: true");
-    expect(types).toContain("enableStaticListTreeIndentationGuides: true");
+    expect(types).toContain("listThreadingFromNonListHead: true");
+    expect(types).toContain("enableListStaticTreeIndentationGuides: true");
     expect(types).toContain(
-      "treatBlankLineSeparatedListBlocksAsOne: false",
+      "threadBlankLineSeparatedListBlocksForActiveItem: false",
+    );
+    expect(types).toContain(
+      "threadBlankLineSeparatedListBlocksForAllBranches: false",
     );
   });
 
@@ -159,14 +176,17 @@ describe("release metadata", () => {
     expect(editor).not.toContain("syntaxTree");
     expect(styles).toContain("position: absolute");
     expect(styles).toContain(
-      "body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled",
+      "body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled",
     );
-    expect(styles).toContain("ltig-thread-all-branches-enabled");
     for (const className of [
       "ltig-thread-active-item-enabled",
       "ltig-thread-all-branches-enabled",
-      "ltig-thread-blank-separated-blocks-enabled",
+      "ltig-thread-active-blank-separated-blocks-enabled",
+      "ltig-thread-all-branches-blank-separated-blocks-enabled",
       "ltig-thread-from-list-head-enabled",
+      "ltig-thread-orphan-enabled",
+      "ltig-thread-orphan-active-item-enabled",
+      "ltig-thread-orphan-all-branches-enabled",
       "ltig-thread-live-preview-enabled",
       "ltig-thread-source-mode-enabled",
       "ltig-thread-reading-mode-enabled",
@@ -182,28 +202,35 @@ describe("release metadata", () => {
       "renderInLivePreview",
       "renderInSourceMode",
       "renderInReadingMode",
-      "enableStaticListTreeIndentationGuides",
+      "enableListStaticTreeIndentationGuides",
       "connectSeparateListBlocks",
-      "enableBulletThreading",
+      "enableListThreading",
       "activeListItemThreading",
-      "allBranchesOfActiveBulletListThreading",
-      "treatBlankLineSeparatedListBlocksAsOne",
-      "bulletThreadingFromNonListHead",
-      "bulletThreadingInLivePreview",
-      "bulletThreadingInSourceMode",
-      "bulletThreadingInReadingMode",
+      "threadBlankLineSeparatedListBlocksForActiveItem",
+      "allBranchesOfActiveListThreading",
+      "threadBlankLineSeparatedListBlocksForAllBranches",
+      "listThreadingFromNonListHead",
+      "activeOrphanListThreading",
+      "activeOrphanListItemThreading",
+      "allBranchesOfActiveOrphanListThreading",
+      "listThreadingInLivePreview",
+      "listThreadingInSourceMode",
+      "listThreadingInReadingMode",
     ]) {
       expect(settings).toContain(`key: "${key}"`);
     }
     expect(settings).toContain(
-      'heading: "Static List Tree Indentation Guides"',
+      'heading: "List Static Tree Indentation Guides"',
     );
+    expect(settings).toContain('heading: "List Threading"');
     expect(settings).toContain('name: "Rendering modes"');
     expect(settings).toContain(
       'name: "All Branches of an Active List Threading"',
     );
-    expect(settings).toContain(
-      '"all branches of an active bullet list threading"',
-    );
+    expect(
+      settings.match(
+        /name: "Thread separate list blocks that are only separated by a blank line"/gu,
+      ),
+    ).toHaveLength(2);
   });
 });

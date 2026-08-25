@@ -9,16 +9,21 @@ import { ListTreeIndentationGuidesSettingTab } from "./settings";
 import { StyleSettingsPrecisionControls } from "./style-settings-precision";
 import {
   DEFAULT_SETTINGS,
+  normalizeSettings,
   type ListTreeIndentationGuidesSettings,
 } from "./types";
 
 const MODE_CLASSES = [
-  "ltig-bullet-threading-enabled",
+  "ltig-list-threading-enabled",
   "ltig-static-guides-enabled",
   "ltig-thread-active-item-enabled",
   "ltig-thread-all-branches-enabled",
-  "ltig-thread-blank-separated-blocks-enabled",
+  "ltig-thread-active-blank-separated-blocks-enabled",
+  "ltig-thread-all-branches-blank-separated-blocks-enabled",
   "ltig-thread-from-list-head-enabled",
+  "ltig-thread-orphan-enabled",
+  "ltig-thread-orphan-active-item-enabled",
+  "ltig-thread-orphan-all-branches-enabled",
   "ltig-thread-live-preview-enabled",
   "ltig-thread-reading-mode-enabled",
   "ltig-thread-source-mode-enabled",
@@ -88,23 +93,17 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
   }
 
   private async loadSettings(): Promise<void> {
-    const loaded = (await this.loadData()) as
-      | Partial<ListTreeIndentationGuidesSettings>
-      | null;
-    this.settings = {
-      ...DEFAULT_SETTINGS,
-      ...(loaded ?? {}),
-    };
+    this.settings = normalizeSettings(await this.loadData());
   }
 
   private applyModeClasses(ownerDocument: Document): void {
     ownerDocument.body.classList.toggle(
-      "ltig-bullet-threading-enabled",
-      this.settings.enableBulletThreading,
+      "ltig-list-threading-enabled",
+      this.settings.enableListThreading,
     );
     ownerDocument.body.classList.toggle(
       "ltig-static-guides-enabled",
-      this.settings.enableStaticListTreeIndentationGuides,
+      this.settings.enableListStaticTreeIndentationGuides,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-active-item-enabled",
@@ -112,27 +111,43 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-all-branches-enabled",
-      this.settings.allBranchesOfActiveBulletListThreading,
+      this.settings.allBranchesOfActiveListThreading,
     );
     ownerDocument.body.classList.toggle(
-      "ltig-thread-blank-separated-blocks-enabled",
-      this.settings.treatBlankLineSeparatedListBlocksAsOne,
+      "ltig-thread-active-blank-separated-blocks-enabled",
+      this.settings.threadBlankLineSeparatedListBlocksForActiveItem,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-all-branches-blank-separated-blocks-enabled",
+      this.settings.threadBlankLineSeparatedListBlocksForAllBranches,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-from-list-head-enabled",
-      this.settings.bulletThreadingFromNonListHead,
+      this.settings.listThreadingFromNonListHead,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-orphan-enabled",
+      this.settings.activeOrphanListThreading,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-orphan-active-item-enabled",
+      this.settings.activeOrphanListItemThreading,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-orphan-all-branches-enabled",
+      this.settings.allBranchesOfActiveOrphanListThreading,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-live-preview-enabled",
-      this.settings.bulletThreadingInLivePreview,
+      this.settings.listThreadingInLivePreview,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-source-mode-enabled",
-      this.settings.bulletThreadingInSourceMode,
+      this.settings.listThreadingInSourceMode,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-reading-mode-enabled",
-      this.settings.bulletThreadingInReadingMode,
+      this.settings.listThreadingInReadingMode,
     );
     ownerDocument.body.classList.toggle(
       "ltig-connect-separate-list-blocks-enabled",

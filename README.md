@@ -20,10 +20,10 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 - Connected tree guides for ordered, unordered, mixed, and task lists.
 - A global static-guide toggle plus independent rendering toggles for Live Preview, Source mode, and Reading mode.
 - Separate list blocks remain visually separate across both content and blank-line boundaries by default, with an optional continuation/gutter-spine setting.
-- Optional Logseq-style bullet threading that responds across the full hovered list-item row.
-- Independent active-item-path and all-branches threading subfeatures.
-- Optional all-branches merging for list blocks separated only by blank lines.
+- Optional Logseq-style list threading that responds across the full hovered list-item row.
+- Independent active-item-path and all-branches threading subfeatures, each with its own optional blank-line block threading.
 - Threading from an immediately preceding non-bulleted/numbered list head.
+- Dedicated active-item and all-branches threading controls for orphan ordered and unordered list blocks.
 - A global threading toggle plus independent Live Preview, Source, and Reading-mode threading toggles.
 - Searchable settings, including aliases for common mode names.
 - Pop-out-window support.
@@ -33,20 +33,24 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 ## Plugin settings
 
-Every plugin setting is searchable from Obsidian's Settings search. Static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. Bullet threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. All Branches of an Active List Threading and its blank-line block-merging option are disabled by default.
+Every plugin setting is searchable from Obsidian's Settings search. List static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. List Threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, Active Orphan List Threading, Active Orphan List Item Threading, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. Both all-branches options and both blank-line list-block options are disabled by default.
 
 | Setting | Purpose |
 | --- | --- |
-| Enable static list tree indentation guides | Globally enables or disables the always-visible tree guides. Enabled by default. |
+| Enable list static tree indentation guides | Globally enables or disables the always-visible tree guides. Enabled by default. |
 | Render in Live Preview | Shows guides in the editable Live Preview view. |
 | Render in Source mode | Shows guides alongside raw Markdown list syntax. |
 | Render in Reading mode | Shows guides in rendered Markdown. |
 | Connect separate list blocks | Lets continuation/gutter spines bridge non-list content between editor list blocks. Disabled by default. |
-| Enable bullet threading | Enables Logseq-style hover highlighting. |
+| Enable list threading | Enables Logseq-style hover highlighting. |
 | Active List Item Threading | Highlights the complete ancestor path to the hovered list item. Enabled by default. |
+| Thread separate list blocks that are only separated by a blank line (Active Item) | Lets an active-item path continue into an adjacent blank-line-separated list block. Disabled by default. |
 | All Branches of an Active List Threading | Highlights every branch in the hovered item’s list block. Disabled by default. |
-| Treat separate list blocks that are separated only by a blank line | Lets All Branches include adjacent blank-line-separated blocks. Disabled by default; nonblank content always separates threading blocks. |
-| Bullet threading from a non-bulleted/numbered list head | Extends Active Item and All Branches threading from the immediately preceding unmarked line. Enabled by default. |
+| Thread separate list blocks that are only separated by a blank line (All Branches) | Lets All Branches include adjacent blank-line-separated blocks. Disabled by default; nonblank content always separates threading blocks. |
+| List threading from a non-bulleted/numbered list head | Extends Active Item and All Branches threading from the immediately preceding unmarked line. Enabled by default. |
+| Active Orphan List Threading | Enables threading for top-level ordered or unordered list blocks without an unmarked list head. Enabled by default. |
+| Active Orphan List Item Threading | Highlights the path to the hovered item in an orphan list. Enabled by default. |
+| All Branches of an Active Orphan List Threading | Highlights every branch in the active orphan list block. Disabled by default. |
 | Thread in Live Preview | Allows threading in Live Preview when the global feature is enabled. |
 | Thread in Source mode | Allows threading in Source mode when the global feature is enabled. |
 | Thread in Reading mode | Allows threading in Reading mode when the global feature is enabled. |
@@ -68,8 +72,8 @@ Install and enable the community plugin **Style Settings** to customize:
 - Visibility of unordered-list bullets in Live Preview and Reading mode (enabled by default).
 - Active-item and all-branches thread opacity, thickness, line caps, and corner radius.
 - Thread connector length, marker gap, and vertical offset.
-- Eight independently themed thread colors, each with an enabled-by-default toggle; deeper levels reuse the eighth color.
-- An enabled-by-default themed global fallback for disabled thread colors and a disabled-by-default global override with independently saved light- and dark-mode colors.
+- Eight independently themed list-thread colors, each with an enabled-by-default toggle; deeper levels reuse the eighth color.
+- An enabled-by-default global fallback for disabled list-thread colors and a disabled-by-default global override with independently persisted light- and dark-mode native color inputs.
 - Reading-mode thread row height, segment overlap, parent reach, and marker offset.
 
 Every numerical Style Settings slider receives a synchronized editable field. Typed in-range decimals are preserved exactly, including transient input such as `1.` while editing; invalid or incomplete values revert only when editing finishes.
@@ -112,7 +116,7 @@ The release workflow validates the clean build, confirms that committed `main.js
 
 ## Acknowledgements
 
-The bullet-threading interaction and rendered-list geometry are adapted from the MIT-licensed [obsidiest/obsidian-bullet](https://github.com/obsidiest/obsidian-bullet) fork.
+The list-threading interaction and rendered-list geometry are adapted from the MIT-licensed [obsidiest/obsidian-bullet](https://github.com/obsidiest/obsidian-bullet) fork.
 
 ## License
 

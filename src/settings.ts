@@ -30,21 +30,22 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
     return [
       {
         type: "group",
-        heading: "Static List Tree Indentation Guides",
+        heading: "List Static Tree Indentation Guides",
         items: [
           {
-            name: "Enable static list tree indentation guides",
+            name: "Enable list static tree indentation guides",
             desc: "Globally enable the always-visible list-tree spines and branch connectors.",
             aliases: [
               "static guides",
               "global rendering toggle",
               "tree indentation guides",
+              "list static tree indentation guides",
             ],
             control: {
               type: "toggle",
-              key: "enableStaticListTreeIndentationGuides",
+              key: "enableListStaticTreeIndentationGuides",
               defaultValue:
-                DEFAULT_SETTINGS.enableStaticListTreeIndentationGuides,
+                DEFAULT_SETTINGS.enableListStaticTreeIndentationGuides,
             },
           },
           {
@@ -64,7 +65,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               key: "renderInLivePreview",
               defaultValue: DEFAULT_SETTINGS.renderInLivePreview,
               disabled: () =>
-                !this.host.settings.enableStaticListTreeIndentationGuides,
+                !this.host.settings.enableListStaticTreeIndentationGuides,
             },
           },
           {
@@ -76,7 +77,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               key: "renderInSourceMode",
               defaultValue: DEFAULT_SETTINGS.renderInSourceMode,
               disabled: () =>
-                !this.host.settings.enableStaticListTreeIndentationGuides,
+                !this.host.settings.enableListStaticTreeIndentationGuides,
             },
           },
           {
@@ -88,7 +89,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               key: "renderInReadingMode",
               defaultValue: DEFAULT_SETTINGS.renderInReadingMode,
               disabled: () =>
-                !this.host.settings.enableStaticListTreeIndentationGuides,
+                !this.host.settings.enableListStaticTreeIndentationGuides,
             },
           },
           {
@@ -105,28 +106,29 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               key: "connectSeparateListBlocks",
               defaultValue: DEFAULT_SETTINGS.connectSeparateListBlocks,
               disabled: () =>
-                !this.host.settings.enableStaticListTreeIndentationGuides,
+                !this.host.settings.enableListStaticTreeIndentationGuides,
             },
           },
         ],
       },
       {
         type: "group",
-        heading: "Bullet threading",
+        heading: "List Threading",
         items: [
           {
-            name: "Enable bullet threading",
+            name: "Enable list threading",
             desc: "Enable Logseq-style hover highlighting for list-tree branches.",
             aliases: [
               "logseq list path",
               "active list item",
               "hover thread",
               "nested path highlight",
+              "list threading",
             ],
             control: {
               type: "toggle",
-              key: "enableBulletThreading",
-              defaultValue: DEFAULT_SETTINGS.enableBulletThreading,
+              key: "enableListThreading",
+              defaultValue: DEFAULT_SETTINGS.enableListThreading,
             },
           },
           {
@@ -141,7 +143,25 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "activeListItemThreading",
               defaultValue: DEFAULT_SETTINGS.activeListItemThreading,
-              disabled: () => !this.host.settings.enableBulletThreading,
+              disabled: () => !this.host.settings.enableListThreading,
+            },
+          },
+          {
+            name: "Thread separate list blocks that are only separated by a blank line",
+            desc: "Allow an active-item path to continue through an adjacent list block when only blank lines separate the blocks.",
+            aliases: [
+              "active item across blank line",
+              "continue active list path",
+              "merge blank line lists",
+            ],
+            control: {
+              type: "toggle",
+              key: "threadBlankLineSeparatedListBlocksForActiveItem",
+              defaultValue:
+                DEFAULT_SETTINGS.threadBlankLineSeparatedListBlocksForActiveItem,
+              disabled: () =>
+                !this.host.settings.enableListThreading ||
+                !this.host.settings.activeListItemThreading,
             },
           },
           {
@@ -155,14 +175,14 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
             ],
             control: {
               type: "toggle",
-              key: "allBranchesOfActiveBulletListThreading",
+              key: "allBranchesOfActiveListThreading",
               defaultValue:
-                DEFAULT_SETTINGS.allBranchesOfActiveBulletListThreading,
-              disabled: () => !this.host.settings.enableBulletThreading,
+                DEFAULT_SETTINGS.allBranchesOfActiveListThreading,
+              disabled: () => !this.host.settings.enableListThreading,
             },
           },
           {
-            name: "Treat separate list blocks that are separated only by a blank line",
+            name: "Thread separate list blocks that are only separated by a blank line",
             desc: "When all-branches threading is active, include adjacent list blocks separated only by blank lines in the highlighted tree.",
             aliases: [
               "merge blank line lists",
@@ -171,60 +191,103 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
             ],
             control: {
               type: "toggle",
-              key: "treatBlankLineSeparatedListBlocksAsOne",
+              key: "threadBlankLineSeparatedListBlocksForAllBranches",
               defaultValue:
-                DEFAULT_SETTINGS.treatBlankLineSeparatedListBlocksAsOne,
+                DEFAULT_SETTINGS.threadBlankLineSeparatedListBlocksForAllBranches,
               disabled: () =>
-                !this.host.settings.enableBulletThreading ||
-                !this.host.settings.allBranchesOfActiveBulletListThreading,
+                !this.host.settings.enableListThreading ||
+                !this.host.settings.allBranchesOfActiveListThreading,
             },
           },
           {
-            name: "Bullet threading from a non-bulleted/numbered list head",
+            name: "List threading from a non-bulleted/numbered list head",
             desc: "Treat the immediately preceding unmarked line as the visual head of an ordered or unordered list's threaded tree.",
             aliases: [
+              "list threading from a non-bulleted numbered list head",
               "plain text list head",
               "unmarked list parent",
               "thread from non list heading",
             ],
             control: {
               type: "toggle",
-              key: "bulletThreadingFromNonListHead",
-              defaultValue: DEFAULT_SETTINGS.bulletThreadingFromNonListHead,
-              disabled: () => !this.host.settings.enableBulletThreading,
+              key: "listThreadingFromNonListHead",
+              defaultValue: DEFAULT_SETTINGS.listThreadingFromNonListHead,
+              disabled: () => !this.host.settings.enableListThreading,
+            },
+          },
+          {
+            name: "Active Orphan List Threading",
+            desc: "Allow threading for ordered or unordered list blocks that have no unmarked list head.",
+            aliases: [
+              "root list threading",
+              "headless list threading",
+              "top level list threading",
+            ],
+            control: {
+              type: "toggle",
+              key: "activeOrphanListThreading",
+              defaultValue: DEFAULT_SETTINGS.activeOrphanListThreading,
+              disabled: () => !this.host.settings.enableListThreading,
+            },
+          },
+          {
+            name: "Active Orphan List Item Threading",
+            desc: "Highlight the path to the hovered item when its list block has no unmarked list head.",
+            aliases: ["active orphan item", "headless active list item"],
+            control: {
+              type: "toggle",
+              key: "activeOrphanListItemThreading",
+              defaultValue: DEFAULT_SETTINGS.activeOrphanListItemThreading,
+              disabled: () =>
+                !this.host.settings.enableListThreading ||
+                !this.host.settings.activeOrphanListThreading,
+            },
+          },
+          {
+            name: "All Branches of an Active Orphan List Threading",
+            desc: "Highlight every branch in the active ordered or unordered list block when it has no unmarked list head.",
+            aliases: ["all orphan branches", "whole headless list thread"],
+            control: {
+              type: "toggle",
+              key: "allBranchesOfActiveOrphanListThreading",
+              defaultValue:
+                DEFAULT_SETTINGS.allBranchesOfActiveOrphanListThreading,
+              disabled: () =>
+                !this.host.settings.enableListThreading ||
+                !this.host.settings.activeOrphanListThreading,
             },
           },
           {
             name: "Thread in Live Preview",
-            desc: "Show the active nested path while hovering list items in Live Preview when bullet threading is enabled.",
+            desc: "Show the active nested path while hovering list items in Live Preview when list threading is enabled.",
             aliases: ["live preview thread", "editor hover path"],
             control: {
               type: "toggle",
-              key: "bulletThreadingInLivePreview",
-              defaultValue: DEFAULT_SETTINGS.bulletThreadingInLivePreview,
-              disabled: () => !this.host.settings.enableBulletThreading,
+              key: "listThreadingInLivePreview",
+              defaultValue: DEFAULT_SETTINGS.listThreadingInLivePreview,
+              disabled: () => !this.host.settings.enableListThreading,
             },
           },
           {
             name: "Thread in Source mode",
-            desc: "Show the active nested path while hovering list items in Source mode when bullet threading is enabled.",
+            desc: "Show the active nested path while hovering list items in Source mode when list threading is enabled.",
             aliases: ["source thread", "raw markdown hover path"],
             control: {
               type: "toggle",
-              key: "bulletThreadingInSourceMode",
-              defaultValue: DEFAULT_SETTINGS.bulletThreadingInSourceMode,
-              disabled: () => !this.host.settings.enableBulletThreading,
+              key: "listThreadingInSourceMode",
+              defaultValue: DEFAULT_SETTINGS.listThreadingInSourceMode,
+              disabled: () => !this.host.settings.enableListThreading,
             },
           },
           {
             name: "Thread in Reading mode",
-            desc: "Show the active nested path while hovering list items in Reading mode when bullet threading is enabled.",
+            desc: "Show the active nested path while hovering list items in Reading mode when list threading is enabled.",
             aliases: ["reading thread", "rendered list hover path"],
             control: {
               type: "toggle",
-              key: "bulletThreadingInReadingMode",
-              defaultValue: DEFAULT_SETTINGS.bulletThreadingInReadingMode,
-              disabled: () => !this.host.settings.enableBulletThreading,
+              key: "listThreadingInReadingMode",
+              defaultValue: DEFAULT_SETTINGS.listThreadingInReadingMode,
+              disabled: () => !this.host.settings.enableListThreading,
             },
           },
         ],
