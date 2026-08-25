@@ -42,7 +42,7 @@ export interface VisibleListModel {
   items: VisibleListItemModel[];
 }
 
-interface CoordinateRect {
+export interface CoordinateRect {
   bottom: number;
   left: number;
   right: number;
@@ -233,9 +233,21 @@ export function isBlankListBlockSeparator(sourceLine: string): boolean {
 }
 
 export function hasMarkdownListMarker(sourceLine: string): boolean {
-  return /^[ \t]*(?:[-+*]|\d+[.)])(?:[ \t]+|$)/u.test(
+  return getMarkdownListMarkerKind(sourceLine) !== null;
+}
+
+export type MarkdownListMarkerKind = "ordered" | "unordered";
+
+export function getMarkdownListMarkerKind(
+  sourceLine: string,
+): MarkdownListMarkerKind | null {
+  const match = /^[ \t]*(?:([-+*])|(\d+[.)]))(?:[ \t]+|$)/u.exec(
     stripBlockquotePrefixes(sourceLine),
   );
+  if (match === null) {
+    return null;
+  }
+  return match[2] === undefined ? "unordered" : "ordered";
 }
 
 function stripBlockquotePrefixes(sourceLine: string): string {
@@ -298,6 +310,47 @@ export function buildRoundedThreadGroupPath({
     );
   }
   return commands.join(" ");
+}
+
+export function findAncestorContinuationEndIndex(
+  rows: readonly VisibleListRow[],
+  depth: number,
+  connectSeparateListBlocks = false,
+): number {
+  if (rows.length === 0) {
+    return -1;
+  }
+  for (let index = 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (
+      row === undefined ||
+      startsNewListBlock(row, { connectSeparateListBlocks }) ||
+      row.depth < depth
+    ) {
+      return index - 1;
+    }
+  }
+  return rows.length - 1;
+}
+
+export function selectListMarkerRect(
+  markerKind: MarkdownListMarkerKind,
+  lineRect: CoordinateRect,
+  elementRect: CoordinateRect | null,
+  textRect: CoordinateRect | null,
+): CoordinateRect | null {
+  const preferredTextRect =
+    markerKind === "ordered" &&
+    textRect !== null &&
+    rectHasVisibleInlineSize(textRect, lineRect)
+      ? textRect
+      : null;
+  for (const candidate of [preferredTextRect, elementRect]) {
+    if (candidate !== null && rectHasUsablePosition(candidate)) {
+      return normalizeMarkerHeight(candidate, lineRect);
+    }
+  }
+  return null;
 }
 
 class EditorGuideOverlay {
@@ -607,7 +660,8 @@ class EditorGuideOverlay {
       }
 
       const depth = readListDepth(line);
-      if (depth === null || !hasMarkdownListMarker(sourceLine)) {
+      const markerKind = getMarkdownListMarkerKind(sourceLine);
+      if (depth === null || markerKind === null) {
         if (isHardListBoundary(line, sourceLine)) {
           boundaryBefore = "content";
           candidateHeadRect = toCoordinateRect(
@@ -619,7 +673,12 @@ class EditorGuideOverlay {
         continue;
       }
       const lineRect = toCoordinateRect(line.getBoundingClientRect());
-      const markerRect = measureMarkerRect(line, lineRect, isLivePreview);
+      const markerRect = measureMarkerRect(
+        line,
+        lineRect,
+        isLivePreview,
+        markerKind,
+      );
       if (markerRect === null) {
         if (isHardListBoundary(line, sourceLine)) {
           boundaryBefore = "content";
@@ -771,28 +830,6 @@ class EditorGuideOverlay {
       return;
     }
     const firstBlockIndex = model.items[0]?.blockIndex;
-    const nextBlockRowIndex = model.items.findIndex(
-      (item, itemIndex) =>
-        itemIndex > 0 && item.blockIndex !== firstBlockIndex,
-    );
-    const firstBlockLastRowIndex =
-      nextBlockRowIndex < 0 ? rows.length - 1 : nextBlockRowIndex - 1;
-    const firstBlockLastConnector = this.connectorFor(
-      rows[firstBlockLastRowIndex],
-      firstBlockLastRowIndex,
-      style.connectorLength,
-      style.markerGap,
-      style.connectorOffset,
-      style.direction,
-      hostRect,
-    );
-    const continuationEnd =
-      nextBlockRowIndex < 0 || firstBlockLastConnector === null
-        ? clipBottom
-        : clamp(firstBlockLastConnector.y, clipTop, clipBottom);
-    if (continuationEnd <= clipTop) {
-      return;
-    }
     const ownerDocument = this.view.dom.ownerDocument;
     for (let depth = 2; depth < first.depth; depth += 1) {
       if (
@@ -818,6 +855,31 @@ class EditorGuideOverlay {
         spineX < clipLeft ||
         spineX > clipRight
       ) {
+        continue;
+      }
+      const continuationEndRowIndex = findAncestorContinuationEndIndex(
+        rows,
+        depth,
+        connectSeparateListBlocks,
+      );
+      const continuationEndConnector = this.connectorFor(
+        rows[continuationEndRowIndex],
+        continuationEndRowIndex,
+        style.connectorLength,
+        style.markerGap,
+        style.connectorOffset,
+        style.direction,
+        hostRect,
+      );
+      if (continuationEndConnector === null) {
+        continue;
+      }
+      const continuationEnd = clamp(
+        continuationEndConnector.y,
+        clipTop,
+        clipBottom,
+      );
+      if (continuationEnd <= clipTop) {
         continue;
       }
       const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
@@ -1235,20 +1297,23 @@ function measureMarkerRect(
   line: HTMLElement,
   lineRect: CoordinateRect,
   isLivePreview: boolean,
+  markerKind: MarkdownListMarkerKind,
 ): CoordinateRect | null {
-  const selectors = isLivePreview
-    ? [
-        ".list-bullet",
-        ".cm-formatting-list-ol",
-        ".cm-formatting-list",
-        ".task-list-item-checkbox",
-      ]
-    : [
-        ".cm-formatting-list",
-        ".cm-formatting-list-ul",
-        ".cm-formatting-list-ol",
-        ".list-bullet",
-      ];
+  const selectors =
+    markerKind === "ordered"
+      ? [".cm-formatting-list-ol", ".cm-formatting-list"]
+      : isLivePreview
+        ? [
+            ".list-bullet",
+            ".task-list-item-checkbox",
+            ".cm-formatting-list-ul",
+            ".cm-formatting-list",
+          ]
+        : [
+            ".cm-formatting-list-ul",
+            ".cm-formatting-list",
+            ".list-bullet",
+          ];
   let markerFound = false;
   for (const selector of selectors) {
     const marker = line.querySelector<HTMLElement>(selector);
@@ -1256,9 +1321,14 @@ function measureMarkerRect(
       continue;
     }
     markerFound = true;
-    const markerRect = toCoordinateRect(marker.getBoundingClientRect());
-    if (rectHasUsablePosition(markerRect)) {
-      return normalizeMarkerHeight(markerRect, lineRect);
+    const markerRect = selectListMarkerRect(
+      markerKind,
+      lineRect,
+      toCoordinateRect(marker.getBoundingClientRect()),
+      markerKind === "ordered" ? measureTextRect(marker) : null,
+    );
+    if (markerRect !== null) {
+      return markerRect;
     }
   }
 
@@ -1289,6 +1359,21 @@ function measureMarkerRect(
   };
 }
 
+function measureTextRect(element: HTMLElement): CoordinateRect | null {
+  if (element.textContent?.trim() === "") {
+    return null;
+  }
+  try {
+    const range = element.ownerDocument.createRange();
+    range.selectNodeContents(element);
+    const rect = toCoordinateRect(range.getBoundingClientRect());
+    range.detach();
+    return rect;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeMarkerHeight(
   markerRect: CoordinateRect,
   lineRect: CoordinateRect,
@@ -1311,6 +1396,19 @@ function rectHasUsablePosition(rect: CoordinateRect): boolean {
     Number.isFinite(rect.bottom) &&
     rect.right >= rect.left &&
     rect.bottom >= rect.top
+  );
+}
+
+function rectHasVisibleInlineSize(
+  rect: CoordinateRect,
+  lineRect: CoordinateRect,
+): boolean {
+  const width = rect.right - rect.left;
+  const lineHeight = Math.max(1, lineRect.bottom - lineRect.top);
+  return (
+    rectHasUsablePosition(rect) &&
+    width > 0.25 &&
+    width <= Math.max(128, lineHeight * 8)
   );
 }
 

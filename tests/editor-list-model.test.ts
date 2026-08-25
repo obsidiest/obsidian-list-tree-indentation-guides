@@ -3,10 +3,13 @@ import {
   buildRoundedThreadGroupPath,
   buildRoundedThreadPath,
   buildVisibleListModel,
+  findAncestorContinuationEndIndex,
   findListRowAtClientY,
+  getMarkdownListMarkerKind,
   hasMarkdownListMarker,
   isBlankListBlockSeparator,
   isDefiniteListBlockBoundary,
+  selectListMarkerRect,
   type VisibleListRow,
 } from "src/editor-guides";
 
@@ -201,5 +204,54 @@ describe("visible editor list model", () => {
     expect(hasMarkdownListMarker("+")).toBe(true);
     expect(hasMarkdownListMarker("plain list head")).toBe(false);
     expect(hasMarkdownListMarker("1.0 is not a list item")).toBe(false);
+    expect(getMarkdownListMarkerKind("- item")).toBe("unordered");
+    expect(getMarkdownListMarkerKind("  12) item")).toBe("ordered");
+    expect(getMarkdownListMarkerKind("plain list head")).toBeNull();
+  });
+
+  it("anchors ordered connectors to the rendered number instead of its layout box", () => {
+    const lineRect = { bottom: 30, left: 0, right: 800, top: 10 };
+    const elementRect = { bottom: 30, left: 0, right: 120, top: 10 };
+    const textRect = { bottom: 28, left: 92, right: 116, top: 12 };
+
+    expect(
+      selectListMarkerRect("ordered", lineRect, elementRect, textRect),
+    ).toEqual(textRect);
+    expect(
+      selectListMarkerRect("unordered", lineRect, elementRect, textRect),
+    ).toEqual(elementRect);
+    expect(
+      selectListMarkerRect(
+        "ordered",
+        lineRect,
+        elementRect,
+        { bottom: 20, left: 92, right: 92, top: 20 },
+      ),
+    ).toEqual(elementRect);
+  });
+
+  it("ends inferred ancestor spines when their visible subtree outdents", () => {
+    const rows: VisibleListRow[] = [
+      { depth: 5 },
+      { depth: 5 },
+      { depth: 4 },
+      { depth: 3 },
+      { depth: 2 },
+    ];
+
+    expect(findAncestorContinuationEndIndex(rows, 4)).toBe(2);
+    expect(findAncestorContinuationEndIndex(rows, 3)).toBe(3);
+    expect(findAncestorContinuationEndIndex(rows, 2)).toBe(4);
+  });
+
+  it("ends inferred ancestor spines at list-block boundaries by default", () => {
+    const rows: VisibleListRow[] = [
+      { depth: 4 },
+      { depth: 4 },
+      { boundaryBefore: "content", depth: 4 },
+    ];
+
+    expect(findAncestorContinuationEndIndex(rows, 3)).toBe(1);
+    expect(findAncestorContinuationEndIndex(rows, 3, true)).toBe(2);
   });
 });

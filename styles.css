@@ -317,14 +317,21 @@ settings:
     type: class-toggle
     default: false
   -
-    id: ltig-thread-override-color
-    title: Global override bullet-thread color
-    description: Light- and dark-mode color used for every thread while the global override is enabled
-    type: variable-themed-color
+    id: ltig-thread-override-color-light
+    title: Global override bullet-thread color (light mode)
+    description: Light-mode color used for every thread while the global override is enabled
+    type: variable-color
     format: hex
     opacity: false
-    default-light: '#777777'
-    default-dark: '#888888'
+    default: '#777777'
+  -
+    id: ltig-thread-override-color-dark
+    title: Global override bullet-thread color (dark mode)
+    description: Dark-mode color used for every thread while the global override is enabled
+    type: variable-color
+    format: hex
+    opacity: false
+    default: '#888888'
   -
     id: ltig-thread-color-1-enabled
     title: Enable thread color 1
@@ -479,7 +486,9 @@ body {
   --ltig-thread-color-7: #e64fa3;
   --ltig-thread-color-8: #e64fa3;
   --ltig-thread-fallback-color: var(--ltig-guide-color);
-  --ltig-thread-override-color: var(--ltig-guide-color);
+  --ltig-thread-override-color-light: #777777;
+  --ltig-thread-override-color-dark: #888888;
+  --ltig-thread-override-color: var(--ltig-thread-override-color-dark);
   --ltig-thread-effective-color-1: var(--ltig-thread-color-1);
   --ltig-thread-effective-color-2: var(--ltig-thread-color-2);
   --ltig-thread-effective-color-3: var(--ltig-thread-color-3);
@@ -488,6 +497,10 @@ body {
   --ltig-thread-effective-color-6: var(--ltig-thread-color-6);
   --ltig-thread-effective-color-7: var(--ltig-thread-color-7);
   --ltig-thread-effective-color-8: var(--ltig-thread-color-8);
+}
+
+body.theme-light {
+  --ltig-thread-override-color: var(--ltig-thread-override-color-light);
 }
 
 body:is(

@@ -145,12 +145,13 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
             },
           },
           {
-            name: "All Branches of an Active Bullet List Threading",
+            name: "All Branches of an Active List Threading",
             desc: "Highlight every nested branch in the same list block as the currently hovered list item.",
             aliases: [
               "whole list threading",
               "all active list branches",
               "entire bullet tree highlight",
+              "all branches of an active bullet list threading",
             ],
             control: {
               type: "toggle",

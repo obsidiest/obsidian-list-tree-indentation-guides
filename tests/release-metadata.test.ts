@@ -108,7 +108,21 @@ describe("release metadata", () => {
     expect(override).toBeGreaterThanOrEqual(0);
     expect(styles.slice(override, override + 350)).toContain("default: false");
     expect(styles).toContain("id: ltig-thread-fallback-color");
-    expect(styles).toContain("id: ltig-thread-override-color");
+    for (const mode of ["light", "dark"]) {
+      const id = `ltig-thread-override-color-${mode}`;
+      const setting = styles.indexOf(`id: ${id}`);
+      expect(setting).toBeGreaterThanOrEqual(0);
+      expect(styles.slice(setting, setting + 350)).toContain(
+        "type: variable-color",
+      );
+      expect(styles).toContain(`--${id}`);
+    }
+    expect(styles).toContain(
+      "--ltig-thread-override-color: var(--ltig-thread-override-color-dark)",
+    );
+    expect(styles).toContain(
+      "--ltig-thread-override-color: var(--ltig-thread-override-color-light)",
+    );
     expect(styles).toContain(
       "title: Static List Tree Indentation Guide Appearance",
     );
@@ -185,5 +199,11 @@ describe("release metadata", () => {
       'heading: "Static List Tree Indentation Guides"',
     );
     expect(settings).toContain('name: "Rendering modes"');
+    expect(settings).toContain(
+      'name: "All Branches of an Active List Threading"',
+    );
+    expect(settings).toContain(
+      '"all branches of an active bullet list threading"',
+    );
   });
 });

@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.5 - 2026-08-25
+
+- Fix threading from a non-bulleted/numbered list head for ordered lists by anchoring editor paths to the rendered numeral instead of the wider ordered-marker layout box.
+- Fix the occasional far-right guide overdraw in long, scrolled list blocks by ending every inferred off-screen ancestor spine at the first visible outdent for that depth.
+- Replace the unreliable themed global-override color control with independent persistent light- and dark-mode Style Settings color controls.
+- Rename **All Branches of an Active Bullet List Threading** to **All Branches of an Active List Threading**, while retaining the former wording as a searchable alias.
+- Add regression coverage for ordered-marker anchors, depth-specific continuation bounds, setting metadata, synchronized versions, and the attested release workflow.
+
 ## 1.0.4 - 2026-08-25
 
 - Split static guides at both content and blank-line list-block boundaries by default, and bound viewport continuation spines to their own visible block.

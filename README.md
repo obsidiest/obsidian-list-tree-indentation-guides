@@ -33,7 +33,7 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 ## Plugin settings
 
-Every plugin setting is searchable from Obsidian's Settings search. Static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. Bullet threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. All Branches of an Active Bullet List Threading and its blank-line block-merging option are disabled by default.
+Every plugin setting is searchable from Obsidian's Settings search. Static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. Bullet threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. All Branches of an Active List Threading and its blank-line block-merging option are disabled by default.
 
 | Setting | Purpose |
 | --- | --- |
@@ -44,7 +44,7 @@ Every plugin setting is searchable from Obsidian's Settings search. Static tree-
 | Connect separate list blocks | Lets continuation/gutter spines bridge non-list content between editor list blocks. Disabled by default. |
 | Enable bullet threading | Enables Logseq-style hover highlighting. |
 | Active List Item Threading | Highlights the complete ancestor path to the hovered list item. Enabled by default. |
-| All Branches of an Active Bullet List Threading | Highlights every branch in the hovered item’s list block. Disabled by default. |
+| All Branches of an Active List Threading | Highlights every branch in the hovered item’s list block. Disabled by default. |
 | Treat separate list blocks that are separated only by a blank line | Lets All Branches include adjacent blank-line-separated blocks. Disabled by default; nonblank content always separates threading blocks. |
 | Bullet threading from a non-bulleted/numbered list head | Extends Active Item and All Branches threading from the immediately preceding unmarked line. Enabled by default. |
 | Thread in Live Preview | Allows threading in Live Preview when the global feature is enabled. |
@@ -69,7 +69,7 @@ Install and enable the community plugin **Style Settings** to customize:
 - Active-item and all-branches thread opacity, thickness, line caps, and corner radius.
 - Thread connector length, marker gap, and vertical offset.
 - Eight independently themed thread colors, each with an enabled-by-default toggle; deeper levels reuse the eighth color.
-- An enabled-by-default themed global fallback for disabled thread colors and a disabled-by-default themed global color override.
+- An enabled-by-default themed global fallback for disabled thread colors and a disabled-by-default global override with independently saved light- and dark-mode colors.
 - Reading-mode thread row height, segment overlap, parent reach, and marker offset.
 
 Every numerical Style Settings slider receives a synchronized editable field. Typed in-range decimals are preserved exactly, including transient input such as `1.` while editing; invalid or incomplete values revert only when editing finishes.
