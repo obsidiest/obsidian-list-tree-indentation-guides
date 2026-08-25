@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.0.4 - 2026-08-25
+
+- Split static guides at both content and blank-line list-block boundaries by default, and bound viewport continuation spines to their own visible block.
+- Add **Treat separate list blocks that are separated only by a blank line**, disabled by default, as an all-branches-only opt-in; nonblank content remains a hard threading boundary.
+- Add **Bullet threading from a non-bulleted/numbered list head**, enabled by default, for Active List Item and All Branches threading in editor and Reading modes.
+- Add the global **Enable static list tree indentation guides** toggle above the three mode toggles under the new **Static List Tree Indentation Guides** section.
+- Hide stale overlay geometry immediately during scrolling and clamp inferred ancestor spines to the current editor and list block.
+- Add enabled-by-default Style Settings toggles for all eight bullet-thread colors, plus enabled-by-default themed fallback colors and disabled-by-default themed override colors.
+- Rename **Guide appearance** to **Static List Tree Indentation Guide Appearance** and retain synchronized precise numeric fields for every numerical Style Settings control.
+- Preserve searchable settings, mixed ordered/unordered lists, pop-out windows, viewport-only processing, release asset validation, and GitHub attestations.
+
 ## 1.0.3 - 2026-08-24
 
 - Stop guide groups and viewport-continuation spines at definite non-list boundaries so separate list blocks no longer appear connected by default.

@@ -1,7 +1,9 @@
 const READING_VIEW_SELECTOR = ".markdown-rendered";
 const BRANCH_CLASS = "ltig-reading-branch";
+const HEAD_CLASS = "ltig-reading-list-head";
 const ITEM_CLASS = "ltig-reading-item";
 const LIST_CLASS = "ltig-reading-list";
+const LIST_WITH_HEAD_CLASS = "ltig-reading-list-with-head";
 
 export function decorateReadingLists(root: ParentNode): number {
   const lists = collectElements(root, "ul, ol");
@@ -9,6 +11,17 @@ export function decorateReadingLists(root: ParentNode): number {
 
   for (const list of lists) {
     list.classList.add(LIST_CLASS);
+    list.classList.remove(LIST_WITH_HEAD_CLASS);
+    const previous = list.previousElementSibling;
+    if (
+      !list.closest(`.${ITEM_CLASS}`) &&
+      previous !== null &&
+      !previous.matches("ul, ol") &&
+      previous.textContent?.trim() !== ""
+    ) {
+      previous.classList.add(HEAD_CLASS);
+      list.classList.add(LIST_WITH_HEAD_CLASS);
+    }
     for (const child of Array.from(list.children)) {
       if (child.tagName !== "LI") {
         continue;
@@ -51,10 +64,15 @@ export function removeReadingGuides(ownerDocument: Document): void {
   )) {
     item.classList.remove(ITEM_CLASS);
   }
+  for (const head of Array.from(
+    ownerDocument.querySelectorAll<HTMLElement>(`.${HEAD_CLASS}`),
+  )) {
+    head.classList.remove(HEAD_CLASS);
+  }
   for (const list of Array.from(
     ownerDocument.querySelectorAll<HTMLElement>(`.${LIST_CLASS}`),
   )) {
-    list.classList.remove(LIST_CLASS);
+    list.classList.remove(LIST_CLASS, LIST_WITH_HEAD_CLASS);
   }
 }
 

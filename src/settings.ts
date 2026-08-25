@@ -30,8 +30,31 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
     return [
       {
         type: "group",
-        heading: "Rendering modes",
+        heading: "Static List Tree Indentation Guides",
         items: [
+          {
+            name: "Enable static list tree indentation guides",
+            desc: "Globally enable the always-visible list-tree spines and branch connectors.",
+            aliases: [
+              "static guides",
+              "global rendering toggle",
+              "tree indentation guides",
+            ],
+            control: {
+              type: "toggle",
+              key: "enableStaticListTreeIndentationGuides",
+              defaultValue:
+                DEFAULT_SETTINGS.enableStaticListTreeIndentationGuides,
+            },
+          },
+          {
+            name: "Rendering modes",
+            desc: "Choose where static list-tree indentation guides are rendered.",
+            aliases: ["view modes", "editor and reading modes"],
+            render: (setting) => {
+              setting.setHeading();
+            },
+          },
           {
             name: "Render in Live Preview",
             desc: "Show connected list-tree spines and branch connectors while editing in Live Preview.",
@@ -40,6 +63,8 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "renderInLivePreview",
               defaultValue: DEFAULT_SETTINGS.renderInLivePreview,
+              disabled: () =>
+                !this.host.settings.enableStaticListTreeIndentationGuides,
             },
           },
           {
@@ -50,6 +75,8 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "renderInSourceMode",
               defaultValue: DEFAULT_SETTINGS.renderInSourceMode,
+              disabled: () =>
+                !this.host.settings.enableStaticListTreeIndentationGuides,
             },
           },
           {
@@ -60,6 +87,8 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "renderInReadingMode",
               defaultValue: DEFAULT_SETTINGS.renderInReadingMode,
+              disabled: () =>
+                !this.host.settings.enableStaticListTreeIndentationGuides,
             },
           },
           {
@@ -75,6 +104,8 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "connectSeparateListBlocks",
               defaultValue: DEFAULT_SETTINGS.connectSeparateListBlocks,
+              disabled: () =>
+                !this.host.settings.enableStaticListTreeIndentationGuides,
             },
           },
         ],
@@ -110,6 +141,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "activeListItemThreading",
               defaultValue: DEFAULT_SETTINGS.activeListItemThreading,
+              disabled: () => !this.host.settings.enableBulletThreading,
             },
           },
           {
@@ -125,6 +157,40 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               key: "allBranchesOfActiveBulletListThreading",
               defaultValue:
                 DEFAULT_SETTINGS.allBranchesOfActiveBulletListThreading,
+              disabled: () => !this.host.settings.enableBulletThreading,
+            },
+          },
+          {
+            name: "Treat separate list blocks that are separated only by a blank line",
+            desc: "When all-branches threading is active, include adjacent list blocks separated only by blank lines in the highlighted tree.",
+            aliases: [
+              "merge blank line lists",
+              "blank separated list threading",
+              "join adjacent list blocks",
+            ],
+            control: {
+              type: "toggle",
+              key: "treatBlankLineSeparatedListBlocksAsOne",
+              defaultValue:
+                DEFAULT_SETTINGS.treatBlankLineSeparatedListBlocksAsOne,
+              disabled: () =>
+                !this.host.settings.enableBulletThreading ||
+                !this.host.settings.allBranchesOfActiveBulletListThreading,
+            },
+          },
+          {
+            name: "Bullet threading from a non-bulleted/numbered list head",
+            desc: "Treat the immediately preceding unmarked line as the visual head of an ordered or unordered list's threaded tree.",
+            aliases: [
+              "plain text list head",
+              "unmarked list parent",
+              "thread from non list heading",
+            ],
+            control: {
+              type: "toggle",
+              key: "bulletThreadingFromNonListHead",
+              defaultValue: DEFAULT_SETTINGS.bulletThreadingFromNonListHead,
+              disabled: () => !this.host.settings.enableBulletThreading,
             },
           },
           {
@@ -135,6 +201,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "bulletThreadingInLivePreview",
               defaultValue: DEFAULT_SETTINGS.bulletThreadingInLivePreview,
+              disabled: () => !this.host.settings.enableBulletThreading,
             },
           },
           {
@@ -145,6 +212,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "bulletThreadingInSourceMode",
               defaultValue: DEFAULT_SETTINGS.bulletThreadingInSourceMode,
+              disabled: () => !this.host.settings.enableBulletThreading,
             },
           },
           {
@@ -155,6 +223,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
               type: "toggle",
               key: "bulletThreadingInReadingMode",
               defaultValue: DEFAULT_SETTINGS.bulletThreadingInReadingMode,
+              disabled: () => !this.host.settings.enableBulletThreading,
             },
           },
         ],
@@ -178,5 +247,6 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
     }
     this.host.settings[key as SettingsKey] = value;
     await this.host.saveSettings();
+    this.update();
   }
 }

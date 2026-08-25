@@ -4,6 +4,8 @@ import {
   buildRoundedThreadPath,
   buildVisibleListModel,
   findListRowAtClientY,
+  hasMarkdownListMarker,
+  isBlankListBlockSeparator,
   isDefiniteListBlockBoundary,
   type VisibleListRow,
 } from "src/editor-guides";
@@ -41,7 +43,7 @@ describe("visible editor list model", () => {
     const rows: VisibleListRow[] = [
       { depth: 1 },
       { depth: 2 },
-      { breakBefore: true, depth: 1 },
+      { boundaryBefore: "content", depth: 1 },
       { depth: 2 },
     ];
     const model = buildVisibleListModel(rows);
@@ -65,7 +67,7 @@ describe("visible editor list model", () => {
     const rows: VisibleListRow[] = [
       { depth: 1 },
       { depth: 2 },
-      { breakBefore: true, depth: 1 },
+      { boundaryBefore: "content", depth: 1 },
       { depth: 2 },
     ];
     const model = buildVisibleListModel(rows, true);
@@ -76,6 +78,55 @@ describe("visible editor list model", () => {
       [3],
     ]);
     expect(model.items.map((item) => item.blockIndex)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("separates blank-line list blocks by default", () => {
+    const rows: VisibleListRow[] = [
+      { depth: 1 },
+      { depth: 2 },
+      { boundaryBefore: "blank-line", depth: 1 },
+      { depth: 2 },
+    ];
+    const model = buildVisibleListModel(rows);
+
+    expect(model.items.map((item) => item.blockIndex)).toEqual([0, 0, 1, 1]);
+    expect(model.items.map((item) => item.parentIndex)).toEqual([
+      null,
+      0,
+      null,
+      2,
+    ]);
+  });
+
+  it("merges only blank-line boundaries for the all-branches opt-in", () => {
+    const rows: VisibleListRow[] = [
+      { depth: 1 },
+      { boundaryBefore: "blank-line", depth: 1 },
+      { boundaryBefore: "content", depth: 1 },
+    ];
+    const model = buildVisibleListModel(rows, {
+      treatBlankLineSeparatedListBlocksAsOne: true,
+    });
+
+    expect(model.items.map((item) => item.blockIndex)).toEqual([0, 0, 1]);
+    expect(model.groups.map((group) => group.itemIndices)).toEqual([
+      [0, 1],
+      [2],
+    ]);
+  });
+
+  it("lets the static bridge opt-in connect every boundary kind", () => {
+    const rows: VisibleListRow[] = [
+      { depth: 1 },
+      { boundaryBefore: "blank-line", depth: 1 },
+      { boundaryBefore: "content", depth: 1 },
+    ];
+    const model = buildVisibleListModel(rows, {
+      connectSeparateListBlocks: true,
+    });
+
+    expect(model.items.map((item) => item.blockIndex)).toEqual([0, 0, 0]);
+    expect(model.groups.map((group) => group.itemIndices)).toEqual([[0, 1, 2]]);
   });
 
   it("keeps deep visible rows usable when their parent is above the viewport", () => {
@@ -138,5 +189,17 @@ describe("visible editor list model", () => {
     expect(isDefiniteListBlockBoundary("   list continuation")).toBe(false);
     expect(isDefiniteListBlockBoundary(">   list continuation")).toBe(false);
     expect(isDefiniteListBlockBoundary("   ")).toBe(false);
+    expect(isBlankListBlockSeparator("   ")).toBe(true);
+    expect(isBlankListBlockSeparator(">   ")).toBe(true);
+    expect(isBlankListBlockSeparator("> quoted paragraph")).toBe(false);
+  });
+
+  it("requires real unordered or ordered marker syntax for modeled rows", () => {
+    expect(hasMarkdownListMarker("- item")).toBe(true);
+    expect(hasMarkdownListMarker("    * nested item")).toBe(true);
+    expect(hasMarkdownListMarker("> 12) quoted ordered item")).toBe(true);
+    expect(hasMarkdownListMarker("+")).toBe(true);
+    expect(hasMarkdownListMarker("plain list head")).toBe(false);
+    expect(hasMarkdownListMarker("1.0 is not a list item")).toBe(false);
   });
 });

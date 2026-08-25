@@ -18,10 +18,12 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 ## Features
 
 - Connected tree guides for ordered, unordered, mixed, and task lists.
-- Independent rendering toggles for Live Preview, Source mode, and Reading mode.
-- Separate list blocks remain visually separate by default, with an optional continuation/gutter-spine setting.
+- A global static-guide toggle plus independent rendering toggles for Live Preview, Source mode, and Reading mode.
+- Separate list blocks remain visually separate across both content and blank-line boundaries by default, with an optional continuation/gutter-spine setting.
 - Optional Logseq-style bullet threading that responds across the full hovered list-item row.
 - Independent active-item-path and all-branches threading subfeatures.
+- Optional all-branches merging for list blocks separated only by blank lines.
+- Threading from an immediately preceding non-bulleted/numbered list head.
 - A global threading toggle plus independent Live Preview, Source, and Reading-mode threading toggles.
 - Searchable settings, including aliases for common mode names.
 - Pop-out-window support.
@@ -31,10 +33,11 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 ## Plugin settings
 
-Every plugin setting is searchable from Obsidian's Settings search. Tree-guide rendering is enabled in all three modes by default. Connecting separate list blocks is disabled by default. Bullet threading is globally disabled by default; Active List Item Threading and the three mode preferences are enabled so they take effect immediately if the global feature is enabled, while All Branches of an Active Bullet List Threading is disabled by default.
+Every plugin setting is searchable from Obsidian's Settings search. Static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. Bullet threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. All Branches of an Active Bullet List Threading and its blank-line block-merging option are disabled by default.
 
 | Setting | Purpose |
 | --- | --- |
+| Enable static list tree indentation guides | Globally enables or disables the always-visible tree guides. Enabled by default. |
 | Render in Live Preview | Shows guides in the editable Live Preview view. |
 | Render in Source mode | Shows guides alongside raw Markdown list syntax. |
 | Render in Reading mode | Shows guides in rendered Markdown. |
@@ -42,6 +45,8 @@ Every plugin setting is searchable from Obsidian's Settings search. Tree-guide r
 | Enable bullet threading | Enables Logseq-style hover highlighting. |
 | Active List Item Threading | Highlights the complete ancestor path to the hovered list item. Enabled by default. |
 | All Branches of an Active Bullet List Threading | Highlights every branch in the hovered item’s list block. Disabled by default. |
+| Treat separate list blocks that are separated only by a blank line | Lets All Branches include adjacent blank-line-separated blocks. Disabled by default; nonblank content always separates threading blocks. |
+| Bullet threading from a non-bulleted/numbered list head | Extends Active Item and All Branches threading from the immediately preceding unmarked line. Enabled by default. |
 | Thread in Live Preview | Allows threading in Live Preview when the global feature is enabled. |
 | Thread in Source mode | Allows threading in Source mode when the global feature is enabled. |
 | Thread in Reading mode | Allows threading in Reading mode when the global feature is enabled. |
@@ -63,7 +68,8 @@ Install and enable the community plugin **Style Settings** to customize:
 - Visibility of unordered-list bullets in Live Preview and Reading mode (enabled by default).
 - Active-item and all-branches thread opacity, thickness, line caps, and corner radius.
 - Thread connector length, marker gap, and vertical offset.
-- Eight independently themed thread colors; deeper levels reuse the eighth color.
+- Eight independently themed thread colors, each with an enabled-by-default toggle; deeper levels reuse the eighth color.
+- An enabled-by-default themed global fallback for disabled thread colors and a disabled-by-default themed global color override.
 - Reading-mode thread row height, segment overlap, parent reach, and marker offset.
 
 Every numerical Style Settings slider receives a synchronized editable field. Typed in-range decimals are preserved exactly, including transient input such as `1.` while editing; invalid or incomplete values revert only when editing finishes.

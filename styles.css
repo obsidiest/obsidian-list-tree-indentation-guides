@@ -5,7 +5,7 @@ id: list-tree-indentation-guides
 settings:
   -
     id: ltig-guide-appearance
-    title: Guide appearance
+    title: Static List Tree Indentation Guide Appearance
     type: heading
     level: 2
   -
@@ -291,10 +291,46 @@ settings:
     format: em
   -
     id: ltig-thread-colors
-    title: Bullet-thread colors
+    title: Bullet-Thread Colors
     type: heading
     level: 3
     collapsed: true
+  -
+    id: ltig-thread-fallback-colors-enabled
+    title: Global Fallback Bullet-Thread Colors
+    description: Use the fallback color whenever an individual bullet-thread color is disabled
+    type: class-toggle
+    default: true
+  -
+    id: ltig-thread-fallback-color
+    title: Global fallback bullet-thread color
+    description: Light- and dark-mode fallback for disabled bullet-thread colors
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#777777'
+    default-dark: '#888888'
+  -
+    id: ltig-thread-override-colors-enabled
+    title: Global Override Bullet-Thread Colors
+    description: Override every bullet-thread color regardless of its individual enablement toggle
+    type: class-toggle
+    default: false
+  -
+    id: ltig-thread-override-color
+    title: Global override bullet-thread color
+    description: Light- and dark-mode color used for every thread while the global override is enabled
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#777777'
+    default-dark: '#888888'
+  -
+    id: ltig-thread-color-1-enabled
+    title: Enable thread color 1
+    description: Use the configured first-edge color instead of the global fallback
+    type: class-toggle
+    default: true
   -
     id: ltig-thread-color-1
     title: Thread color 1
@@ -305,6 +341,12 @@ settings:
     default-light: '#d94f00'
     default-dark: '#ff5a00'
   -
+    id: ltig-thread-color-2-enabled
+    title: Enable thread color 2
+    description: Use the configured second-edge color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
     id: ltig-thread-color-2
     title: Thread color 2
     description: Highlight color for the second nested edge
@@ -313,6 +355,12 @@ settings:
     opacity: false
     default-light: '#c99a00'
     default-dark: '#ffc400'
+  -
+    id: ltig-thread-color-3-enabled
+    title: Enable thread color 3
+    description: Use the configured third-edge color instead of the global fallback
+    type: class-toggle
+    default: true
   -
     id: ltig-thread-color-3
     title: Thread color 3
@@ -323,6 +371,12 @@ settings:
     default-light: '#79b800'
     default-dark: '#a8e600'
   -
+    id: ltig-thread-color-4-enabled
+    title: Enable thread color 4
+    description: Use the configured fourth-edge color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
     id: ltig-thread-color-4
     title: Thread color 4
     description: Highlight color for the fourth nested edge
@@ -331,6 +385,12 @@ settings:
     opacity: false
     default-light: '#008ea3'
     default-dark: '#00c8df'
+  -
+    id: ltig-thread-color-5-enabled
+    title: Enable thread color 5
+    description: Use the configured fifth-edge color instead of the global fallback
+    type: class-toggle
+    default: true
   -
     id: ltig-thread-color-5
     title: Thread color 5
@@ -341,6 +401,12 @@ settings:
     default-light: '#316fd1'
     default-dark: '#5794ff'
   -
+    id: ltig-thread-color-6-enabled
+    title: Enable thread color 6
+    description: Use the configured sixth-edge color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
     id: ltig-thread-color-6
     title: Thread color 6
     description: Highlight color for the sixth nested edge
@@ -350,6 +416,12 @@ settings:
     default-light: '#7547c7'
     default-dark: '#a66cff'
   -
+    id: ltig-thread-color-7-enabled
+    title: Enable thread color 7
+    description: Use the configured seventh-edge color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
     id: ltig-thread-color-7
     title: Thread color 7
     description: Highlight color for the seventh nested edge
@@ -358,6 +430,12 @@ settings:
     opacity: false
     default-light: '#b83782'
     default-dark: '#e64fa3'
+  -
+    id: ltig-thread-color-8-enabled
+    title: Enable thread color 8+
+    description: Use the configured eighth-and-deeper edge color instead of the global fallback
+    type: class-toggle
+    default: true
   -
     id: ltig-thread-color-8
     title: Thread color 8+
@@ -400,6 +478,175 @@ body {
   --ltig-thread-color-6: #a66cff;
   --ltig-thread-color-7: #e64fa3;
   --ltig-thread-color-8: #e64fa3;
+  --ltig-thread-fallback-color: var(--ltig-guide-color);
+  --ltig-thread-override-color: var(--ltig-guide-color);
+  --ltig-thread-effective-color-1: var(--ltig-thread-color-1);
+  --ltig-thread-effective-color-2: var(--ltig-thread-color-2);
+  --ltig-thread-effective-color-3: var(--ltig-thread-color-3);
+  --ltig-thread-effective-color-4: var(--ltig-thread-color-4);
+  --ltig-thread-effective-color-5: var(--ltig-thread-color-5);
+  --ltig-thread-effective-color-6: var(--ltig-thread-color-6);
+  --ltig-thread-effective-color-7: var(--ltig-thread-color-7);
+  --ltig-thread-effective-color-8: var(--ltig-thread-color-8);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-1-enabled) {
+  --ltig-thread-effective-color-1: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-2-enabled) {
+  --ltig-thread-effective-color-2: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-3-enabled) {
+  --ltig-thread-effective-color-3: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-4-enabled) {
+  --ltig-thread-effective-color-4: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-5-enabled) {
+  --ltig-thread-effective-color-5: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-6-enabled) {
+  --ltig-thread-effective-color-6: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-7-enabled) {
+  --ltig-thread-effective-color-7: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):not(.ltig-thread-color-8-enabled) {
+  --ltig-thread-effective-color-8: transparent;
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-1-enabled
+  ) {
+  --ltig-thread-effective-color-1: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-2-enabled
+  ) {
+  --ltig-thread-effective-color-2: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-3-enabled
+  ) {
+  --ltig-thread-effective-color-3: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-4-enabled
+  ) {
+  --ltig-thread-effective-color-4: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-5-enabled
+  ) {
+  --ltig-thread-effective-color-5: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-6-enabled
+  ) {
+  --ltig-thread-effective-color-6: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-7-enabled
+  ) {
+  --ltig-thread-effective-color-7: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ):where(.ltig-thread-fallback-colors-enabled):not(
+    .ltig-thread-color-8-enabled
+  ) {
+  --ltig-thread-effective-color-8: var(--ltig-thread-fallback-color);
+}
+
+body:is(
+    .ltig-thread-cap-round,
+    .ltig-thread-cap-square,
+    .ltig-thread-cap-flat
+  ).ltig-thread-override-colors-enabled {
+  --ltig-thread-effective-color-1: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-2: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-3: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-4: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-5: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-6: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-7: var(--ltig-thread-override-color);
+  --ltig-thread-effective-color-8: var(--ltig-thread-override-color);
 }
 
 .ltig-editor-overlay-host {
@@ -421,11 +668,11 @@ body {
   display: none;
 }
 
-body.ltig-live-preview-enabled
+body.ltig-static-guides-enabled.ltig-live-preview-enabled
   .markdown-source-view.mod-cm6.is-live-preview
   .cm-hmd-list-indent
   :is(.cm-indent, .cm-indent-spacing)::before,
-body.ltig-source-mode-enabled
+body.ltig-static-guides-enabled.ltig-source-mode-enabled
   .markdown-source-view.mod-cm6:not(.is-live-preview)
   .cm-hmd-list-indent
   :is(.cm-indent, .cm-indent-spacing)::before {
@@ -474,35 +721,35 @@ body.ltig-source-mode-enabled
 }
 
 .ltig-thread-depth-1 {
-  stroke: var(--ltig-thread-color-1);
+  stroke: var(--ltig-thread-effective-color-1);
 }
 
 .ltig-thread-depth-2 {
-  stroke: var(--ltig-thread-color-2);
+  stroke: var(--ltig-thread-effective-color-2);
 }
 
 .ltig-thread-depth-3 {
-  stroke: var(--ltig-thread-color-3);
+  stroke: var(--ltig-thread-effective-color-3);
 }
 
 .ltig-thread-depth-4 {
-  stroke: var(--ltig-thread-color-4);
+  stroke: var(--ltig-thread-effective-color-4);
 }
 
 .ltig-thread-depth-5 {
-  stroke: var(--ltig-thread-color-5);
+  stroke: var(--ltig-thread-effective-color-5);
 }
 
 .ltig-thread-depth-6 {
-  stroke: var(--ltig-thread-color-6);
+  stroke: var(--ltig-thread-effective-color-6);
 }
 
 .ltig-thread-depth-7 {
-  stroke: var(--ltig-thread-color-7);
+  stroke: var(--ltig-thread-effective-color-7);
 }
 
 .ltig-thread-depth-8 {
-  stroke: var(--ltig-thread-color-8);
+  stroke: var(--ltig-thread-effective-color-8);
 }
 
 .markdown-rendered .ltig-reading-item {
@@ -522,7 +769,7 @@ body.ltig-source-mode-enabled
   pointer-events: none;
 }
 
-body.ltig-reading-mode-enabled
+body.ltig-static-guides-enabled.ltig-reading-mode-enabled
   .markdown-rendered
   .ltig-reading-branch {
   display: block;
@@ -588,13 +835,13 @@ body.ltig-reading-mode-enabled
   border-style: dotted;
 }
 
-body.ltig-live-preview-enabled:not(.ltig-show-unordered-list-bullets)
+body.ltig-static-guides-enabled.ltig-live-preview-enabled:not(.ltig-show-unordered-list-bullets)
   .markdown-source-view.mod-cm6.is-live-preview
   .list-bullet {
   opacity: 0;
 }
 
-body.ltig-reading-mode-enabled:not(.ltig-show-unordered-list-bullets)
+body.ltig-static-guides-enabled.ltig-reading-mode-enabled:not(.ltig-show-unordered-list-bullets)
   .markdown-rendered
   ul
   > li.ltig-reading-item::marker {
@@ -611,15 +858,21 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
   :is(ul, ol) {
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-1);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-1);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head {
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-1);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
   :is(ul, ol)
   :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-1);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-2);
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-1);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-2);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
@@ -627,29 +880,8 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-2);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-3);
-}
-
-body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-3);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-4);
-}
-
-body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-4);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-5);
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-2);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-3);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
@@ -657,11 +889,20 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol)
+  :is(ul, ol) {
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-3);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-4);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
+  .markdown-rendered
+  :is(ul, ol)
+  :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-5);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-6);
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-4);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-5);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
@@ -671,10 +912,9 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol)
-  :is(ul, ol)
   :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-6);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-7);
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-5);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-6);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
@@ -685,10 +925,9 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol)
-  :is(ul, ol)
   :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-7);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-8);
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-6);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-7);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
@@ -700,10 +939,24 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
   :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol)
+  :is(ul, ol) {
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-7);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-8);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled
+  .markdown-rendered
+  :is(ul, ol)
+  :is(ul, ol)
+  :is(ul, ol)
+  :is(ul, ol)
+  :is(ul, ol)
+  :is(ul, ol)
+  :is(ul, ol)
   :is(ul, ol)
   :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-color-8);
-  --ltig-reading-thread-child-color: var(--ltig-thread-color-8);
+  --ltig-reading-thread-color: var(--ltig-thread-effective-color-8);
+  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-8);
 }
 
 body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-active-item-enabled
@@ -868,6 +1121,155 @@ body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-
   .markdown-rendered
   .ltig-reading-list:not(.ltig-reading-item .ltig-reading-list):hover
   .ltig-reading-list
+  > .ltig-reading-item:last-child
+  > .ltig-reading-branch::after {
+  display: none;
+}
+
+/* Extend Reading-mode threads from an immediately preceding unmarked head. */
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-active-item-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head
+  > li:has(~ li:hover)::before {
+  position: absolute;
+  z-index: 2;
+  top: calc(
+    var(--ltig-thread-reading-item-height) * -1 -
+      var(--ltig-thread-thickness) / 2 +
+      var(--ltig-thread-reading-marker-y-shift)
+  );
+  left: calc(
+    0px - var(--ltig-thread-connector-length) -
+      var(--ltig-thread-marker-gap)
+  );
+  box-sizing: border-box;
+  width: 0;
+  height: calc(
+    100% + var(--ltig-thread-reading-item-height) +
+      var(--ltig-thread-reading-segment-reach)
+  );
+  border-inline-start: var(--ltig-thread-thickness) solid
+    var(--ltig-reading-thread-color);
+  content: "";
+  opacity: var(--ltig-thread-opacity);
+  pointer-events: none;
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-active-item-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head
+  > li:hover::before {
+  position: absolute;
+  z-index: 2;
+  top: calc(
+    var(--ltig-thread-reading-item-height) * -1 -
+      var(--ltig-thread-thickness) / 2 +
+      var(--ltig-thread-reading-marker-y-shift)
+  );
+  right: auto;
+  bottom: calc(
+    100% - (var(--ltig-thread-reading-item-height) + var(--size-4-2)) /
+      2 + 1px - var(--ltig-thread-reading-marker-y-shift)
+  );
+  left: calc(
+    0px - var(--ltig-thread-connector-length) -
+      var(--ltig-thread-marker-gap)
+  );
+  box-sizing: border-box;
+  width: var(--ltig-thread-connector-length);
+  height: auto;
+  border-inline-start: var(--ltig-thread-thickness) solid
+    var(--ltig-reading-thread-color);
+  border-block-end: var(--ltig-thread-thickness) solid
+    var(--ltig-reading-thread-color);
+  border-end-start-radius: var(--ltig-thread-corner-radius);
+  content: "";
+  opacity: var(--ltig-thread-opacity);
+  pointer-events: none;
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item
+  > .ltig-reading-branch {
+  left: calc(
+    0px - var(--ltig-thread-connector-length) -
+      var(--ltig-thread-marker-gap)
+  );
+  display: block;
+  width: var(--ltig-thread-connector-length);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item
+  > .ltig-reading-branch::before,
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item
+  > .ltig-reading-branch::after {
+  border-color: var(--ltig-reading-thread-color);
+  opacity: var(--ltig-thread-opacity);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item
+  > .ltig-reading-branch::before {
+  border-inline-start-width: var(--ltig-thread-thickness);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item:first-child
+  > .ltig-reading-branch::before {
+  top: calc(
+    var(--ltig-thread-reading-item-height) * -1 +
+      var(--ltig-thread-reading-marker-y-shift) +
+      var(--ltig-reading-overlap)
+  );
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item:first-child:last-child
+  > .ltig-reading-branch::before {
+  height: calc(
+    var(--ltig-reading-connector-center) + var(--ltig-connector-offset) +
+      var(--ltig-thread-reading-item-height) -
+      var(--ltig-thread-reading-marker-y-shift)
+  );
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item
+  > .ltig-reading-branch::after {
+  width: var(--ltig-thread-connector-length);
+  border-block-start-width: var(--ltig-thread-thickness);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
+  > .ltig-reading-item:last-child
+  > .ltig-reading-branch::before {
+  width: var(--ltig-thread-connector-length);
+  border-block-end: var(--ltig-thread-thickness) solid
+    var(--ltig-reading-thread-color);
+  border-end-start-radius: var(--ltig-thread-corner-radius);
+}
+
+body.ltig-bullet-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-all-branches-enabled.ltig-thread-from-list-head-enabled
+  .markdown-rendered
+  .ltig-reading-list-with-head:hover
   > .ltig-reading-item:last-child
   > .ltig-reading-branch::after {
   display: none;

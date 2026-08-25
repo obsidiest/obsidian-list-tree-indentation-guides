@@ -12,8 +12,15 @@ const THREAD_COLOR_COUNT = 8;
 let overlaySequence = 0;
 
 export interface VisibleListRow {
-  breakBefore?: boolean;
+  boundaryBefore?: ListBlockBoundary;
   depth: number;
+}
+
+export type ListBlockBoundary = "blank-line" | "content";
+
+export interface VisibleListModelOptions {
+  connectSeparateListBlocks?: boolean;
+  treatBlankLineSeparatedListBlocksAsOne?: boolean;
 }
 
 export interface VisibleListItemModel {
@@ -49,6 +56,7 @@ export interface ListRowHitBox {
 
 interface MeasuredListRow extends VisibleListRow {
   element: HTMLElement;
+  headRect?: CoordinateRect;
   lineRect: CoordinateRect;
   markerRect: CoordinateRect;
 }
@@ -120,8 +128,12 @@ export function createEditorGuidesExtension(): Extension {
  */
 export function buildVisibleListModel(
   rows: readonly VisibleListRow[],
-  connectSeparateListBlocks = false,
+  options: boolean | VisibleListModelOptions = {},
 ): VisibleListModel {
+  const normalizedOptions =
+    typeof options === "boolean"
+      ? { connectSeparateListBlocks: options }
+      : options;
   const groups: VisibleListGroup[] = [];
   const items: VisibleListItemModel[] = [];
   const currentGroupAtDepth = new Map<number, number>();
@@ -134,7 +146,7 @@ export function buildVisibleListModel(
       continue;
     }
     const depth = Math.max(1, Math.trunc(row.depth));
-    if (row.breakBefore === true && !connectSeparateListBlocks) {
+    if (startsNewListBlock(row, normalizedOptions)) {
       if (itemIndex > 0) {
         blockIndex += 1;
       }
@@ -173,6 +185,21 @@ export function buildVisibleListModel(
   return { groups, items };
 }
 
+function startsNewListBlock(
+  row: VisibleListRow,
+  options: VisibleListModelOptions,
+): boolean {
+  if (options.connectSeparateListBlocks === true) {
+    return false;
+  }
+  const boundary = row.boundaryBefore;
+  return !(
+    boundary === undefined ||
+    (boundary === "blank-line" &&
+      options.treatBlankLineSeparatedListBlocksAsOne === true)
+  );
+}
+
 export function findListRowAtClientY(
   rows: readonly ListRowHitBox[],
   clientY: number,
@@ -194,18 +221,32 @@ export function findListRowAtClientY(
 }
 
 export function isDefiniteListBlockBoundary(sourceLine: string): boolean {
-  let remainder = sourceLine;
-  while (true) {
-    const quotePrefix = /^[ \t]{0,3}>[ \t]?/u.exec(remainder);
-    if (quotePrefix === null) {
-      break;
-    }
-    remainder = remainder.slice(quotePrefix[0].length);
-  }
+  const remainder = stripBlockquotePrefixes(sourceLine);
   if (remainder.trim() === "") {
     return false;
   }
   return !/^[ \t]/u.test(remainder);
+}
+
+export function isBlankListBlockSeparator(sourceLine: string): boolean {
+  return stripBlockquotePrefixes(sourceLine).trim() === "";
+}
+
+export function hasMarkdownListMarker(sourceLine: string): boolean {
+  return /^[ \t]*(?:[-+*]|\d+[.)])(?:[ \t]+|$)/u.test(
+    stripBlockquotePrefixes(sourceLine),
+  );
+}
+
+function stripBlockquotePrefixes(sourceLine: string): string {
+  let remainder = sourceLine;
+  while (true) {
+    const quotePrefix = /^[ \t]{0,3}>[ \t]?/u.exec(remainder);
+    if (quotePrefix === null) {
+      return remainder;
+    }
+    remainder = remainder.slice(quotePrefix[0].length);
+  }
 }
 
 export function buildRoundedThreadPath({
@@ -291,7 +332,11 @@ class EditorGuideOverlay {
     this.overlay.setAttribute("focusable", "false");
     this.overlayHost.appendChild(this.overlay);
 
-    this.scrollHandler = () => this.scheduleRender();
+    this.scrollHandler = () => {
+      this.lastMeasuredRows = [];
+      this.overlay.classList.add("ltig-editor-overlay-hidden");
+      this.scheduleRender();
+    };
     this.resizeHandler = () => this.scheduleRender();
     this.pointerLeaveHandler = () => this.setHoveredLine(null);
     this.pointerMoveHandler = (event) => this.updateHoveredLine(event);
@@ -410,9 +455,11 @@ class EditorGuideOverlay {
     }
 
     const isLivePreview = sourceView.classList.contains("is-live-preview");
-    const guidesEnabled = isLivePreview
-      ? ownerDocument.body.classList.contains("ltig-live-preview-enabled")
-      : ownerDocument.body.classList.contains("ltig-source-mode-enabled");
+    const guidesEnabled =
+      ownerDocument.body.classList.contains("ltig-static-guides-enabled") &&
+      (isLivePreview
+        ? ownerDocument.body.classList.contains("ltig-live-preview-enabled")
+        : ownerDocument.body.classList.contains("ltig-source-mode-enabled"));
     const threadingEnabled =
       ownerDocument.body.classList.contains("ltig-bullet-threading-enabled") &&
       (ownerDocument.body.classList.contains(
@@ -464,7 +511,19 @@ class EditorGuideOverlay {
     const connectSeparateListBlocks = ownerDocument.body.classList.contains(
       "ltig-connect-separate-list-blocks-enabled",
     );
-    const model = buildVisibleListModel(rows, connectSeparateListBlocks);
+    const guideModel = buildVisibleListModel(rows, {
+      connectSeparateListBlocks,
+    });
+    const allBranchesThreading = ownerDocument.body.classList.contains(
+      "ltig-thread-all-branches-enabled",
+    );
+    const threadModel = buildVisibleListModel(rows, {
+      treatBlankLineSeparatedListBlocksAsOne:
+        allBranchesThreading &&
+        ownerDocument.body.classList.contains(
+          "ltig-thread-blank-separated-blocks-enabled",
+        ),
+    });
 
     this.overlay.classList.remove("ltig-editor-overlay-hidden");
     this.overlay.setAttribute("viewBox", `0 0 ${overlayWidth} ${overlayHeight}`);
@@ -491,11 +550,13 @@ class EditorGuideOverlay {
       this.renderGuidePaths(
         paths,
         rows,
-        model,
+        guideModel,
         style,
         hostRect,
         clipTop,
         clipBottom,
+        clipLeft,
+        clipRight,
         connectSeparateListBlocks,
       );
     }
@@ -503,7 +564,7 @@ class EditorGuideOverlay {
       this.renderThreadPaths(
         paths,
         rows,
-        model,
+        threadModel,
         style.direction,
         readThreadStyleGeometry(this.view.dom),
         hostRect,
@@ -512,8 +573,9 @@ class EditorGuideOverlay {
         ownerDocument.body.classList.contains(
           "ltig-thread-active-item-enabled",
         ),
+        allBranchesThreading,
         ownerDocument.body.classList.contains(
-          "ltig-thread-all-branches-enabled",
+          "ltig-thread-from-list-head-enabled",
         ),
       );
     }
@@ -530,15 +592,29 @@ class EditorGuideOverlay {
 
   private collectVisibleRows(isLivePreview: boolean): MeasuredListRow[] {
     const rows: MeasuredListRow[] = [];
-    let breakBefore = false;
+    let boundaryBefore: ListBlockBoundary | undefined;
+    let candidateHeadRect: CoordinateRect | undefined;
     for (const line of Array.from(
       this.view.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
     )) {
-      const depth = readListDepth(line);
       const sourceLine = this.readSourceLine(line);
-      if (depth === null) {
+      if (isBlankListBlockSeparator(sourceLine)) {
+        if (boundaryBefore !== "content") {
+          boundaryBefore = "blank-line";
+        }
+        candidateHeadRect = undefined;
+        continue;
+      }
+
+      const depth = readListDepth(line);
+      if (depth === null || !hasMarkdownListMarker(sourceLine)) {
         if (isHardListBoundary(line, sourceLine)) {
-          breakBefore = true;
+          boundaryBefore = "content";
+          candidateHeadRect = toCoordinateRect(
+            line.getBoundingClientRect(),
+          );
+        } else {
+          candidateHeadRect = undefined;
         }
         continue;
       }
@@ -546,18 +622,22 @@ class EditorGuideOverlay {
       const markerRect = measureMarkerRect(line, lineRect, isLivePreview);
       if (markerRect === null) {
         if (isHardListBoundary(line, sourceLine)) {
-          breakBefore = true;
+          boundaryBefore = "content";
         }
+        candidateHeadRect = undefined;
         continue;
       }
       rows.push({
-        breakBefore,
+        boundaryBefore,
         depth,
         element: line,
+        headRect:
+          boundaryBefore === "content" ? candidateHeadRect : undefined,
         lineRect,
         markerRect,
       });
-      breakBefore = false;
+      boundaryBefore = undefined;
+      candidateHeadRect = undefined;
     }
     return rows;
   }
@@ -579,6 +659,8 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    clipLeft: number,
+    clipRight: number,
     connectSeparateListBlocks: boolean,
   ): void {
     const ownerDocument = this.view.dom.ownerDocument;
@@ -649,6 +731,8 @@ class EditorGuideOverlay {
       hostRect,
       clipTop,
       clipBottom,
+      clipLeft,
+      clipRight,
       connectSeparateListBlocks,
     );
   }
@@ -661,17 +745,19 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    clipLeft: number,
+    clipRight: number,
     connectSeparateListBlocks: boolean,
   ): void {
     const first = rows[0];
     if (
       first === undefined ||
       first.depth <= 2 ||
-      (first.breakBefore === true && !connectSeparateListBlocks)
+      startsNewListBlock(first, { connectSeparateListBlocks })
     ) {
       return;
     }
-    const indentWidth = inferIndentWidth(rows);
+    const indentWidth = clamp(inferIndentWidth(rows), 8, 96);
     const firstConnector = this.connectorFor(
       first,
       0,
@@ -684,9 +770,37 @@ class EditorGuideOverlay {
     if (firstConnector === null) {
       return;
     }
+    const firstBlockIndex = model.items[0]?.blockIndex;
+    const nextBlockRowIndex = model.items.findIndex(
+      (item, itemIndex) =>
+        itemIndex > 0 && item.blockIndex !== firstBlockIndex,
+    );
+    const firstBlockLastRowIndex =
+      nextBlockRowIndex < 0 ? rows.length - 1 : nextBlockRowIndex - 1;
+    const firstBlockLastConnector = this.connectorFor(
+      rows[firstBlockLastRowIndex],
+      firstBlockLastRowIndex,
+      style.connectorLength,
+      style.markerGap,
+      style.connectorOffset,
+      style.direction,
+      hostRect,
+    );
+    const continuationEnd =
+      nextBlockRowIndex < 0 || firstBlockLastConnector === null
+        ? clipBottom
+        : clamp(firstBlockLastConnector.y, clipTop, clipBottom);
+    if (continuationEnd <= clipTop) {
+      return;
+    }
     const ownerDocument = this.view.dom.ownerDocument;
     for (let depth = 2; depth < first.depth; depth += 1) {
-      if (model.groups.some((group) => group.depth === depth)) {
+      if (
+        model.groups.some(
+          (group) =>
+            group.blockIndex === firstBlockIndex && group.depth === depth,
+        )
+      ) {
         continue;
       }
       const depthDifference = first.depth - depth;
@@ -694,11 +808,23 @@ class EditorGuideOverlay {
         style.direction === "rtl"
           ? firstConnector.startX + depthDifference * indentWidth
           : firstConnector.startX - depthDifference * indentWidth;
+      const isOnAncestorSide =
+        style.direction === "rtl"
+          ? spineX > firstConnector.startX
+          : spineX < firstConnector.startX;
+      if (
+        !Number.isFinite(spineX) ||
+        !isOnAncestorSide ||
+        spineX < clipLeft ||
+        spineX > clipRight
+      ) {
+        continue;
+      }
       const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
       path.classList.add("ltig-guide-path", "ltig-guide-path-continuation");
       path.setAttribute(
         "d",
-        `M ${spineX} ${clipTop} V ${clipBottom}`,
+        `M ${spineX} ${clipTop} V ${continuationEnd}`,
       );
       container.prepend(path);
     }
@@ -715,6 +841,7 @@ class EditorGuideOverlay {
     clipBottom: number,
     activeListItemThreading: boolean,
     allBranchesThreading: boolean,
+    threadFromListHead: boolean,
   ): void {
     const hoveredIndex = this.resolveHoveredIndex(rows);
     if (hoveredIndex === null) {
@@ -731,6 +858,7 @@ class EditorGuideOverlay {
         hostRect,
         clipTop,
         clipBottom,
+        threadFromListHead,
       );
       return;
     }
@@ -739,6 +867,50 @@ class EditorGuideOverlay {
     }
     const chain = collectAncestorIndices(model.items, hoveredIndex);
     const ownerDocument = this.view.dom.ownerDocument;
+    const rootIndex = chain[0];
+    const root = rootIndex === undefined ? undefined : rows[rootIndex];
+    const activeBlockIndex =
+      rootIndex === undefined ? undefined : model.items[rootIndex]?.blockIndex;
+    const firstBlockItemIndex = model.items.findIndex(
+      (item) => item.blockIndex === activeBlockIndex,
+    );
+    const listHeadRect =
+      firstBlockItemIndex >= 0
+        ? rows[firstBlockItemIndex]?.headRect
+        : undefined;
+    const hasListHead =
+      threadFromListHead && listHeadRect !== undefined;
+    if (root !== undefined && listHeadRect !== undefined && hasListHead) {
+      const connector = this.connectorFor(
+        root,
+        rootIndex ?? 0,
+        style.connectorLength,
+        style.markerGap,
+        style.verticalOffset,
+        direction,
+        hostRect,
+      );
+      if (connector !== null) {
+        const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+        addThreadPathClasses(path, 1);
+        path.setAttribute(
+          "d",
+          buildRoundedThreadPath({
+            endX: connector.endX,
+            endY: clamp(connector.y, clipTop, clipBottom),
+            radius: style.cornerRadius,
+            startX: connector.startX,
+            startY: clamp(
+              markerCenterY(listHeadRect) - hostRect.top +
+                style.verticalOffset,
+              clipTop,
+              clipBottom,
+            ),
+          }),
+        );
+        container.appendChild(path);
+      }
+    }
     for (let chainIndex = 1; chainIndex < chain.length; chainIndex += 1) {
       const parentIndex = chain[chainIndex - 1];
       const childIndex = chain[chainIndex];
@@ -770,7 +942,10 @@ class EditorGuideOverlay {
           ? endX + style.connectorLength
           : endX - style.connectorLength;
       const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
-      addThreadPathClasses(path, child.depth);
+      addThreadPathClasses(
+        path,
+        hasListHead ? chainIndex + 1 : chainIndex,
+      );
       path.setAttribute(
         "d",
         buildRoundedThreadPath({
@@ -795,23 +970,35 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    threadFromListHead: boolean,
   ): void {
     const activeBlockIndex = model.items[hoveredIndex]?.blockIndex;
     if (activeBlockIndex === undefined) {
       return;
     }
     const ownerDocument = this.view.dom.ownerDocument;
-    for (const group of model.groups) {
-      if (
-        group.blockIndex !== activeBlockIndex ||
-        group.parentIndex === null
-      ) {
-        continue;
-      }
-      const parent = rows[group.parentIndex];
-      if (parent === undefined) {
-        continue;
-      }
+    const activeItemIndices = model.items
+      .map((item, itemIndex) =>
+        item.blockIndex === activeBlockIndex ? itemIndex : -1,
+      )
+      .filter((itemIndex) => itemIndex >= 0);
+    const rootDepth = Math.min(
+      ...activeItemIndices.map(
+        (itemIndex) => model.items[itemIndex]?.depth ?? Number.POSITIVE_INFINITY,
+      ),
+    );
+    const firstBlockItemIndex = activeItemIndices[0];
+    const listHeadRect =
+      threadFromListHead && firstBlockItemIndex !== undefined
+        ? rows[firstBlockItemIndex]?.headRect
+        : undefined;
+    const hasListHead = listHeadRect !== undefined;
+
+    const appendGroupPath = (
+      group: VisibleListGroup,
+      startY: number,
+      colorDepth: number,
+    ): void => {
       const connectors = group.itemIndices
         .map((itemIndex) =>
           this.connectorFor(
@@ -832,6 +1019,48 @@ class EditorGuideOverlay {
         );
       const spineX = median(connectors.map((connector) => connector.startX));
       if (spineX === null || connectors.length === 0) {
+        return;
+      }
+      const pathData = buildRoundedThreadGroupPath({
+        connectors: connectors.map(({ endX, y }) => ({ endX, y })),
+        radius: style.cornerRadius,
+        spineX,
+        startY: clamp(startY, clipTop, clipBottom),
+      });
+      if (pathData === "") {
+        return;
+      }
+      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+      addThreadPathClasses(path, colorDepth);
+      path.setAttribute("d", pathData);
+      container.appendChild(path);
+    };
+
+    if (hasListHead) {
+      const rootGroup = model.groups.find(
+        (group) =>
+          group.blockIndex === activeBlockIndex &&
+          group.depth === rootDepth &&
+          group.parentIndex === null,
+      );
+      if (rootGroup !== undefined) {
+        appendGroupPath(
+          rootGroup,
+          markerCenterY(listHeadRect) - hostRect.top + style.verticalOffset,
+          1,
+        );
+      }
+    }
+
+    for (const group of model.groups) {
+      if (
+        group.blockIndex !== activeBlockIndex ||
+        group.parentIndex === null
+      ) {
+        continue;
+      }
+      const parent = rows[group.parentIndex];
+      if (parent === undefined) {
         continue;
       }
       const parentY = clamp(
@@ -839,19 +1068,11 @@ class EditorGuideOverlay {
         clipTop,
         clipBottom,
       );
-      const pathData = buildRoundedThreadGroupPath({
-        connectors: connectors.map(({ endX, y }) => ({ endX, y })),
-        radius: style.cornerRadius,
-        spineX,
-        startY: parentY,
-      });
-      if (pathData === "") {
-        continue;
-      }
-      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
-      addThreadPathClasses(path, group.depth);
-      path.setAttribute("d", pathData);
-      container.appendChild(path);
+      appendGroupPath(
+        group,
+        parentY,
+        group.depth - rootDepth + (hasListHead ? 1 : 0),
+      );
     }
   }
 
@@ -890,11 +1111,18 @@ class EditorGuideOverlay {
     depth: number,
     connectSeparateListBlocks: boolean,
   ): boolean {
+    const currentRow = rows[itemIndex];
+    if (
+      currentRow === undefined ||
+      startsNewListBlock(currentRow, { connectSeparateListBlocks })
+    ) {
+      return false;
+    }
     for (let index = itemIndex - 1; index >= 0; index -= 1) {
       const row = rows[index];
       if (
         row === undefined ||
-        (row.breakBefore === true && !connectSeparateListBlocks) ||
+        startsNewListBlock(row, { connectSeparateListBlocks }) ||
         row.depth < depth
       ) {
         return false;
@@ -941,11 +1169,11 @@ class EditorGuideOverlay {
   }
 }
 
-function addThreadPathClasses(path: SVGPathElement, depth: number): void {
+function addThreadPathClasses(path: SVGPathElement, colorDepth: number): void {
   path.classList.add(
     "ltig-thread-path",
     `ltig-thread-depth-${Math.min(
-      Math.max(1, depth - 1),
+      Math.max(1, colorDepth),
       THREAD_COLOR_COUNT,
     )}`,
   );

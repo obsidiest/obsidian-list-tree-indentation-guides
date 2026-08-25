@@ -82,9 +82,36 @@ describe("release metadata", () => {
       "default: true",
     );
     for (let depth = 1; depth <= 8; depth += 1) {
+      const toggleSetting = styles.indexOf(
+        `id: ltig-thread-color-${depth}-enabled`,
+      );
+      expect(toggleSetting).toBeGreaterThanOrEqual(0);
+      expect(styles.slice(toggleSetting, toggleSetting + 350)).toContain(
+        "type: class-toggle",
+      );
+      expect(styles.slice(toggleSetting, toggleSetting + 350)).toContain(
+        "default: true",
+      );
       expect(styles).toContain(`id: ltig-thread-color-${depth}`);
       expect(styles).toContain(`--ltig-thread-color-${depth}`);
+      expect(styles).toContain(`--ltig-thread-effective-color-${depth}`);
     }
+  });
+
+  it("offers fallback and override controls for every bullet-thread color", async () => {
+    const styles = await readProjectFile("styles.css");
+    const fallback = styles.indexOf("id: ltig-thread-fallback-colors-enabled");
+    const override = styles.indexOf("id: ltig-thread-override-colors-enabled");
+
+    expect(fallback).toBeGreaterThanOrEqual(0);
+    expect(styles.slice(fallback, fallback + 350)).toContain("default: true");
+    expect(override).toBeGreaterThanOrEqual(0);
+    expect(styles.slice(override, override + 350)).toContain("default: false");
+    expect(styles).toContain("id: ltig-thread-fallback-color");
+    expect(styles).toContain("id: ltig-thread-override-color");
+    expect(styles).toContain(
+      "title: Static List Tree Indentation Guide Appearance",
+    );
   });
 
   it("uses safe defaults for list separation and threading subfeatures", async () => {
@@ -95,6 +122,11 @@ describe("release metadata", () => {
       "allBranchesOfActiveBulletListThreading: false",
     );
     expect(types).toContain("connectSeparateListBlocks: false");
+    expect(types).toContain("bulletThreadingFromNonListHead: true");
+    expect(types).toContain("enableStaticListTreeIndentationGuides: true");
+    expect(types).toContain(
+      "treatBlankLineSeparatedListBlocksAsOne: false",
+    );
   });
 
   it("uses the visible-DOM editor overlay and mode-scoped threading", async () => {
@@ -105,6 +137,10 @@ describe("release metadata", () => {
     expect(editor).toContain("this.overlayHost.appendChild(this.overlay)");
     expect(editor).toContain('querySelectorAll<HTMLElement>(".cm-line")');
     expect(editor).toContain("findListRowAtClientY");
+    expect(editor).toContain('boundaryBefore = "blank-line"');
+    expect(editor).toContain("continuationEnd");
+    expect(editor).toContain("listHeadRect");
+    expect(editor).toContain("startsNewListBlock(currentRow");
     expect(editor).not.toContain('target.closest<HTMLElement>(".cm-line');
     expect(editor).not.toContain("syntaxTree");
     expect(styles).toContain("position: absolute");
@@ -115,6 +151,8 @@ describe("release metadata", () => {
     for (const className of [
       "ltig-thread-active-item-enabled",
       "ltig-thread-all-branches-enabled",
+      "ltig-thread-blank-separated-blocks-enabled",
+      "ltig-thread-from-list-head-enabled",
       "ltig-thread-live-preview-enabled",
       "ltig-thread-source-mode-enabled",
       "ltig-thread-reading-mode-enabled",
@@ -130,15 +168,22 @@ describe("release metadata", () => {
       "renderInLivePreview",
       "renderInSourceMode",
       "renderInReadingMode",
+      "enableStaticListTreeIndentationGuides",
       "connectSeparateListBlocks",
       "enableBulletThreading",
       "activeListItemThreading",
       "allBranchesOfActiveBulletListThreading",
+      "treatBlankLineSeparatedListBlocksAsOne",
+      "bulletThreadingFromNonListHead",
       "bulletThreadingInLivePreview",
       "bulletThreadingInSourceMode",
       "bulletThreadingInReadingMode",
     ]) {
       expect(settings).toContain(`key: "${key}"`);
     }
+    expect(settings).toContain(
+      'heading: "Static List Tree Indentation Guides"',
+    );
+    expect(settings).toContain('name: "Rendering modes"');
   });
 });
