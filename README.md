@@ -17,19 +17,21 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 ## Feature Preview
 
-List Static Indentation Guides - List Indentation Guides Plugin
+With their corresponding toggles enabled:
+
+List Static Indentation Guides
 <img width="1009" height="1259" alt="List Static Indentation Guides - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/107a5228-8d82-4ffe-85d0-2871840102bc" />
 
-Active List Item Threading - List Indentation Guides Plugin
+Active List Item Threading
 <img width="925" height="904" alt="Active List Item Threading - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/e3afec0b-8ad3-4668-b156-1f0d9ed1bc99" />
 
-All Branches of an Active List Threading - List Indentation Guides Plugin
+All Branches of an Active List Threading
 <img width="846" height="925" alt="All Branches of an Active List Threading - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/ffecb7d2-9c57-42bb-a931-3890a0cf7362" />
 
-Active List Item Threading - Orphan List - List Indentation Guides Plugin
+Active List Item Threading - Orphan List
 <img width="888" height="625" alt="Active List Item Threading - Orphan List - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/17eebc25-1c7e-4676-8487-5da2a5d1052f" />
 
-All Branches of an Active List Threading - Orphan List - List Indentation
+All Branches of an Active List Threading - Orphan List
 <img width="812" height="828" alt="All Branches of an Active List Threading - Orphan List - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/33352030-3e94-45d1-9c4e-a80d200a6a8b" />
 
 
