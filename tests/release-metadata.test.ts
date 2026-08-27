@@ -140,6 +140,7 @@ describe("release metadata", () => {
   it("uses safe defaults for list separation and threading subfeatures", async () => {
     const types = await readProjectFile("src/types.ts");
 
+    expect(types).toContain("activeCursorListThreading: false");
     expect(types).toContain("activeListItemThreading: true");
     expect(types).toContain(
       "allBranchesOfActiveListThreading: false",
@@ -163,23 +164,31 @@ describe("release metadata", () => {
   it("uses the visible-DOM editor overlay and mode-scoped threading", async () => {
     const editor = await readProjectFile("src/editor-guides.ts");
     const main = await readProjectFile("src/main.ts");
+    const reading = await readProjectFile("src/reading-guides.ts");
     const styles = await readProjectFile("styles.css");
 
-    expect(editor).toContain("this.overlayHost.appendChild(this.overlay)");
+    expect(editor).toContain('this.overlayHost.createSvg("svg"');
     expect(editor).toContain('querySelectorAll<HTMLElement>(".cm-line")');
     expect(editor).toContain("findListRowAtClientY");
+    expect(editor).toContain("findListRowAtDocumentLine");
+    expect(editor).toContain("update.selectionSet");
     expect(editor).toContain('boundaryBefore = "blank-line"');
     expect(editor).toContain("continuationEnd");
     expect(editor).toContain("listHeadRect");
     expect(editor).toContain("startsNewListBlock(currentRow");
     expect(editor).not.toContain('target.closest<HTMLElement>(".cm-line');
+    expect(editor).not.toContain("createElementNS");
+    expect(editor).not.toContain("range.detach()");
     expect(editor).not.toContain("syntaxTree");
+    expect(reading).toContain("observeReadingThreadHover");
+    expect(styles).not.toContain(":has(");
     expect(styles).toContain("position: absolute");
     expect(styles).toContain(
       "body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled",
     );
     for (const className of [
       "ltig-thread-active-item-enabled",
+      "ltig-thread-active-cursor-enabled",
       "ltig-thread-all-branches-enabled",
       "ltig-thread-active-blank-separated-blocks-enabled",
       "ltig-thread-all-branches-blank-separated-blocks-enabled",
@@ -205,6 +214,7 @@ describe("release metadata", () => {
       "enableListStaticTreeIndentationGuides",
       "connectSeparateListBlocks",
       "enableListThreading",
+      "activeCursorListThreading",
       "activeListItemThreading",
       "threadBlankLineSeparatedListBlocksForActiveItem",
       "allBranchesOfActiveListThreading",

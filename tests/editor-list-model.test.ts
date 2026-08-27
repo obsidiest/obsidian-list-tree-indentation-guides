@@ -5,10 +5,12 @@ import {
   buildVisibleListModel,
   findAncestorContinuationEndIndex,
   findListRowAtClientY,
+  findListRowAtDocumentLine,
   getMarkdownListMarkerKind,
   hasMarkdownListMarker,
   isBlankListBlockSeparator,
   isDefiniteListBlockBoundary,
+  selectListThreadTargetIndex,
   selectListMarkerRect,
   type VisibleListRow,
 } from "src/editor-guides";
@@ -195,6 +197,50 @@ describe("visible editor list model", () => {
     expect(findListRowAtClientY(rows, 42)).toBe(1);
     expect(findListRowAtClientY(rows, 27)).toBeNull();
     expect(findListRowAtClientY(rows, Number.NaN)).toBeNull();
+  });
+
+  it("selects the visible list row containing the editor caret", () => {
+    const rows = [
+      { documentLineNumber: 4 },
+      { documentLineNumber: 9 },
+      { documentLineNumber: 12 },
+    ];
+
+    expect(findListRowAtDocumentLine(rows, 4)).toBe(0);
+    expect(findListRowAtDocumentLine(rows, 9)).toBe(1);
+    expect(findListRowAtDocumentLine(rows, 12)).toBe(2);
+    expect(findListRowAtDocumentLine(rows, 10)).toBeNull();
+    expect(findListRowAtDocumentLine(rows, 0)).toBeNull();
+  });
+
+  it("lets cursor activation fully override a different hovered row", () => {
+    const rows = [
+      { documentLineNumber: 4 },
+      { documentLineNumber: 9 },
+      { documentLineNumber: 12 },
+    ];
+
+    expect(
+      selectListThreadTargetIndex(rows, {
+        activeCursorListThreading: false,
+        cursorDocumentLineNumber: 12,
+        hoveredIndex: 0,
+      }),
+    ).toBe(0);
+    expect(
+      selectListThreadTargetIndex(rows, {
+        activeCursorListThreading: true,
+        cursorDocumentLineNumber: 12,
+        hoveredIndex: 0,
+      }),
+    ).toBe(2);
+    expect(
+      selectListThreadTargetIndex(rows, {
+        activeCursorListThreading: true,
+        cursorDocumentLineNumber: 10,
+        hoveredIndex: 0,
+      }),
+    ).toBeNull();
   });
 
   it("recognizes definite list-block boundaries, including blockquotes", () => {

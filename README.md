@@ -19,8 +19,8 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 With their corresponding toggles enabled:
 
-List Static Indentation Guides
-<img width="1009" height="1259" alt="List Static Indentation Guides - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/107a5228-8d82-4ffe-85d0-2871840102bc" />
+List Static Tree Indentation Guides
+<img width="1009" height="1259" alt="List Static Tree Indentation Guides - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/107a5228-8d82-4ffe-85d0-2871840102bc" />
 
 Active List Item Threading
 <img width="925" height="904" alt="Active List Item Threading - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/e3afec0b-8ad3-4668-b156-1f0d9ed1bc99" />
@@ -34,13 +34,13 @@ Active List Item Threading - Orphan List
 All Branches of an Active List Threading - Orphan List
 <img width="812" height="828" alt="All Branches of an Active List Threading - Orphan List - List Indentation Guides Plugin" src="https://github.com/user-attachments/assets/33352030-3e94-45d1-9c4e-a80d200a6a8b" />
 
-
 ## Features
 
 - Connected tree guides for ordered, unordered, mixed, and task lists.
 - A global static-guide toggle plus independent rendering toggles for Live Preview, Source mode, and Reading mode.
 - Separate list blocks remain visually separate across both content and blank-line boundaries by default, with an optional continuation/gutter-spine setting.
-- Optional Logseq-style list threading that responds across the full hovered list-item row.
+- Optional Logseq-style list threading that responds across the full hovered list-item row or, in editor modes, the active caret line.
+- A disabled-by-default Active Cursor List Threading override that changes regular and orphan list activation from hover to the focused editor caret in Live Preview and Source mode.
 - Independent active-item-path and all-branches threading subfeatures, each with its own optional blank-line block threading.
 - Threading from an immediately preceding non-bulleted/numbered list head.
 - Dedicated active-item and all-branches threading controls for orphan ordered and unordered list blocks.
@@ -53,7 +53,7 @@ All Branches of an Active List Threading - Orphan List
 
 ## Plugin settings
 
-Every plugin setting is searchable from Obsidian's Settings search. List static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. List Threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, Active Orphan List Threading, Active Orphan List Item Threading, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. Both all-branches options and both blank-line list-block options are disabled by default.
+Every plugin setting is searchable from Obsidian's Settings search. List static tree-guide rendering and all three mode preferences are enabled by default. Connecting separate list blocks is disabled by default. List Threading is globally disabled by default; Active List Item Threading, threading from an unmarked list head, Active Orphan List Threading, Active Orphan List Item Threading, and the three mode preferences are enabled so they take effect immediately if the global feature is enabled. Active Cursor List Threading, both all-branches options, and both blank-line list-block options are disabled by default.
 
 | Setting | Purpose |
 | --- | --- |
@@ -62,18 +62,19 @@ Every plugin setting is searchable from Obsidian's Settings search. List static 
 | Render in Source mode | Shows guides alongside raw Markdown list syntax. |
 | Render in Reading mode | Shows guides in rendered Markdown. |
 | Connect separate list blocks | Lets continuation/gutter spines bridge non-list content between editor list blocks. Disabled by default. |
-| Enable list threading | Enables Logseq-style hover highlighting. |
-| Active List Item Threading | Highlights the complete ancestor path to the hovered list item. Enabled by default. |
+| Enable list threading | Enables Logseq-style active-list highlighting. |
+| Active Cursor List Threading | In Live Preview and Source mode, replaces hover activation with the focused editor caret for every enabled regular or orphan threading submode. Disabled by default; Reading mode remains hover-based. |
+| Active List Item Threading | Highlights the complete ancestor path to the active list item. Enabled by default. |
 | Thread separate list blocks that are only separated by a blank line (Active Item) | Lets an active-item path continue into an adjacent blank-line-separated list block. Disabled by default. |
-| All Branches of an Active List Threading | Highlights every branch in the hovered item’s list block. Disabled by default. |
+| All Branches of an Active List Threading | Highlights every branch in the active item’s list block. Disabled by default. |
 | Thread separate list blocks that are only separated by a blank line (All Branches) | Lets All Branches include adjacent blank-line-separated blocks. Disabled by default; nonblank content always separates threading blocks. |
 | List threading from a non-bulleted/numbered list head | Extends Active Item and All Branches threading from the immediately preceding unmarked line. Enabled by default. |
 | Active Orphan List Threading | Enables threading for top-level ordered or unordered list blocks without an unmarked list head. Enabled by default. |
-| Active Orphan List Item Threading | Highlights the path to the hovered item in an orphan list. Enabled by default. |
+| Active Orphan List Item Threading | Highlights the path to the active item in an orphan list. Enabled by default. |
 | All Branches of an Active Orphan List Threading | Highlights every branch in the active orphan list block. Disabled by default. |
-| Thread in Live Preview | Allows threading in Live Preview when the global feature is enabled. |
-| Thread in Source mode | Allows threading in Source mode when the global feature is enabled. |
-| Thread in Reading mode | Allows threading in Reading mode when the global feature is enabled. |
+| Thread in Live Preview | Allows hover- or caret-activated threading in Live Preview when the global feature is enabled. |
+| Thread in Source mode | Allows hover- or caret-activated threading in Source mode when the global feature is enabled. |
+| Thread in Reading mode | Allows hover-activated threading in Reading mode when the global feature is enabled. |
 
 ## Style Settings
 

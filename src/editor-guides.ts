@@ -6,7 +6,6 @@ import {
 } from "@codemirror/view";
 import { buildGuidePath, clamp, median } from "./guide-geometry";
 
-const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const LIST_LINE_CLASS_PREFIX = "HyperMD-list-line-";
 const THREAD_COLOR_COUNT = 8;
 let overlaySequence = 0;
@@ -54,7 +53,18 @@ export interface ListRowHitBox {
   top: number;
 }
 
+export interface ListRowDocumentLine {
+  documentLineNumber: number;
+}
+
+export interface ListThreadTargetOptions {
+  activeCursorListThreading: boolean;
+  cursorDocumentLineNumber: number | null;
+  hoveredIndex: number | null;
+}
+
 interface MeasuredListRow extends VisibleListRow {
+  documentLineNumber: number;
   element: HTMLElement;
   headRect?: CoordinateRect;
   lineRect: CoordinateRect;
@@ -220,6 +230,35 @@ export function findListRowAtClientY(
   return null;
 }
 
+export function findListRowAtDocumentLine(
+  rows: readonly ListRowDocumentLine[],
+  documentLineNumber: number,
+): number | null {
+  if (!Number.isInteger(documentLineNumber) || documentLineNumber < 1) {
+    return null;
+  }
+  const index = rows.findIndex(
+    (row) => row.documentLineNumber === documentLineNumber,
+  );
+  return index >= 0 ? index : null;
+}
+
+export function selectListThreadTargetIndex(
+  rows: readonly ListRowDocumentLine[],
+  options: ListThreadTargetOptions,
+): number | null {
+  if (options.activeCursorListThreading) {
+    return options.cursorDocumentLineNumber === null
+      ? null
+      : findListRowAtDocumentLine(rows, options.cursorDocumentLineNumber);
+  }
+  return options.hoveredIndex !== null &&
+    options.hoveredIndex >= 0 &&
+    options.hoveredIndex < rows.length
+    ? options.hoveredIndex
+    : null;
+}
+
 export function isDefiniteListBlockBoundary(sourceLine: string): boolean {
   const remainder = stripBlockquotePrefixes(sourceLine);
   if (remainder.trim() === "") {
@@ -382,11 +421,13 @@ class EditorGuideOverlay {
     this.overlayHost = this.sourceView ?? view.dom;
     this.overlayHost.classList.add("ltig-editor-overlay-host");
     this.overlayClipId = `ltig-editor-clip-${overlaySequence++}`;
-    this.overlay = ownerDocument.createElementNS(SVG_NAMESPACE, "svg");
-    this.overlay.classList.add("ltig-editor-overlay");
-    this.overlay.setAttribute("aria-hidden", "true");
-    this.overlay.setAttribute("focusable", "false");
-    this.overlayHost.appendChild(this.overlay);
+    this.overlay = this.overlayHost.createSvg("svg", {
+      cls: "ltig-editor-overlay",
+      attr: {
+        "aria-hidden": "true",
+        focusable: "false",
+      },
+    });
 
     this.scrollHandler = () => {
       this.lastMeasuredRows = [];
@@ -456,7 +497,9 @@ class EditorGuideOverlay {
   public update(update: ViewUpdate): void {
     if (
       update.docChanged ||
+      update.focusChanged ||
       update.geometryChanged ||
+      update.selectionSet ||
       update.viewportChanged ||
       update.transactions.some((transaction) => transaction.reconfigured)
     ) {
@@ -535,6 +578,9 @@ class EditorGuideOverlay {
       ownerDocument.body.classList.contains(
         "ltig-thread-orphan-all-branches-enabled",
       );
+    const activeCursorListThreading = ownerDocument.body.classList.contains(
+      "ltig-thread-active-cursor-enabled",
+    );
     const threadingEnabled =
       ownerDocument.body.classList.contains(
         "ltig-list-threading-enabled",
@@ -609,21 +655,23 @@ class EditorGuideOverlay {
     this.overlay.setAttribute("width", String(overlayWidth));
     this.overlay.setAttribute("height", String(overlayHeight));
 
-    const fragment = ownerDocument.createDocumentFragment();
-    const definitions = ownerDocument.createElementNS(SVG_NAMESPACE, "defs");
-    const clipPath = ownerDocument.createElementNS(SVG_NAMESPACE, "clipPath");
-    clipPath.id = this.overlayClipId;
-    const clipRectangle = ownerDocument.createElementNS(SVG_NAMESPACE, "rect");
-    clipRectangle.setAttribute("x", String(clipLeft));
-    clipRectangle.setAttribute("y", String(clipTop));
-    clipRectangle.setAttribute("width", String(clipRight - clipLeft));
-    clipRectangle.setAttribute("height", String(clipBottom - clipTop));
-    clipPath.appendChild(clipRectangle);
-    definitions.appendChild(clipPath);
-    fragment.appendChild(definitions);
+    const fragment = createFragment();
+    const definitions = fragment.createSvg("defs");
+    const clipPath = definitions.createSvg("clipPath", {
+      attr: { id: this.overlayClipId },
+    });
+    clipPath.createSvg("rect", {
+      attr: {
+        height: String(clipBottom - clipTop),
+        width: String(clipRight - clipLeft),
+        x: String(clipLeft),
+        y: String(clipTop),
+      },
+    });
 
-    const paths = ownerDocument.createElementNS(SVG_NAMESPACE, "g");
-    paths.setAttribute("clip-path", `url(#${this.overlayClipId})`);
+    const paths = fragment.createSvg("g", {
+      attr: { "clip-path": `url(#${this.overlayClipId})` },
+    });
     const style = readGuideStyleGeometry(this.view.dom);
     if (guidesEnabled) {
       this.renderGuidePaths(
@@ -650,6 +698,7 @@ class EditorGuideOverlay {
         hostRect,
         clipTop,
         clipBottom,
+        activeCursorListThreading,
         activeListItemThreading,
         allBranchesThreading,
         ownerDocument.body.classList.contains(
@@ -660,7 +709,6 @@ class EditorGuideOverlay {
       );
     }
 
-    fragment.appendChild(paths);
     this.overlay.replaceChildren(fragment);
   }
 
@@ -677,7 +725,8 @@ class EditorGuideOverlay {
     for (const line of Array.from(
       this.view.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
     )) {
-      const sourceLine = this.readSourceLine(line);
+      const { documentLineNumber, text: sourceLine } =
+        this.readSourceLine(line);
       if (isBlankListBlockSeparator(sourceLine)) {
         if (boundaryBefore !== "content") {
           boundaryBefore = "blank-line";
@@ -716,6 +765,7 @@ class EditorGuideOverlay {
       rows.push({
         boundaryBefore,
         depth,
+        documentLineNumber,
         element: line,
         headRect:
           boundaryBefore === "content" ? candidateHeadRect : undefined,
@@ -728,12 +778,22 @@ class EditorGuideOverlay {
     return rows;
   }
 
-  private readSourceLine(line: HTMLElement): string {
+  private readSourceLine(line: HTMLElement): {
+    documentLineNumber: number;
+    text: string;
+  } {
     try {
       const position = this.view.posAtDOM(line);
-      return this.view.state.doc.lineAt(position).text;
+      const documentLine = this.view.state.doc.lineAt(position);
+      return {
+        documentLineNumber: documentLine.number,
+        text: documentLine.text,
+      };
     } catch {
-      return line.textContent ?? "";
+      return {
+        documentLineNumber: -1,
+        text: line.textContent ?? "",
+      };
     }
   }
 
@@ -749,7 +809,6 @@ class EditorGuideOverlay {
     clipRight: number,
     connectSeparateListBlocks: boolean,
   ): void {
-    const ownerDocument = this.view.dom.ownerDocument;
     for (const group of model.groups) {
       const rendered = group.itemIndices
         .map((itemIndex) =>
@@ -795,18 +854,17 @@ class EditorGuideOverlay {
         ? clipBottom
         : clamp(last.y, clipTop, clipBottom);
 
-      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
-      path.classList.add("ltig-guide-path");
-      path.setAttribute(
-        "d",
-        buildGuidePath({
+      container.createSvg("path", {
+        cls: "ltig-guide-path",
+        attr: {
+          d: buildGuidePath({
           connectors: rendered.map(({ endX, y }) => ({ endX, y })),
           endY,
           spineX,
           startY,
-        }),
-      );
-      container.appendChild(path);
+          }),
+        },
+      });
     }
 
     if (connectSeparateListBlocks) {
@@ -859,7 +917,6 @@ class EditorGuideOverlay {
       return;
     }
     const firstBlockIndex = model.items[0]?.blockIndex;
-    const ownerDocument = this.view.dom.ownerDocument;
     for (let depth = 2; depth < first.depth; depth += 1) {
       if (
         model.groups.some(
@@ -911,13 +968,11 @@ class EditorGuideOverlay {
       if (continuationEnd <= clipTop) {
         continue;
       }
-      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
-      path.classList.add("ltig-guide-path", "ltig-guide-path-continuation");
-      path.setAttribute(
-        "d",
-        `M ${spineX} ${clipTop} V ${continuationEnd}`,
-      );
-      container.prepend(path);
+      container.createSvg("path", {
+        cls: ["ltig-guide-path", "ltig-guide-path-continuation"],
+        attr: { d: `M ${spineX} ${clipTop} V ${continuationEnd}` },
+        prepend: true,
+      });
     }
   }
 
@@ -931,20 +986,24 @@ class EditorGuideOverlay {
     hostRect: DOMRect,
     clipTop: number,
     clipBottom: number,
+    activeCursorListThreading: boolean,
     activeListItemThreading: boolean,
     allBranchesThreading: boolean,
     threadFromListHead: boolean,
     activeOrphanListItemThreading: boolean,
     allBranchesOfActiveOrphanListThreading: boolean,
   ): void {
-    const hoveredIndex = this.resolveHoveredIndex(rows);
-    if (hoveredIndex === null) {
+    const activeIndex = this.resolveActiveIndex(
+      rows,
+      activeCursorListThreading,
+    );
+    if (activeIndex === null) {
       return;
     }
     const allBranchesBlockHasHead = this.blockHasListHead(
       rows,
       allBranchesModel,
-      hoveredIndex,
+      activeIndex,
     );
     if (
       (allBranchesBlockHasHead && allBranchesThreading) ||
@@ -955,7 +1014,7 @@ class EditorGuideOverlay {
         container,
         rows,
         allBranchesModel,
-        hoveredIndex,
+        activeIndex,
         direction,
         style,
         hostRect,
@@ -969,7 +1028,7 @@ class EditorGuideOverlay {
     const activeBlockHasHead = this.blockHasListHead(
       rows,
       activeModel,
-      hoveredIndex,
+      activeIndex,
     );
     if (
       (activeBlockHasHead && !activeListItemThreading) ||
@@ -977,8 +1036,7 @@ class EditorGuideOverlay {
     ) {
       return;
     }
-    const chain = collectAncestorIndices(activeModel.items, hoveredIndex);
-    const ownerDocument = this.view.dom.ownerDocument;
+    const chain = collectAncestorIndices(activeModel.items, activeIndex);
     const rootIndex = chain[0];
     const root = rootIndex === undefined ? undefined : rows[rootIndex];
     const activeBlockIndex =
@@ -1026,7 +1084,7 @@ class EditorGuideOverlay {
               hostRect,
             )
           : null;
-        const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+        const path = container.createSvg("path");
         addThreadPathClasses(path, 1);
         path.setAttribute(
           "d",
@@ -1049,7 +1107,6 @@ class EditorGuideOverlay {
                 ),
           }),
         );
-        container.appendChild(path);
       }
     }
     for (let chainIndex = 1; chainIndex < chain.length; chainIndex += 1) {
@@ -1082,7 +1139,7 @@ class EditorGuideOverlay {
         direction === "rtl"
           ? endX + style.connectorLength
           : endX - style.connectorLength;
-      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+      const path = container.createSvg("path");
       addThreadPathClasses(
         path,
         hasListHead || hasOrphanRoot
@@ -1099,7 +1156,6 @@ class EditorGuideOverlay {
           startY: parentY,
         }),
       );
-      container.appendChild(path);
     }
   }
 
@@ -1120,7 +1176,6 @@ class EditorGuideOverlay {
     if (activeBlockIndex === undefined) {
       return;
     }
-    const ownerDocument = this.view.dom.ownerDocument;
     const activeItemIndices = model.items
       .map((item, itemIndex) =>
         item.blockIndex === activeBlockIndex ? itemIndex : -1,
@@ -1185,10 +1240,9 @@ class EditorGuideOverlay {
       if (pathData === "") {
         return;
       }
-      const path = ownerDocument.createElementNS(SVG_NAMESPACE, "path");
+      const path = container.createSvg("path");
       addThreadPathClasses(path, colorDepth);
       path.setAttribute("d", pathData);
-      container.appendChild(path);
     };
 
     if (hasListHead || hasOrphanRoot) {
@@ -1316,7 +1370,21 @@ class EditorGuideOverlay {
     return false;
   }
 
-  private resolveHoveredIndex(rows: readonly MeasuredListRow[]): number | null {
+  private resolveActiveIndex(
+    rows: readonly MeasuredListRow[],
+    activeCursorListThreading: boolean,
+  ): number | null {
+    if (activeCursorListThreading) {
+      const cursorLineNumber = this.view.hasFocus
+        ? this.view.state.doc.lineAt(this.view.state.selection.main.head)
+            .number
+        : null;
+      return selectListThreadTargetIndex(rows, {
+        activeCursorListThreading,
+        cursorDocumentLineNumber: cursorLineNumber,
+        hoveredIndex: null,
+      });
+    }
     if (this.hoveredLine !== null) {
       const directIndex = rows.findIndex(
         (row) => row.element === this.hoveredLine,
@@ -1326,7 +1394,11 @@ class EditorGuideOverlay {
       }
     }
     const hoveredIndex = rows.findIndex((row) => row.element.matches(":hover"));
-    return hoveredIndex >= 0 ? hoveredIndex : null;
+    return selectListThreadTargetIndex(rows, {
+      activeCursorListThreading,
+      cursorDocumentLineNumber: null,
+      hoveredIndex: hoveredIndex >= 0 ? hoveredIndex : null,
+    });
   }
 
   private updateHoveredLine(event: PointerEvent): void {
@@ -1484,7 +1556,6 @@ function measureTextRect(element: HTMLElement): CoordinateRect | null {
     const range = element.ownerDocument.createRange();
     range.selectNodeContents(element);
     const rect = toCoordinateRect(range.getBoundingClientRect());
-    range.detach();
     return rect;
   } catch {
     return null;

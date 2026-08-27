@@ -28,10 +28,4 @@ export default [
       "obsidianmd/no-nodejs-modules": "off",
     },
   },
-  {
-    files: ["src/editor-guides.ts"],
-    rules: {
-      "obsidianmd/prefer-create-el": "off",
-    },
-  },
 ];

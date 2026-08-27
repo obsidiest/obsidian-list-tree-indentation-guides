@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## 1.1.0 - 2026-08-27
+
+- Add the searchable **Active Cursor List Threading** toggle, disabled by default. In Live Preview and Source mode it replaces pointer-hover activation with the focused editor caret while preserving the enablement states of regular active-item, regular all-branches, orphan active-item, and orphan all-branches threading.
+- Keep Reading-mode threading hover-based because Reading mode has no editor caret.
+- Replace all six Reading-mode `:has()` selectors with a delegated pointer interaction state, avoiding broad selector invalidation while preserving active paths, orphan roots, and unmarked-list-head threading.
+- Replace native SVG element construction with Obsidian's `createSvg()` and `createFragment()` helpers and re-enable the corresponding Obsidian ESLint rule.
+- Remove the deprecated `Range.detach()` call used while measuring ordered-list markers.
+- Preserve the README feature-preview screenshots added after 1.0.6, searchable settings, viewport-only editor processing, synchronized precise Style Settings controls, and attested release assets.
+
 ## 1.0.6 - 2026-08-25
 
 - Fix global fallback and override light/dark list-thread colors by persisting them through Style Settings text variables paired with synchronized native color inputs; color selections now commit, close, survive reopening, and reset cleanly.

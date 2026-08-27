@@ -1,4 +1,5 @@
 export interface ListTreeIndentationGuidesSettings {
+  activeCursorListThreading: boolean;
   activeListItemThreading: boolean;
   activeOrphanListItemThreading: boolean;
   activeOrphanListThreading: boolean;
@@ -19,6 +20,7 @@ export interface ListTreeIndentationGuidesSettings {
 }
 
 export const DEFAULT_SETTINGS: ListTreeIndentationGuidesSettings = {
+  activeCursorListThreading: false,
   activeListItemThreading: true,
   activeOrphanListItemThreading: true,
   activeOrphanListThreading: true,
@@ -54,6 +56,10 @@ export function normalizeSettings(
 ): ListTreeIndentationGuidesSettings {
   const persisted = isRecord(loaded) ? (loaded as PersistedSettings) : {};
   return {
+    activeCursorListThreading: readBoolean(
+      persisted.activeCursorListThreading,
+      DEFAULT_SETTINGS.activeCursorListThreading,
+    ),
     activeListItemThreading: readBoolean(
       persisted.activeListItemThreading,
       DEFAULT_SETTINGS.activeListItemThreading,

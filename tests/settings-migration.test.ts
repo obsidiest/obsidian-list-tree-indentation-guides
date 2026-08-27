@@ -5,6 +5,7 @@ describe("plugin settings normalization", () => {
   it("supplies the safe defaults for new list-threading controls", () => {
     expect(normalizeSettings(undefined)).toEqual(DEFAULT_SETTINGS);
     expect(DEFAULT_SETTINGS).toMatchObject({
+      activeCursorListThreading: false,
       activeListItemThreading: true,
       activeOrphanListItemThreading: true,
       activeOrphanListThreading: true,

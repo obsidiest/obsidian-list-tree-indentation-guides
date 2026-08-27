@@ -3,6 +3,7 @@ import { createEditorGuidesExtension } from "./editor-guides";
 import {
   decorateExistingReadingViews,
   decorateReadingLists,
+  observeReadingThreadHover,
   removeReadingGuides,
 } from "./reading-guides";
 import { ListTreeIndentationGuidesSettingTab } from "./settings";
@@ -16,6 +17,7 @@ import {
 const MODE_CLASSES = [
   "ltig-list-threading-enabled",
   "ltig-static-guides-enabled",
+  "ltig-thread-active-cursor-enabled",
   "ltig-thread-active-item-enabled",
   "ltig-thread-all-branches-enabled",
   "ltig-thread-active-blank-separated-blocks-enabled",
@@ -35,6 +37,10 @@ const MODE_CLASSES = [
 
 export default class ListTreeIndentationGuidesPlugin extends Plugin {
   public settings: ListTreeIndentationGuidesSettings = { ...DEFAULT_SETTINGS };
+  private readonly readingThreadHoverCleanups = new Map<
+    Document,
+    () => void
+  >();
   private styleSettingsPrecisionControls =
     new StyleSettingsPrecisionControls();
 
@@ -53,6 +59,7 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     this.styleSettingsPrecisionControls.start(this.getOwnerDocuments());
     this.applyModeClassesToAllDocuments();
     this.decorateAllReadingViews();
+    this.observeReadingThreadHoverForDocuments(this.getOwnerDocuments());
 
     this.registerEvent(
       this.app.workspace.on("window-open", (_workspaceWindow, openedWindow) => {
@@ -61,6 +68,9 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
         );
         this.applyModeClasses(openedWindow.document);
         decorateExistingReadingViews(openedWindow.document);
+        this.observeReadingThreadHoverForDocuments([
+          openedWindow.document,
+        ]);
       }),
     );
     this.registerEvent(
@@ -68,16 +78,24 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
         this.styleSettingsPrecisionControls.start(this.getOwnerDocuments());
         this.applyModeClassesToAllDocuments();
         this.decorateAllReadingViews();
+        this.observeReadingThreadHoverForDocuments(
+          this.getOwnerDocuments(),
+        );
       }),
     );
     this.app.workspace.onLayoutReady(() => {
       this.applyModeClassesToAllDocuments();
       this.decorateAllReadingViews();
+      this.observeReadingThreadHoverForDocuments(this.getOwnerDocuments());
     });
   }
 
   public override onunload(): void {
     this.styleSettingsPrecisionControls.stop();
+    for (const cleanup of this.readingThreadHoverCleanups.values()) {
+      cleanup();
+    }
+    this.readingThreadHoverCleanups.clear();
     for (const ownerDocument of this.getOwnerDocuments()) {
       removeReadingGuides(ownerDocument);
       for (const className of MODE_CLASSES) {
@@ -104,6 +122,10 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     ownerDocument.body.classList.toggle(
       "ltig-static-guides-enabled",
       this.settings.enableListStaticTreeIndentationGuides,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-thread-active-cursor-enabled",
+      this.settings.activeCursorListThreading,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-active-item-enabled",
@@ -176,6 +198,20 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
   private decorateAllReadingViews(): void {
     for (const ownerDocument of this.getOwnerDocuments()) {
       decorateExistingReadingViews(ownerDocument);
+    }
+  }
+
+  private observeReadingThreadHoverForDocuments(
+    ownerDocuments: Iterable<Document>,
+  ): void {
+    for (const ownerDocument of ownerDocuments) {
+      if (this.readingThreadHoverCleanups.has(ownerDocument)) {
+        continue;
+      }
+      this.readingThreadHoverCleanups.set(
+        ownerDocument,
+        observeReadingThreadHover(ownerDocument),
+      );
     }
   }
 

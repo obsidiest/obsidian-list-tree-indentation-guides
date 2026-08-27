@@ -1064,7 +1064,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .ltig-reading-active-item-threading
   li:hover
   > :is(ul, ol)
-  > li:has(~ li:hover)::before {
+  > li.ltig-reading-item-before-active::before {
   position: absolute;
   z-index: 2;
   top: calc(
@@ -1232,7 +1232,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
   .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:has(~ .ltig-reading-item:hover)
+  > .ltig-reading-item.ltig-reading-item-before-active
   > .ltig-reading-branch,
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
@@ -1250,7 +1250,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
   .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:has(~ .ltig-reading-item:hover)
+  > .ltig-reading-item.ltig-reading-item-before-active
   > .ltig-reading-branch::before,
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
@@ -1265,7 +1265,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
   .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:has(~ .ltig-reading-item:hover)
+  > .ltig-reading-item.ltig-reading-item-before-active
   > .ltig-reading-branch::after {
   display: none;
 }
@@ -1273,7 +1273,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
   .markdown-rendered
   .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:first-child:has(~ .ltig-reading-item:hover)
+  > .ltig-reading-item:first-child.ltig-reading-item-before-active
   > .ltig-reading-branch::before {
   top: calc(
     var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
@@ -1400,7 +1400,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
 body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
   .markdown-rendered
   .ltig-reading-list-with-head.ltig-reading-active-item-threading
-  > li:has(~ li:hover)::before {
+  > li.ltig-reading-item-before-active::before {
   position: absolute;
   z-index: 2;
   top: calc(

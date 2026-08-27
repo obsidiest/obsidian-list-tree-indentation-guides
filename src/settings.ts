@@ -117,7 +117,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
         items: [
           {
             name: "Enable list threading",
-            desc: "Enable Logseq-style hover highlighting for list-tree branches.",
+            desc: "Enable Logseq-style active highlighting for list-tree branches.",
             aliases: [
               "logseq list path",
               "active list item",
@@ -132,8 +132,24 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
             },
           },
           {
+            name: "Active Cursor List Threading",
+            desc: "In Live Preview and Source mode, activate enabled list-item and list-block threading from the editor caret instead of pointer hover. Reading mode remains hover-based because it has no editor caret.",
+            aliases: [
+              "caret list threading",
+              "cursor activated list",
+              "active editor cursor thread",
+              "thread current list line",
+            ],
+            control: {
+              type: "toggle",
+              key: "activeCursorListThreading",
+              defaultValue: DEFAULT_SETTINGS.activeCursorListThreading,
+              disabled: () => !this.host.settings.enableListThreading,
+            },
+          },
+          {
             name: "Active List Item Threading",
-            desc: "Highlight the complete nested path to whichever list item is currently hovered over.",
+            desc: "Highlight the complete nested path to the active list item, as determined by hover or the editor caret.",
             aliases: [
               "active bullet path",
               "hovered list item ancestors",
@@ -166,7 +182,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
           },
           {
             name: "All Branches of an Active List Threading",
-            desc: "Highlight every nested branch in the same list block as the currently hovered list item.",
+            desc: "Highlight every nested branch in the same list block as the active list item.",
             aliases: [
               "whole list threading",
               "all active list branches",
@@ -232,7 +248,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
           },
           {
             name: "Active Orphan List Item Threading",
-            desc: "Highlight the path to the hovered item when its list block has no unmarked list head.",
+            desc: "Highlight the path to the active item when its list block has no unmarked list head.",
             aliases: ["active orphan item", "headless active list item"],
             control: {
               type: "toggle",
@@ -259,8 +275,8 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
           },
           {
             name: "Thread in Live Preview",
-            desc: "Show the active nested path while hovering list items in Live Preview when list threading is enabled.",
-            aliases: ["live preview thread", "editor hover path"],
+            desc: "Show active list threading in Live Preview using hover or, when enabled, the editor caret.",
+            aliases: ["live preview thread", "editor hover path", "caret path"],
             control: {
               type: "toggle",
               key: "listThreadingInLivePreview",
@@ -270,8 +286,8 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
           },
           {
             name: "Thread in Source mode",
-            desc: "Show the active nested path while hovering list items in Source mode when list threading is enabled.",
-            aliases: ["source thread", "raw markdown hover path"],
+            desc: "Show active list threading in Source mode using hover or, when enabled, the editor caret.",
+            aliases: ["source thread", "raw markdown hover path", "caret path"],
             control: {
               type: "toggle",
               key: "listThreadingInSourceMode",
