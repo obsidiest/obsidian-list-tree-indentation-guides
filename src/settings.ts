@@ -8,6 +8,7 @@ import {
   DEFAULT_SETTINGS,
   type ListTreeIndentationGuidesSettings,
 } from "./types";
+import { breadcrumbSettingDefinitions, validTimeout } from "./breadcrumb-settings";
 
 export interface SettingsPluginHost extends Plugin {
   settings: ListTreeIndentationGuidesSettings;
@@ -33,7 +34,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
         heading: "List Static Tree Indentation Guides",
         items: [
           {
-            name: "Enable list static tree indentation guides",
+            name: "List Static Tree Indentation Guides",
             desc: "Globally enable the always-visible list-tree spines and branch connectors.",
             aliases: [
               "static guides",
@@ -116,7 +117,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
         heading: "List Threading",
         items: [
           {
-            name: "Enable list threading",
+            name: "List Threading",
             desc: "Enable Logseq-style active highlighting for list-tree branches.",
             aliases: [
               "logseq list path",
@@ -216,7 +217,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
             },
           },
           {
-            name: "List threading from a non-bulleted/numbered list head",
+            name: "Unmarked List Head List Threading",
             desc: "Treat the immediately preceding unmarked line as the visual head of an ordered or unordered list's threaded tree.",
             aliases: [
               "list threading from a non-bulleted numbered list head",
@@ -308,6 +309,7 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
           },
         ],
       },
+      ...breadcrumbSettingDefinitions(() => this.host.settings),
     ];
   }
 
@@ -322,10 +324,12 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
     key: string,
     value: unknown,
   ): Promise<void> {
-    if (!SETTINGS_KEYS.has(key) || typeof value !== "boolean") {
+    if (!SETTINGS_KEYS.has(key)) {
       return;
     }
-    this.host.settings[key as SettingsKey] = value;
+    const fallback = DEFAULT_SETTINGS[key as SettingsKey];
+    if (typeof fallback === "boolean" && typeof value !== "boolean" || typeof fallback === "number" && !validTimeout(value)) return;
+    Object.assign(this.host.settings, { [key]: value });
     await this.host.saveSettings();
     this.update();
   }

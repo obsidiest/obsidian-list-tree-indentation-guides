@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.0.0
+
+- Add List Hover Breadcrumb with independent mode, scope, marker, guide, threading, navigation, timeout, and Style Settings controls, adapted from Extended Headings 2.1.0.
+- Replace fixed rendered-list offsets with measured SVG overlays isolated to each note or internal embed. Preserve source positions for navigation from partial embeds.
+- Add main and breadcrumb Thread connector height controls, defaulting to 100% of the safe gap below parent markers, with stroke-cap clearance.
+- Rename the main static-guide, threading, and unmarked-head toggles while preserving saved settings.
+- Retire fixed Reading-mode geometry compensation controls and add automated Style Settings schema and Chromium layout/interaction checks.
+- See `docs/validation-2.0.0.md` for automated evidence and the Obsidian desktop checks that remain unverified.
+
 ## 1.1.0 - 2026-08-27
 
 - Add the searchable **Active Cursor List Threading** toggle, disabled by default. In Live Preview and Source mode it replaces pointer-hover activation with the focused editor caret while preserving the enablement states of regular active-item, regular all-branches, orphan active-item, and orphan all-branches threading.

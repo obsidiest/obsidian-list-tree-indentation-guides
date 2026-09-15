@@ -5,14 +5,17 @@ const { readFile } = await import("node:fs/promises");
 const manifest = JSON.parse(
   await readFile(new URL("./manifest.json", import.meta.url), "utf8"),
 );
+const parserLicense = await readFile(
+  new URL("./node_modules/@lezer/markdown/LICENSE", import.meta.url), "utf8",
+);
 
 const context = await esbuild.context({
   banner: {
-    js: `/* ${manifest.name} v${manifest.version} | MIT | obsidiest */`,
+    js: `/* ${manifest.name} v${manifest.version} | MIT | obsidiest\n\nIncludes @lezer/markdown:\n${parserLicense}\n*/`,
   },
   bundle: true,
   entryPoints: ["src/main.ts"],
-  external: ["obsidian", "electron", "@codemirror/*", "@lezer/*"],
+  external: ["obsidian", "electron", "@codemirror/*", "@lezer/common", "@lezer/highlight", "@lezer/lr"],
   format: "cjs",
   logLevel: "info",
   minify: production,

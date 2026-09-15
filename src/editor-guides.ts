@@ -4,7 +4,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import { buildGuidePath, clamp, median } from "./guide-geometry";
+import { buildGuidePath, clamp, median, threadStartY } from "./guide-geometry";
 
 const LIST_LINE_CLASS_PREFIX = "HyperMD-list-line-";
 const THREAD_COLOR_COUNT = 8;
@@ -88,6 +88,8 @@ interface GuideStyleGeometry {
 
 interface ThreadStyleGeometry {
   connectorLength: number;
+  connectorHeight: number;
+  thickness: number;
   cornerRadius: number;
   markerGap: number;
   verticalOffset: number;
@@ -725,6 +727,7 @@ class EditorGuideOverlay {
     for (const line of Array.from(
       this.view.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
     )) {
+      if (line.closest(".cm-editor") !== this.view.dom || line.closest(".internal-embed")) continue;
       const { documentLineNumber, text: sourceLine } =
         this.readSourceLine(line);
       if (isBlankListBlockSeparator(sourceLine)) {
@@ -1095,8 +1098,8 @@ class EditorGuideOverlay {
             startX: connector.startX,
             startY: listHeadRect !== undefined && threadFromListHead
               ? clamp(
-                  markerCenterY(listHeadRect) - hostRect.top +
-                    style.verticalOffset,
+                  threadStartY(listHeadRect.bottom - hostRect.top, connector.y,
+                    style.connectorHeight, style.thickness, style.markerGap),
                   clipTop,
                   clipBottom,
                 )
@@ -1118,7 +1121,9 @@ class EditorGuideOverlay {
         continue;
       }
       const parentY = clamp(
-        markerCenterY(parent.markerRect) - hostRect.top + style.verticalOffset,
+        threadStartY(parent.markerRect.bottom - hostRect.top,
+          markerCenterY(child.markerRect) - hostRect.top + style.verticalOffset,
+          style.connectorHeight, style.thickness, style.markerGap),
         clipTop,
         clipBottom,
       );
@@ -1197,7 +1202,7 @@ class EditorGuideOverlay {
 
     const appendGroupPath = (
       group: VisibleListGroup,
-      startY: number | undefined,
+      parentBottom: number | undefined,
       colorDepth: number,
     ): void => {
       const connectors = group.itemIndices
@@ -1232,7 +1237,8 @@ class EditorGuideOverlay {
         radius: style.cornerRadius,
         spineX,
         startY: clamp(
-          startY ?? firstConnector.y,
+          parentBottom === undefined ? firstConnector.y : threadStartY(parentBottom,
+            firstConnector.y, style.connectorHeight, style.thickness, style.markerGap),
           clipTop,
           clipBottom,
         ),
@@ -1256,9 +1262,7 @@ class EditorGuideOverlay {
         appendGroupPath(
           rootGroup,
           hasListHead
-            ? markerCenterY(listHeadRect) -
-                hostRect.top +
-                style.verticalOffset
+            ? listHeadRect.bottom - hostRect.top
             : undefined,
           1,
         );
@@ -1276,11 +1280,7 @@ class EditorGuideOverlay {
       if (parent === undefined) {
         continue;
       }
-      const parentY = clamp(
-        markerCenterY(parent.markerRect) - hostRect.top + style.verticalOffset,
-        clipTop,
-        clipBottom,
-      );
+      const parentY = parent.markerRect.bottom - hostRect.top;
       appendGroupPath(
         group,
         parentY,
@@ -1665,6 +1665,8 @@ function readGuideStyleGeometry(element: HTMLElement): GuideStyleGeometry {
 function readThreadStyleGeometry(element: HTMLElement): ThreadStyleGeometry {
   const style = element.ownerDocument.defaultView?.getComputedStyle(element);
   return {
+    connectorHeight: readPixelValue(style?.getPropertyValue("--ltig-thread-connector-height"), 100),
+    thickness: readPixelValue(style?.getPropertyValue("--ltig-thread-thickness"), 4),
     connectorLength: readPixelValue(
       style?.getPropertyValue("--ltig-thread-connector-length"),
       28,

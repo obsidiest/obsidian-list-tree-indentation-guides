@@ -6,6 +6,27 @@ async function readProjectFile(path: string): Promise<string> {
 }
 
 describe("release metadata", () => {
+  it("publishes valid, uniquely identified Style Settings controls", async () => {
+    const { createRequire } = await import("node:module");
+    const yaml = createRequire(import.meta.url)("yaml") as {
+      parse(text: string): {settings: Record<string, unknown>[]};
+    };
+    const styles = await readProjectFile("styles.css");
+    const metadata = styles.match(/\/\* @settings([\s\S]*?)\*\//u)?.[1];
+    expect(metadata).toBeDefined();
+    const controls = yaml.parse(metadata!).settings;
+    expect(new Set(controls.map(c => c.id)).size).toBe(controls.length);
+    const supported = new Set(["heading", "class-toggle", "class-select", "variable-themed-color", "variable-text", "variable-number-slider", "variable-select"]);
+    for (const control of controls) {
+      expect(supported.has(String(control.type)), String(control.id)).toBe(true);
+      if (control.type === "heading") expect(typeof control.level).toBe("number");
+      if (control.type === "variable-number-slider") {
+        expect(typeof control.default, String(control.id)).toBe("number");
+        expect(control.default).toBeGreaterThanOrEqual(control.min as number);
+        expect(control.default).toBeLessThanOrEqual(control.max as number);
+      }
+    }
+  });
   it("keeps every version source synchronized", async () => {
     const manifest = JSON.parse(await readProjectFile("manifest.json")) as {
       minAppVersion: string;
@@ -50,18 +71,14 @@ describe("release metadata", () => {
       "ltig-marker-gap",
       "ltig-first-branch-rise",
       "ltig-connector-offset",
-      "ltig-reading-overlap",
-      "ltig-reading-connector-center",
       "ltig-thread-opacity",
       "ltig-thread-thickness",
       "ltig-thread-corner-radius",
       "ltig-thread-connector-length",
+      "ltig-thread-connector-height",
+      "ltig-breadcrumb-thread-connector-height",
       "ltig-thread-marker-gap",
       "ltig-thread-vertical-offset",
-      "ltig-thread-reading-item-height",
-      "ltig-thread-reading-segment-reach",
-      "ltig-thread-reading-join-reach",
-      "ltig-thread-reading-marker-y-shift",
     ];
     for (const id of sliderIds) {
       const settingStart = styles.indexOf(`id: ${id}`);
@@ -164,7 +181,7 @@ describe("release metadata", () => {
   it("uses the visible-DOM editor overlay and mode-scoped threading", async () => {
     const editor = await readProjectFile("src/editor-guides.ts");
     const main = await readProjectFile("src/main.ts");
-    const reading = await readProjectFile("src/reading-guides.ts");
+    const reading = await readProjectFile("src/rendered-guides.ts");
     const styles = await readProjectFile("styles.css");
 
     expect(editor).toContain('this.overlayHost.createSvg("svg"');
@@ -180,12 +197,11 @@ describe("release metadata", () => {
     expect(editor).not.toContain("createElementNS");
     expect(editor).not.toContain("range.detach()");
     expect(editor).not.toContain("syntaxTree");
-    expect(reading).toContain("observeReadingThreadHover");
+    expect(reading).toContain("pointWithinHost");
+    expect(reading).toContain("renderedMarkerRect");
     expect(styles).not.toContain(":has(");
     expect(styles).toContain("position: absolute");
-    expect(styles).toContain(
-      "body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled",
-    );
+    expect(reading).toContain("s.listThreadingInReadingMode");
     for (const className of [
       "ltig-thread-active-item-enabled",
       "ltig-thread-active-cursor-enabled",
