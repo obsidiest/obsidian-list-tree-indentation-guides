@@ -130,26 +130,6 @@ settings:
     step: 0.5
     format: px
   -
-    id: ltig-reading-overlap
-    title: Reading-mode vertical overlap
-    description: Extends adjacent Reading-mode spine segments to bridge theme list spacing
-    type: variable-number-slider
-    default: 4
-    min: 0
-    max: 24
-    step: 1
-    format: px
-  -
-    id: ltig-reading-connector-center
-    title: Reading-mode connector height
-    description: Vertical position of Reading-mode connectors relative to each list item
-    type: variable-number-slider
-    default: 0.75
-    min: 0
-    max: 2
-    step: 0.05
-    format: em
-  -
     id: ltig-list-markers
     title: List markers
     type: heading
@@ -230,6 +210,16 @@ settings:
     step: 1
     format: px
   -
+    id: ltig-thread-connector-height
+    title: Thread connector height
+    description: Vertical reach as a percentage of the available gap below the parent marker. 100% spans the gap while leaving the marker and stroke cap clear; lower values shorten the elbow.
+    type: variable-number-slider
+    default: 100
+    min: 0
+    max: 100
+    step: 1
+    format: '%'
+  -
     id: ltig-thread-marker-gap
     title: Thread marker gap
     description: Empty distance between threading and its list marker
@@ -242,53 +232,13 @@ settings:
   -
     id: ltig-thread-vertical-offset
     title: Thread vertical offset
-    description: Moves editor thread elbows up or down relative to list markers
+    description: Moves thread elbows up or down relative to list markers
     type: variable-number-slider
     default: 0
     min: -16
     max: 16
     step: 0.5
     format: px
-  -
-    id: ltig-thread-reading-item-height
-    title: Reading-mode thread row height
-    description: Vertical reach used to join highlighted Reading-mode list rows
-    type: variable-number-slider
-    default: 1.8
-    min: 0.5
-    max: 4
-    step: 0.05
-    format: em
-  -
-    id: ltig-thread-reading-segment-reach
-    title: Reading-mode segment overlap
-    description: Extra reach used to close gaps between highlighted Reading-mode segments
-    type: variable-number-slider
-    default: 2
-    min: 0
-    max: 24
-    step: 0.5
-    format: px
-  -
-    id: ltig-thread-reading-join-reach
-    title: Reading-mode parent join reach
-    description: Extends highlighted Reading-mode paths toward their parent rows
-    type: variable-number-slider
-    default: 0
-    min: -1
-    max: 2
-    step: 0.05
-    format: em
-  -
-    id: ltig-thread-reading-marker-y-shift
-    title: Reading-mode marker offset
-    description: Moves highlighted Reading-mode elbows up or down relative to list markers
-    type: variable-number-slider
-    default: 0.2
-    min: -1
-    max: 1
-    step: 0.05
-    format: em
   -
     id: ltig-thread-colors
     title: List Thread Colors
@@ -451,6 +401,833 @@ settings:
     opacity: false
     default-light: '#b83782'
     default-dark: '#e64fa3'
+
+  -
+    id: ltig-breadcrumb
+    title: List Hover Breadcrumb
+    type: heading
+    level: 1
+    collapsed: true
+  -
+    id: ltig-breadcrumb-appearance
+    title: Popover Appearance
+    type: heading
+    level: 2
+  -
+    id: ltig-breadcrumb-background
+    title: Breadcrumb background
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#ffffff'
+    default-dark: '#202225'
+  -
+    id: ltig-breadcrumb-border-color
+    title: Breadcrumb border color
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#d7d7d7'
+    default-dark: '#46484d'
+  -
+    id: ltig-breadcrumb-text-color
+    title: Breadcrumb text color
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#252525'
+    default-dark: '#dcddde'
+  -
+    id: ltig-breadcrumb-title-color
+    title: Breadcrumb title color
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#666666'
+    default-dark: '#a7a9ad'
+  -
+    id: ltig-breadcrumb-current-color
+    title: Current list item color
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#4c78cc'
+    default-dark: '#7aa2f7'
+  -
+    id: ltig-breadcrumb-hover-color
+    title: Hovered list item color
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#e7edf8'
+    default-dark: '#343b4a'
+  -
+    id: ltig-breadcrumb-geometry
+    title: Breadcrumb Geometry and Typography
+    type: heading
+    level: 3
+    collapsed: true
+  -
+    id: ltig-breadcrumb-min-width
+    title: Minimum width
+    type: variable-number-slider
+    default: 320
+    min: 120
+    max: 640
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-max-width
+    title: Maximum width
+    type: variable-number-slider
+    default: 560
+    min: 180
+    max: 960
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-max-height
+    title: Maximum height
+    type: variable-number-slider
+    default: 400
+    min: 100
+    max: 800
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-padding
+    title: Panel padding
+    type: variable-number-slider
+    default: 10
+    min: 0
+    max: 40
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-row-gap
+    title: Row gap
+    type: variable-number-slider
+    default: 2
+    min: 0
+    max: 16
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-indent
+    title: Tree indentation
+    type: variable-number-slider
+    default: 18
+    min: 8
+    max: 48
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-row-padding-x
+    title: Row horizontal padding
+    type: variable-number-slider
+    default: 6
+    min: 0
+    max: 24
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-row-padding-y
+    title: Row vertical padding
+    type: variable-number-slider
+    default: 4
+    min: 0
+    max: 20
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-font-size
+    title: List item font size
+    type: variable-number-slider
+    default: 13
+    min: 8
+    max: 28
+    step: 0.25
+    format: px
+  -
+    id: ltig-breadcrumb-font-weight
+    title: List item font weight
+    type: variable-number-slider
+    default: 400
+    min: 100
+    max: 900
+    step: 1
+  -
+    id: ltig-breadcrumb-line-height
+    title: List item line height
+    type: variable-number-slider
+    default: 1.35
+    min: 0.8
+    max: 3
+    step: 0.05
+  -
+    id: ltig-breadcrumb-title-size
+    title: Title font size
+    type: variable-number-slider
+    default: 11
+    min: 8
+    max: 24
+    step: 0.25
+    format: px
+  -
+    id: ltig-breadcrumb-title-weight
+    title: Title font weight
+    type: variable-number-slider
+    default: 600
+    min: 100
+    max: 900
+    step: 1
+  -
+    id: ltig-breadcrumb-title-letter-spacing
+    title: Title letter spacing
+    type: variable-number-slider
+    default: 0.03
+    min: -0.1
+    max: 0.5
+    step: 0.01
+    format: em
+  -
+    id: ltig-breadcrumb-title-case
+    title: Title letter case
+    type: class-select
+    allowEmpty: false
+    default: ltig-breadcrumb-title-uppercase
+    options:
+      -
+        label: Normal
+        value: ltig-breadcrumb-title-normal
+      -
+        label: Uppercase
+        value: ltig-breadcrumb-title-uppercase
+  -
+    id: ltig-breadcrumb-title-gap
+    title: Gap below title
+    type: variable-number-slider
+    default: 6
+    min: 0
+    max: 24
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-current-background-opacity
+    title: Current list item background opacity
+    type: variable-number-slider
+    default: 14
+    min: 0
+    max: 100
+    step: 1
+  -
+    id: ltig-breadcrumb-border-thickness
+    title: Border thickness
+    type: variable-number-slider
+    default: 1
+    min: 0
+    max: 8
+    step: 0.25
+    format: px
+  -
+    id: ltig-breadcrumb-radius
+    title: Panel corner radius
+    type: variable-number-slider
+    default: 8
+    min: 0
+    max: 32
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-shadow-y
+    title: Shadow vertical offset
+    type: variable-number-slider
+    default: 4
+    min: -12
+    max: 24
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-shadow-blur
+    title: Shadow blur
+    type: variable-number-slider
+    default: 18
+    min: 0
+    max: 64
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-shadow-opacity
+    title: Shadow opacity
+    type: variable-number-slider
+    default: 0.25
+    min: 0
+    max: 1
+    step: 0.01
+  -
+    id: ltig-breadcrumb-anchor-gap
+    title: Gap from hovered list item
+    type: variable-number-slider
+    default: 8
+    min: 0
+    max: 48
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-viewport-gap
+    title: Minimum gap from viewport edges
+    type: variable-number-slider
+    default: 8
+    min: 0
+    max: 48
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-main-highlight
+    title: Active List item Highlight
+    type: heading
+    level: 3
+    collapsed: true
+  -
+    id: ltig-breadcrumb-main-color
+    title: Active list item color
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#4c78cc'
+    default-dark: '#7aa2f7'
+  -
+    id: ltig-breadcrumb-main-opacity
+    title: Active list item highlight opacity
+    type: variable-number-slider
+    default: 0.18
+    min: 0
+    max: 1
+    step: 0.01
+  -
+    id: ltig-breadcrumb-main-radius
+    title: Active list item highlight radius
+    type: variable-number-slider
+    default: 4
+    min: 0
+    max: 20
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-main-outline-thickness
+    title: Active list item outline thickness
+    type: variable-number-slider
+    default: 1
+    min: 0
+    max: 8
+    step: 0.25
+    format: px
+  -
+    id: ltig-breadcrumb-main-outline-opacity
+    title: Active list item outline opacity
+    type: variable-number-slider
+    default: 0.55
+    min: 0
+    max: 1
+    step: 0.01
+  -
+    id: ltig-breadcrumb-main-outline-offset
+    title: Active list item outline offset
+    type: variable-number-slider
+    default: 1
+    min: -4
+    max: 12
+    step: 0.25
+    format: px
+  -
+    id: ltig-breadcrumb-list-marker-appearance
+    title: List Hover Breadcrumb List Marker Typography and Appearance
+    type: heading
+    level: 3
+    collapsed: true
+  -
+    id: ltig-breadcrumb-list-marker-font-size
+    title: List marker font size
+    description: Relative to the breadcrumb list item text; 1 matches its size
+    type: variable-number-slider
+    default: 1
+    min: 0.5
+    max: 2
+    step: 0.05
+    format: em
+  -
+    id: ltig-breadcrumb-list-marker-font-weight
+    title: List marker font weight
+    type: variable-number-slider
+    default: 400
+    min: 100
+    max: 900
+    step: 1
+  -
+    id: ltig-breadcrumb-list-marker-color
+    title: List marker color
+    description: Blank inherits the corresponding breadcrumb list item color
+    type: variable-themed-color
+    format: hex
+    default-light: '#777777'
+    default-dark: '#888888'
+  -
+    id: ltig-breadcrumb-list-marker-font-style
+    title: List marker font style
+    type: variable-select
+    allowEmpty: false
+    default: inherit
+    options:
+      -
+        label: Inherit
+        value: inherit
+      -
+        label: Normal
+        value: normal
+      -
+        label: Italic
+        value: italic
+  -
+    id: ltig-breadcrumb-list-marker-font-variant
+    title: List marker font variant
+    type: variable-select
+    allowEmpty: false
+    default: all-small-caps
+    options:
+      -
+        label: Inherit
+        value: inherit
+      -
+        label: Normal
+        value: normal
+      -
+        label: Small caps
+        value: small-caps
+      -
+        label: All small caps
+        value: all-small-caps
+  -
+    id: ltig-breadcrumb-list-marker-letter-spacing
+    title: List marker letter spacing
+    type: variable-number-slider
+    default: 0
+    min: -0.1
+    max: 0.3
+    step: 0.01
+    format: em
+  -
+    id: ltig-breadcrumb-list-marker-opacity
+    title: List marker opacity
+    type: variable-number-slider
+    default: 1
+    min: 0.05
+    max: 1
+    step: 0.05
+  -
+    id: ltig-breadcrumb-list-marker-width
+    title: List marker width
+    description: Reserved width for the complete list marker label
+    type: variable-number-slider
+    default: 3
+    min: 2
+    max: 8
+    step: 0.1
+    format: ch
+  -
+    id: ltig-breadcrumb-list-marker-gap
+    title: Gap after list marker
+    type: variable-number-slider
+    default: 0.35
+    min: 0
+    max: 2
+    step: 0.05
+    format: em
+  -
+    id: ltig-breadcrumb-guide-appearance
+    title: List Hover Breadcrumb Static Tree Indentation Guide Appearance
+    type: heading
+    level: 3
+  -
+    id: ltig-breadcrumb-guide-color
+    title: Guide color
+    description: Color of vertical spines and horizontal connectors
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#777777'
+    default-dark: '#888888'
+  -
+    id: ltig-breadcrumb-guide-opacity
+    title: Guide opacity
+    description: Opacity of every spine and connector
+    type: variable-number-slider
+    default: 0.72
+    min: 0.05
+    max: 1
+    step: 0.05
+  -
+    id: ltig-breadcrumb-guide-thickness
+    title: Guide thickness
+    description: Stroke width of every spine and connector
+    type: variable-number-slider
+    default: 1.5
+    min: 0.5
+    max: 6
+    step: 0.1
+    format: px
+  -
+    id: ltig-breadcrumb-guide-pattern
+    title: Guide pattern
+    description: Line pattern used by every spine and connector
+    type: class-select
+    allowEmpty: false
+    default: ltig-breadcrumb-line-solid
+    options:
+      -
+        label: Solid
+        value: ltig-breadcrumb-line-solid
+      -
+        label: Dashed
+        value: ltig-breadcrumb-line-dashed
+      -
+        label: Dotted
+        value: ltig-breadcrumb-line-dotted
+  -
+    id: ltig-breadcrumb-guide-dash-length
+    title: Dashed-line dash length
+    description: Length of each dash when the guide pattern is Dashed
+    type: variable-number-slider
+    default: 6
+    min: 0.5
+    max: 24
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-guide-dash-gap
+    title: Dashed-line gap
+    description: Space between dashes when the guide pattern is Dashed
+    type: variable-number-slider
+    default: 4
+    min: 0.5
+    max: 24
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-guide-dot-gap
+    title: Dotted-line gap
+    description: Space between dots when the guide pattern is Dotted
+    type: variable-number-slider
+    default: 4
+    min: 0.5
+    max: 24
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-guide-geometry
+    title: List Hover Breadcrumb Guide Geometry
+    type: heading
+    level: 3
+    collapsed: true
+  -
+    id: ltig-breadcrumb-connector-length
+    title: Horizontal connector length
+    description: Distance from each vertical spine toward its list marker or content
+    type: variable-number-slider
+    default: 18
+    min: 4
+    max: 48
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-marker-gap
+    title: Gap before list marker or content
+    description: Empty distance between a horizontal connector and the following marker or content
+    type: variable-number-slider
+    default: 4
+    min: 0
+    max: 24
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-first-branch-rise
+    title: First-branch vertical rise
+    description: Amount a sibling spine extends above its first horizontal connector
+    type: variable-number-slider
+    default: 10
+    min: 0
+    max: 40
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-connector-offset
+    title: Connector vertical offset
+    description: Moves every horizontal connector up or down relative to the list item's line center
+    type: variable-number-slider
+    default: 0
+    min: -12
+    max: 12
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-thread-appearance
+    title: List thread appearance
+    type: heading
+    level: 3
+    collapsed: true
+  -
+    id: ltig-breadcrumb-thread-opacity
+    title: Thread opacity
+    description: Opacity of active-item and all-branches threading
+    type: variable-number-slider
+    default: 1
+    min: 0.05
+    max: 1
+    step: 0.05
+  -
+    id: ltig-breadcrumb-thread-thickness
+    title: Thread thickness
+    description: Stroke weight of active-item and all-branches threading
+    type: variable-number-slider
+    default: 4
+    min: 0.5
+    max: 12
+    step: 0.1
+    format: px
+  -
+    id: ltig-breadcrumb-thread-corner-radius
+    title: Thread corner radius
+    description: Roundness of each highlighted threading elbow
+    type: variable-number-slider
+    default: 8
+    min: 0
+    max: 32
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-thread-line-cap
+    title: Thread line cap
+    description: Shape at the open ends of the highlighted path
+    type: class-select
+    allowEmpty: false
+    default: ltig-breadcrumb-thread-cap-round
+    options:
+      -
+        label: Round
+        value: ltig-breadcrumb-thread-cap-round
+      -
+        label: Square
+        value: ltig-breadcrumb-thread-cap-square
+      -
+        label: Flat
+        value: ltig-breadcrumb-thread-cap-flat
+  -
+    id: ltig-breadcrumb-thread-geometry
+    title: List thread geometry
+    type: heading
+    level: 4
+    collapsed: true
+  -
+    id: ltig-breadcrumb-thread-connector-length
+    title: Thread connector length
+    description: Horizontal reach of each highlighted threading elbow
+    type: variable-number-slider
+    default: 28
+    min: 4
+    max: 96
+    step: 1
+    format: px
+  -
+    id: ltig-breadcrumb-thread-connector-height
+    title: Thread connector height
+    description: Vertical reach as a percentage of the available gap below the parent marker. 100% spans the gap while leaving the marker and stroke cap clear; lower values shorten the elbow.
+    type: variable-number-slider
+    default: 100
+    min: 0
+    max: 100
+    step: 1
+    format: '%'
+  -
+    id: ltig-breadcrumb-thread-marker-gap
+    title: Thread marker gap
+    description: Empty distance between threading and its list marker
+    type: variable-number-slider
+    default: 4
+    min: 0
+    max: 32
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-thread-vertical-offset
+    title: Thread vertical offset
+    description: Moves thread elbows up or down relative to list markers
+    type: variable-number-slider
+    default: 0
+    min: -16
+    max: 16
+    step: 0.5
+    format: px
+  -
+    id: ltig-breadcrumb-thread-colors
+    title: List Thread Colors
+    type: heading
+    level: 4
+    collapsed: true
+  -
+    id: ltig-breadcrumb-thread-fallback-colors-enabled
+    title: Global Fallback List Thread Colors
+    description: Use the fallback color whenever an individual list thread color is disabled
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-fallback-color-light
+    title: Global fallback list thread color (light mode)
+    description: Light-mode fallback for disabled list thread colors
+    type: variable-text
+    default: '#777777'
+  -
+    id: ltig-breadcrumb-thread-fallback-color-dark
+    title: Global fallback list thread color (dark mode)
+    description: Dark-mode fallback for disabled list thread colors
+    type: variable-text
+    default: '#888888'
+  -
+    id: ltig-breadcrumb-thread-override-colors-enabled
+    title: Global Override List Thread Colors
+    description: Override every list thread color regardless of its individual enablement toggle
+    type: class-toggle
+    default: false
+  -
+    id: ltig-breadcrumb-thread-override-color-light
+    title: Global override list thread color (light mode)
+    description: Light-mode color used for every thread while the global override is enabled
+    type: variable-text
+    default: '#777777'
+  -
+    id: ltig-breadcrumb-thread-override-color-dark
+    title: Global override list thread color (dark mode)
+    description: Dark-mode color used for every thread while the global override is enabled
+    type: variable-text
+    default: '#888888'
+  -
+    id: ltig-breadcrumb-thread-color-1-enabled
+    title: Enable thread color 1
+    description: Use the configured first-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-1
+    title: Thread color 1
+    description: Highlight color for the first nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#d94f00'
+    default-dark: '#ff5a00'
+  -
+    id: ltig-breadcrumb-thread-color-2-enabled
+    title: Enable thread color 2
+    description: Use the configured second-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-2
+    title: Thread color 2
+    description: Highlight color for the second nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#c99a00'
+    default-dark: '#ffc400'
+  -
+    id: ltig-breadcrumb-thread-color-3-enabled
+    title: Enable thread color 3
+    description: Use the configured third-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-3
+    title: Thread color 3
+    description: Highlight color for the third nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#79b800'
+    default-dark: '#a8e600'
+  -
+    id: ltig-breadcrumb-thread-color-4-enabled
+    title: Enable thread color 4
+    description: Use the configured fourth-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-4
+    title: Thread color 4
+    description: Highlight color for the fourth nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#008ea3'
+    default-dark: '#00c8df'
+  -
+    id: ltig-breadcrumb-thread-color-5-enabled
+    title: Enable thread color 5
+    description: Use the configured fifth-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-5
+    title: Thread color 5
+    description: Highlight color for the fifth nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#316fd1'
+    default-dark: '#5794ff'
+  -
+    id: ltig-breadcrumb-thread-color-6-enabled
+    title: Enable thread color 6
+    description: Use the configured sixth-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-6
+    title: Thread color 6
+    description: Highlight color for the sixth nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#7547c7'
+    default-dark: '#a66cff'
+  -
+    id: ltig-breadcrumb-thread-color-7-enabled
+    title: Enable thread color 7
+    description: Use the configured seventh-edge list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-7
+    title: Thread color 7
+    description: Highlight color for the seventh nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#b83782'
+    default-dark: '#e64fa3'
+  -
+    id: ltig-breadcrumb-thread-color-8-enabled
+    title: Enable thread color 8+
+    description: Use the configured eighth-and-deeper list thread color instead of the global fallback
+    type: class-toggle
+    default: true
+  -
+    id: ltig-breadcrumb-thread-color-8
+    title: Thread color 8+
+    description: Highlight color for the eighth and every deeper nested edge
+    type: variable-themed-color
+    format: hex
+    opacity: false
+    default-light: '#b83782'
+    default-dark: '#e64fa3'
 */
 
 body {
@@ -464,18 +1241,13 @@ body {
   --ltig-marker-gap: 4px;
   --ltig-first-branch-rise: 10px;
   --ltig-connector-offset: 0px;
-  --ltig-reading-overlap: 4px;
-  --ltig-reading-connector-center: 0.75em;
   --ltig-thread-opacity: 1;
   --ltig-thread-thickness: 4px;
   --ltig-thread-corner-radius: 8px;
   --ltig-thread-connector-length: 28px;
+  --ltig-thread-connector-height: 100%;
   --ltig-thread-marker-gap: 4px;
   --ltig-thread-vertical-offset: 0px;
-  --ltig-thread-reading-item-height: 1.8em;
-  --ltig-thread-reading-segment-reach: 2px;
-  --ltig-thread-reading-join-reach: 0em;
-  --ltig-thread-reading-marker-y-shift: 0.2em;
   --ltig-thread-color-1: #ff5a00;
   --ltig-thread-color-2: #ffc400;
   --ltig-thread-color-3: #a8e600;
@@ -649,11 +1421,7 @@ body:is(
   --ltig-thread-effective-color-8: var(--ltig-thread-fallback-color);
 }
 
-body:is(
-    .ltig-thread-cap-round,
-    .ltig-thread-cap-square,
-    .ltig-thread-cap-flat
-  ).ltig-thread-override-colors-enabled {
+body[class].ltig-thread-override-colors-enabled {
   --ltig-thread-effective-color-1: var(--ltig-thread-override-color);
   --ltig-thread-effective-color-2: var(--ltig-thread-override-color);
   --ltig-thread-effective-color-3: var(--ltig-thread-override-color);
@@ -705,8 +1473,7 @@ body.ltig-static-guides-enabled.ltig-source-mode-enabled
 }
 
 .ltig-line-dashed .ltig-guide-path {
-  stroke-dasharray: var(--ltig-guide-dash-length)
-    var(--ltig-guide-dash-gap);
+  stroke-dasharray: var(--ltig-guide-dash-length) var(--ltig-guide-dash-gap);
 }
 
 .ltig-line-dotted .ltig-guide-path {
@@ -767,784 +1534,6 @@ body.ltig-static-guides-enabled.ltig-source-mode-enabled
   stroke: var(--ltig-thread-effective-color-8);
 }
 
-.markdown-rendered .ltig-reading-item {
-  position: relative;
-}
-
-.ltig-reading-branch {
-  position: absolute;
-  z-index: 0;
-  top: calc(0px - var(--ltig-reading-overlap));
-  bottom: calc(0px - var(--ltig-reading-overlap));
-  left: calc(
-    0px - var(--ltig-connector-length) - var(--ltig-marker-gap)
-  );
-  display: none;
-  width: var(--ltig-connector-length);
-  pointer-events: none;
-}
-
-body.ltig-static-guides-enabled.ltig-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-branch {
-  display: block;
-}
-
-.ltig-reading-branch::before,
-.ltig-reading-branch::after {
-  position: absolute;
-  box-sizing: border-box;
-  border-color: var(--ltig-guide-color);
-  content: "";
-  opacity: var(--ltig-guide-opacity);
-  pointer-events: none;
-}
-
-.ltig-reading-branch::before {
-  top: 0;
-  bottom: 0;
-  left: 0;
-  border-inline-start-style: solid;
-  border-inline-start-width: var(--ltig-guide-thickness);
-}
-
-.ltig-reading-branch::after {
-  top: calc(
-    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
-      var(--ltig-connector-offset)
-  );
-  left: 0;
-  width: var(--ltig-connector-length);
-  border-block-start-style: solid;
-  border-block-start-width: var(--ltig-guide-thickness);
-}
-
-:is(ul, ol) > li.ltig-reading-item:first-child > .ltig-reading-branch::before {
-  top: calc(
-    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
-      var(--ltig-connector-offset) - var(--ltig-first-branch-rise)
-  );
-}
-
-:is(ul, ol) > li.ltig-reading-item:last-child > .ltig-reading-branch::before {
-  bottom: auto;
-  height: calc(
-    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
-      var(--ltig-connector-offset)
-  );
-}
-
-:is(ul, ol)
-  > li.ltig-reading-item:first-child:last-child
-  > .ltig-reading-branch::before {
-  height: var(--ltig-first-branch-rise);
-}
-
-.ltig-line-dashed .ltig-reading-branch::before,
-.ltig-line-dashed .ltig-reading-branch::after {
-  border-style: dashed;
-}
-
-.ltig-line-dotted .ltig-reading-branch::before,
-.ltig-line-dotted .ltig-reading-branch::after {
-  border-style: dotted;
-}
-
-body.ltig-static-guides-enabled.ltig-live-preview-enabled:not(.ltig-show-unordered-list-bullets)
-  .markdown-source-view.mod-cm6.is-live-preview
-  .list-bullet {
-  opacity: 0;
-}
-
-body.ltig-static-guides-enabled.ltig-reading-mode-enabled:not(.ltig-show-unordered-list-bullets)
-  .markdown-rendered
-  ul
-  > li.ltig-reading-item::marker {
-  color: transparent;
-}
-
-/* Logseq-style list threading, adapted from obsidiest/obsidian-bullet. */
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  li {
-  position: relative;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol) {
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-1);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-1);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-1);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-2);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-2);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-3);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-3);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-4);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-4);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-5);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-5);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-6);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-6);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-7);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-7);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-8);
-}
-
-/* Orphan lists spend color 1 on their root connector, then advance normally. */
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-1);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-2);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-2);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-3);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-3);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-4);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-4);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-5);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-5);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-6);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-6);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-7);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-7);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-8);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-8);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-8);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol)
-  :is(ul, ol) {
-  --ltig-reading-thread-color: var(--ltig-thread-effective-color-8);
-  --ltig-reading-thread-child-color: var(--ltig-thread-effective-color-8);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-active-item-threading
-  li:hover
-  > :is(ul, ol)
-  > li.ltig-reading-item-before-active::before {
-  position: absolute;
-  z-index: 2;
-  top: calc(
-    var(--ltig-thread-reading-item-height) / 2 * -1 -
-      var(--ltig-thread-thickness) / 2 -
-      var(--ltig-thread-reading-join-reach) +
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  box-sizing: border-box;
-  width: 0;
-  height: calc(
-    100% - var(--ltig-thread-reading-item-height) + var(--size-4-8) +
-      var(--ltig-thread-thickness) / 2 +
-      var(--ltig-thread-reading-join-reach) +
-      var(--ltig-thread-reading-segment-reach)
-  );
-  border-inline-start: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  content: "";
-  opacity: var(--ltig-thread-opacity);
-  pointer-events: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-active-item-threading
-  li:hover
-  > :is(ul, ol)
-  > li:hover::before {
-  position: absolute;
-  z-index: 2;
-  top: calc(
-    var(--ltig-thread-reading-item-height) / 2 * -1 -
-      var(--ltig-thread-thickness) / 2 -
-      var(--ltig-thread-reading-join-reach) +
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-  right: auto;
-  bottom: calc(
-    100% - (var(--ltig-thread-reading-item-height) + var(--size-4-2)) /
-      2 + 1px - var(--ltig-thread-reading-marker-y-shift)
-  );
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  box-sizing: border-box;
-  width: var(--ltig-thread-connector-length);
-  height: auto;
-  border-inline-start: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-block-end: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-end-start-radius: var(--ltig-thread-corner-radius);
-  content: "";
-  opacity: var(--ltig-thread-opacity);
-  pointer-events: none;
-}
-
-/* Highlight every branch below the top-level rendered list under the pointer. */
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item
-  > .ltig-reading-branch {
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  display: block;
-  width: var(--ltig-thread-connector-length);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item
-  > .ltig-reading-branch::before,
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item
-  > .ltig-reading-branch::after {
-  border-color: var(--ltig-reading-thread-color);
-  opacity: var(--ltig-thread-opacity);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item
-  > .ltig-reading-branch::before {
-  border-inline-start-width: var(--ltig-thread-thickness);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item:first-child
-  > .ltig-reading-branch::before {
-  top: calc(
-    var(--ltig-thread-reading-item-height) / 2 * -1 -
-      var(--ltig-thread-thickness) / 2 -
-      var(--ltig-thread-reading-join-reach) +
-      var(--ltig-thread-reading-marker-y-shift) + var(--ltig-reading-overlap)
-  );
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item:first-child:last-child
-  > .ltig-reading-branch::before {
-  height: calc(
-    var(--ltig-reading-connector-center) + var(--ltig-connector-offset) +
-      var(--ltig-thread-reading-item-height) / 2 +
-      var(--ltig-thread-thickness) / 2 +
-      var(--ltig-thread-reading-join-reach) -
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item
-  > .ltig-reading-branch::after {
-  width: var(--ltig-thread-connector-length);
-  border-block-start-width: var(--ltig-thread-thickness);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item:last-child
-  > .ltig-reading-branch::before {
-  width: var(--ltig-thread-connector-length);
-  border-block-end: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-end-start-radius: var(--ltig-thread-corner-radius);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-all-branches-threading:hover
-  .ltig-reading-list
-  > .ltig-reading-item:last-child
-  > .ltig-reading-branch::after {
-  display: none;
-}
-
-/* Root connectors for top-level list blocks without an unmarked list head. */
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item.ltig-reading-item-before-active
-  > .ltig-reading-branch,
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:hover
-  > .ltig-reading-branch {
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  display: block;
-  width: var(--ltig-thread-connector-length);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item.ltig-reading-item-before-active
-  > .ltig-reading-branch::before,
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:hover
-  > .ltig-reading-branch::before {
-  border-color: var(--ltig-reading-thread-color);
-  border-inline-start-width: var(--ltig-thread-thickness);
-  opacity: var(--ltig-thread-opacity);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item.ltig-reading-item-before-active
-  > .ltig-reading-branch::after {
-  display: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:first-child.ltig-reading-item-before-active
-  > .ltig-reading-branch::before {
-  top: calc(
-    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
-      var(--ltig-thread-reading-marker-y-shift) -
-      var(--ltig-first-branch-rise)
-  );
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:hover
-  > .ltig-reading-branch::before {
-  bottom: auto;
-  height: calc(
-    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:first-child:hover
-  > .ltig-reading-branch::before {
-  display: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-active-item-threading
-  > .ltig-reading-item:hover
-  > .ltig-reading-branch::after {
-  top: calc(
-    var(--ltig-reading-overlap) + var(--ltig-reading-connector-center) +
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-  width: var(--ltig-thread-connector-length);
-  border-color: var(--ltig-reading-thread-color);
-  border-block-start-width: var(--ltig-thread-thickness);
-  opacity: var(--ltig-thread-opacity);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch {
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  display: block;
-  width: var(--ltig-thread-connector-length);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::before,
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::after {
-  border-color: var(--ltig-reading-thread-color);
-  opacity: var(--ltig-thread-opacity);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::before {
-  border-inline-start-width: var(--ltig-thread-thickness);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::after {
-  width: var(--ltig-thread-connector-length);
-  border-block-start-width: var(--ltig-thread-thickness);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:last-child
-  > .ltig-reading-branch::before {
-  width: var(--ltig-thread-connector-length);
-  border-block-end: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-end-start-radius: var(--ltig-thread-corner-radius);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:last-child
-  > .ltig-reading-branch::after {
-  display: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:first-child:last-child
-  > .ltig-reading-branch::before {
-  display: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled
-  .markdown-rendered
-  .ltig-reading-orphan-list.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:first-child:last-child
-  > .ltig-reading-branch::after {
-  display: block;
-}
-
-/* Extend Reading-mode threads from an immediately preceding unmarked head. */
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-active-item-threading
-  > li.ltig-reading-item-before-active::before {
-  position: absolute;
-  z-index: 2;
-  top: calc(
-    var(--ltig-thread-reading-item-height) * -1 -
-      var(--ltig-thread-thickness) / 2 +
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  box-sizing: border-box;
-  width: 0;
-  height: calc(
-    100% + var(--ltig-thread-reading-item-height) +
-      var(--ltig-thread-reading-segment-reach)
-  );
-  border-inline-start: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  content: "";
-  opacity: var(--ltig-thread-opacity);
-  pointer-events: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-active-item-threading
-  > li:hover::before {
-  position: absolute;
-  z-index: 2;
-  top: calc(
-    var(--ltig-thread-reading-item-height) * -1 -
-      var(--ltig-thread-thickness) / 2 +
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-  right: auto;
-  bottom: calc(
-    100% - (var(--ltig-thread-reading-item-height) + var(--size-4-2)) /
-      2 + 1px - var(--ltig-thread-reading-marker-y-shift)
-  );
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  box-sizing: border-box;
-  width: var(--ltig-thread-connector-length);
-  height: auto;
-  border-inline-start: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-block-end: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-end-start-radius: var(--ltig-thread-corner-radius);
-  content: "";
-  opacity: var(--ltig-thread-opacity);
-  pointer-events: none;
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch {
-  left: calc(
-    0px - var(--ltig-thread-connector-length) -
-      var(--ltig-thread-marker-gap)
-  );
-  display: block;
-  width: var(--ltig-thread-connector-length);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::before,
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::after {
-  border-color: var(--ltig-reading-thread-color);
-  opacity: var(--ltig-thread-opacity);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::before {
-  border-inline-start-width: var(--ltig-thread-thickness);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:first-child
-  > .ltig-reading-branch::before {
-  top: calc(
-    var(--ltig-thread-reading-item-height) * -1 +
-      var(--ltig-thread-reading-marker-y-shift) +
-      var(--ltig-reading-overlap)
-  );
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:first-child:last-child
-  > .ltig-reading-branch::before {
-  height: calc(
-    var(--ltig-reading-connector-center) + var(--ltig-connector-offset) +
-      var(--ltig-thread-reading-item-height) -
-      var(--ltig-thread-reading-marker-y-shift)
-  );
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item
-  > .ltig-reading-branch::after {
-  width: var(--ltig-thread-connector-length);
-  border-block-start-width: var(--ltig-thread-thickness);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:last-child
-  > .ltig-reading-branch::before {
-  width: var(--ltig-thread-connector-length);
-  border-block-end: var(--ltig-thread-thickness) solid
-    var(--ltig-reading-thread-color);
-  border-end-start-radius: var(--ltig-thread-corner-radius);
-}
-
-body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-from-list-head-enabled
-  .markdown-rendered
-  .ltig-reading-list-with-head.ltig-reading-all-branches-threading:hover
-  > .ltig-reading-item:last-child
-  > .ltig-reading-branch::after {
-  display: none;
-}
-
 .ltig-style-settings-number-input {
   box-sizing: border-box;
   width: 5.5rem;
@@ -1552,8 +1541,7 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-fr
   height: var(--input-height);
   margin-inline-start: var(--size-2-2, 0.25rem);
   padding-inline: var(--size-2-2, 0.25rem);
-  border: var(--input-border-width, 1px) solid
-    var(--background-modifier-border);
+  border: var(--input-border-width, 1px) solid var(--background-modifier-border);
   border-radius: var(--input-radius, var(--radius-s));
   background: var(--background-modifier-form-field);
   color: var(--text-normal);
@@ -1567,14 +1555,610 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-fr
   outline: none;
 }
 
+/* Measured rendered lists: includes heading and block embeds in every mode. */
+.ltig-rendered-host {
+  position: relative;
+}
+.ltig-rendered-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: visible;
+}
+.ltig-rendered-static {
+  --indentation-guide-width: 0;
+}
+.ltig-rendered-static .ltig-rendered-item > :is(ul, ol)::before {
+  border-inline-start: 0;
+}
+body:is(
+    .ltig-line-solid,
+    .ltig-line-dashed,
+    .ltig-line-dotted
+  ).ltig-static-guides-enabled.ltig-live-preview-enabled:not(
+    .ltig-show-unordered-list-bullets
+  )
+  .markdown-source-view.is-live-preview
+  .list-bullet {
+  opacity: 0;
+}
+body:is(.ltig-line-solid, .ltig-line-dashed, .ltig-line-dotted):not(
+    .ltig-show-unordered-list-bullets
+  )
+  .ltig-rendered-static
+  ul
+  > .ltig-rendered-item::marker {
+  color: transparent;
+}
+.ltig-breadcrumb-popover .ltig-breadcrumb-list-marker {
+  align-self: flex-start;
+}
+.ltig-breadcrumb-rendered-highlight {
+  position: absolute;
+  pointer-events: none;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+body {
+  --ltig-breadcrumb-guide-color: var(--text-muted);
+  --ltig-breadcrumb-guide-opacity: 0.72;
+  --ltig-breadcrumb-guide-thickness: 1.5px;
+  --ltig-breadcrumb-guide-dash-length: 6px;
+  --ltig-breadcrumb-guide-dash-gap: 4px;
+  --ltig-breadcrumb-guide-dot-gap: 4px;
+  --ltig-breadcrumb-connector-length: 18px;
+  --ltig-breadcrumb-marker-gap: 4px;
+  --ltig-breadcrumb-first-branch-rise: 10px;
+  --ltig-breadcrumb-connector-offset: 0px;
+  --ltig-breadcrumb-thread-opacity: 1;
+  --ltig-breadcrumb-thread-thickness: 4px;
+  --ltig-breadcrumb-thread-corner-radius: 8px;
+  --ltig-breadcrumb-thread-connector-length: 28px;
+  --ltig-breadcrumb-thread-connector-height: 100%;
+  --ltig-breadcrumb-thread-marker-gap: 4px;
+  --ltig-breadcrumb-thread-vertical-offset: 0px;
+  --ltig-breadcrumb-thread-color-1: #ff5a00;
+  --ltig-breadcrumb-thread-color-2: #ffc400;
+  --ltig-breadcrumb-thread-color-3: #a8e600;
+  --ltig-breadcrumb-thread-color-4: #00c8df;
+  --ltig-breadcrumb-thread-color-5: #5794ff;
+  --ltig-breadcrumb-thread-color-6: #a66cff;
+  --ltig-breadcrumb-thread-color-7: #e64fa3;
+  --ltig-breadcrumb-thread-color-8: #e64fa3;
+  --ltig-breadcrumb-thread-fallback-color-light: #777777;
+  --ltig-breadcrumb-thread-fallback-color-dark: #888888;
+  --ltig-breadcrumb-thread-fallback-color: var(
+    --ltig-breadcrumb-thread-fallback-color-dark
+  );
+  --ltig-breadcrumb-thread-override-color-light: #777777;
+  --ltig-breadcrumb-thread-override-color-dark: #888888;
+  --ltig-breadcrumb-thread-override-color: var(
+    --ltig-breadcrumb-thread-override-color-dark
+  );
+  --ltig-breadcrumb-thread-effective-color-1: var(
+    --ltig-breadcrumb-thread-color-1
+  );
+  --ltig-breadcrumb-thread-effective-color-2: var(
+    --ltig-breadcrumb-thread-color-2
+  );
+  --ltig-breadcrumb-thread-effective-color-3: var(
+    --ltig-breadcrumb-thread-color-3
+  );
+  --ltig-breadcrumb-thread-effective-color-4: var(
+    --ltig-breadcrumb-thread-color-4
+  );
+  --ltig-breadcrumb-thread-effective-color-5: var(
+    --ltig-breadcrumb-thread-color-5
+  );
+  --ltig-breadcrumb-thread-effective-color-6: var(
+    --ltig-breadcrumb-thread-color-6
+  );
+  --ltig-breadcrumb-thread-effective-color-7: var(
+    --ltig-breadcrumb-thread-color-7
+  );
+  --ltig-breadcrumb-thread-effective-color-8: var(
+    --ltig-breadcrumb-thread-color-8
+  );
+}
+
+body.theme-light {
+  --ltig-breadcrumb-thread-fallback-color: var(
+    --ltig-breadcrumb-thread-fallback-color-light
+  );
+  --ltig-breadcrumb-thread-override-color: var(
+    --ltig-breadcrumb-thread-override-color-light
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-1-enabled) {
+  --ltig-breadcrumb-thread-effective-color-1: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-2-enabled) {
+  --ltig-breadcrumb-thread-effective-color-2: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-3-enabled) {
+  --ltig-breadcrumb-thread-effective-color-3: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-4-enabled) {
+  --ltig-breadcrumb-thread-effective-color-4: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-5-enabled) {
+  --ltig-breadcrumb-thread-effective-color-5: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-6-enabled) {
+  --ltig-breadcrumb-thread-effective-color-6: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-7-enabled) {
+  --ltig-breadcrumb-thread-effective-color-7: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):not(.ltig-breadcrumb-thread-color-8-enabled) {
+  --ltig-breadcrumb-thread-effective-color-8: transparent;
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-1-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-1: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-2-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-2: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-3-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-3: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-4-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-4: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-5-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-5: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-6-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-6: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-7-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-7: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body:is(
+    .ltig-breadcrumb-thread-cap-round,
+    .ltig-breadcrumb-thread-cap-square,
+    .ltig-breadcrumb-thread-cap-flat
+  ):where(.ltig-breadcrumb-thread-fallback-colors-enabled):not(
+    .ltig-breadcrumb-thread-color-8-enabled
+  ) {
+  --ltig-breadcrumb-thread-effective-color-8: var(
+    --ltig-breadcrumb-thread-fallback-color
+  );
+}
+
+body[class].ltig-breadcrumb-thread-override-colors-enabled {
+  --ltig-breadcrumb-thread-effective-color-1: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-2: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-3: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-4: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-5: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-6: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-7: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+  --ltig-breadcrumb-thread-effective-color-8: var(
+    --ltig-breadcrumb-thread-override-color
+  );
+}
+
+body {
+  --ltig-breadcrumb-list-marker-font-size: 1em;
+  --ltig-breadcrumb-list-marker-font-weight: 400;
+  --ltig-breadcrumb-list-marker-color: inherit;
+  --ltig-breadcrumb-list-marker-font-style: inherit;
+  --ltig-breadcrumb-list-marker-font-variant: all-small-caps;
+  --ltig-breadcrumb-list-marker-letter-spacing: 0em;
+  --ltig-breadcrumb-list-marker-opacity: 1;
+  --ltig-breadcrumb-list-marker-width: 3ch;
+  --ltig-breadcrumb-list-marker-gap: 0.35em;
+}
+body {
+  --ltig-breadcrumb-main-color: #7aa2f7;
+  --ltig-breadcrumb-main-opacity: 0.18;
+  --ltig-breadcrumb-main-radius: 4px;
+  --ltig-breadcrumb-main-outline-thickness: 1px;
+  --ltig-breadcrumb-main-outline-opacity: 0.55;
+  --ltig-breadcrumb-main-outline-offset: 1px;
+  --ltig-breadcrumb-background: #202225;
+  --ltig-breadcrumb-border-color: #46484d;
+  --ltig-breadcrumb-text-color: #dcddde;
+  --ltig-breadcrumb-title-color: #a7a9ad;
+  --ltig-breadcrumb-current-color: #7aa2f7;
+  --ltig-breadcrumb-hover-color: #343b4a;
+  --ltig-breadcrumb-min-width: 320px;
+  --ltig-breadcrumb-max-width: 560px;
+  --ltig-breadcrumb-max-height: 400px;
+  --ltig-breadcrumb-padding: 10px;
+  --ltig-breadcrumb-row-gap: 2px;
+  --ltig-breadcrumb-indent: 18px;
+  --ltig-breadcrumb-row-padding-x: 6px;
+  --ltig-breadcrumb-row-padding-y: 4px;
+  --ltig-breadcrumb-font-size: 13px;
+  --ltig-breadcrumb-font-weight: 400;
+  --ltig-breadcrumb-line-height: 1.35;
+  --ltig-breadcrumb-title-size: 11px;
+  --ltig-breadcrumb-title-weight: 600;
+  --ltig-breadcrumb-title-letter-spacing: 0.03em;
+  --ltig-breadcrumb-title-gap: 6px;
+  --ltig-breadcrumb-current-background-opacity: 14;
+  --ltig-breadcrumb-border-thickness: 1px;
+  --ltig-breadcrumb-radius: 8px;
+  --ltig-breadcrumb-shadow-y: 4px;
+  --ltig-breadcrumb-shadow-blur: 18px;
+  --ltig-breadcrumb-shadow-opacity: 0.25;
+  --ltig-breadcrumb-anchor-gap: 8px;
+  --ltig-breadcrumb-viewport-gap: 8px;
+}
+body.theme-light {
+  --ltig-breadcrumb-main-color: #4c78cc;
+  --ltig-breadcrumb-background: #ffffff;
+  --ltig-breadcrumb-border-color: #d7d7d7;
+  --ltig-breadcrumb-text-color: #252525;
+  --ltig-breadcrumb-title-color: #666666;
+  --ltig-breadcrumb-current-color: #4c78cc;
+  --ltig-breadcrumb-hover-color: #e7edf8;
+}
+.ltig-breadcrumb-list-marker {
+  box-sizing: border-box;
+  color: var(--ltig-breadcrumb-list-marker-color);
+  flex: 0 0 var(--ltig-breadcrumb-list-marker-width);
+  font-family: inherit;
+  font-size: var(--ltig-breadcrumb-list-marker-font-size);
+  font-style: var(--ltig-breadcrumb-list-marker-font-style);
+  font-variant: var(--ltig-breadcrumb-list-marker-font-variant);
+  font-weight: var(--ltig-breadcrumb-list-marker-font-weight);
+  letter-spacing: var(--ltig-breadcrumb-list-marker-letter-spacing);
+  margin-inline-end: var(--ltig-breadcrumb-list-marker-gap);
+  opacity: var(--ltig-breadcrumb-list-marker-opacity);
+  text-align: end;
+  white-space: nowrap;
+  width: var(--ltig-breadcrumb-list-marker-width);
+}
+
+.ltig-breadcrumb-guide-path {
+  fill: none;
+  stroke: var(--ltig-breadcrumb-guide-color);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-opacity: var(--ltig-breadcrumb-guide-opacity);
+  stroke-width: var(--ltig-breadcrumb-guide-thickness);
+  vector-effect: non-scaling-stroke;
+}
+
+.ltig-breadcrumb-line-dashed .ltig-breadcrumb-guide-path {
+  stroke-dasharray: var(--ltig-breadcrumb-guide-dash-length)
+    var(--ltig-breadcrumb-guide-dash-gap);
+}
+
+.ltig-breadcrumb-line-dotted .ltig-breadcrumb-guide-path {
+  stroke-dasharray: 0.01 var(--ltig-breadcrumb-guide-dot-gap);
+  stroke-linecap: round;
+}
+
+.ltig-breadcrumb-thread-path {
+  fill: none;
+  opacity: var(--ltig-breadcrumb-thread-opacity);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: var(--ltig-breadcrumb-thread-thickness);
+  vector-effect: non-scaling-stroke;
+}
+
+.ltig-breadcrumb-thread-cap-round .ltig-breadcrumb-thread-path {
+  stroke-linecap: round;
+}
+
+.ltig-breadcrumb-thread-cap-square .ltig-breadcrumb-thread-path {
+  stroke-linecap: square;
+}
+
+.ltig-breadcrumb-thread-cap-flat .ltig-breadcrumb-thread-path {
+  stroke-linecap: butt;
+}
+
+.ltig-breadcrumb-thread-depth-1 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-1);
+}
+
+.ltig-breadcrumb-thread-depth-2 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-2);
+}
+
+.ltig-breadcrumb-thread-depth-3 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-3);
+}
+
+.ltig-breadcrumb-thread-depth-4 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-4);
+}
+
+.ltig-breadcrumb-thread-depth-5 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-5);
+}
+
+.ltig-breadcrumb-thread-depth-6 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-6);
+}
+
+.ltig-breadcrumb-thread-depth-7 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-7);
+}
+
+.ltig-breadcrumb-thread-depth-8 {
+  stroke: var(--ltig-breadcrumb-thread-effective-color-8);
+}
+
+.ltig-breadcrumb-popover {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  z-index: var(--layer-popover, 1000);
+  box-sizing: border-box;
+  width: max-content;
+  min-width: min(
+    var(--ltig-breadcrumb-min-width),
+    calc(100vw - 2 * var(--ltig-breadcrumb-viewport-gap))
+  );
+  max-width: min(
+    var(--ltig-breadcrumb-max-width),
+    calc(100vw - 2 * var(--ltig-breadcrumb-viewport-gap))
+  );
+  max-height: min(
+    var(--ltig-breadcrumb-max-height),
+    calc(100vh - 2 * var(--ltig-breadcrumb-viewport-gap))
+  );
+  padding: var(--ltig-breadcrumb-padding);
+  overflow: hidden;
+  color: var(--ltig-breadcrumb-text-color);
+  background: var(--ltig-breadcrumb-background);
+  border: var(--ltig-breadcrumb-border-thickness) solid
+    var(--ltig-breadcrumb-border-color);
+  border-radius: var(--ltig-breadcrumb-radius);
+  box-shadow: 0 var(--ltig-breadcrumb-shadow-y)
+    var(--ltig-breadcrumb-shadow-blur)
+    rgba(0, 0, 0, var(--ltig-breadcrumb-shadow-opacity));
+}
+.ltig-breadcrumb-title {
+  flex: 0 0 auto;
+  margin-bottom: var(--ltig-breadcrumb-title-gap);
+  color: var(--ltig-breadcrumb-title-color);
+  font-size: var(--ltig-breadcrumb-title-size);
+  font-weight: var(--ltig-breadcrumb-title-weight);
+  letter-spacing: var(--ltig-breadcrumb-title-letter-spacing);
+  text-transform: uppercase;
+}
+.ltig-breadcrumb-title-normal .ltig-breadcrumb-title {
+  text-transform: none;
+}
+.ltig-breadcrumb-tree {
+  flex: 1 1 auto;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  min-height: 0;
+  min-width: 0;
+}
+.ltig-breadcrumb-content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ltig-breadcrumb-row-gap);
+  padding: 2px;
+}
+.ltig-breadcrumb-guides {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.ltig-breadcrumb-popover button.ltig-breadcrumb-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  margin: 0;
+  padding-block: var(--ltig-breadcrumb-row-padding-y);
+  padding-inline-end: var(--ltig-breadcrumb-row-padding-x);
+  padding-inline-start: calc(
+    var(--ltig-breadcrumb-row-padding-x) +
+      max(
+        var(--ltig-breadcrumb-connector-length),
+        var(--ltig-breadcrumb-thread-connector-length)
+      ) +
+      var(--ltig-breadcrumb-depth) * var(--ltig-breadcrumb-indent)
+  );
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--ltig-breadcrumb-radius) / 2);
+  box-shadow: none;
+  font-family: inherit;
+  font-size: var(--ltig-breadcrumb-font-size);
+  font-weight: var(--ltig-breadcrumb-font-weight);
+  line-height: var(--ltig-breadcrumb-line-height);
+  text-align: start;
+  cursor: var(--cursor-link);
+}
+.ltig-breadcrumb-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ltig-breadcrumb-expand .ltig-breadcrumb-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.ltig-breadcrumb-popover button.ltig-breadcrumb-row.is-current {
+  color: var(--ltig-breadcrumb-current-color);
+  background: color-mix(
+    in srgb,
+    var(--ltig-breadcrumb-current-color)
+      calc(var(--ltig-breadcrumb-current-background-opacity) * 1%),
+    transparent
+  );
+}
+.ltig-breadcrumb-popover
+  button.ltig-breadcrumb-row:is(.is-active, :focus-visible) {
+  color: var(--ltig-breadcrumb-current-color);
+  background: var(--ltig-breadcrumb-hover-color);
+  outline: var(--ltig-breadcrumb-main-outline-thickness) solid
+    color-mix(
+      in srgb,
+      var(--ltig-breadcrumb-current-color)
+        calc(var(--ltig-breadcrumb-main-outline-opacity) * 100%),
+      transparent
+    );
+  outline-offset: var(--ltig-breadcrumb-main-outline-offset);
+}
+.ltig-breadcrumb-main-highlight,
+[data-ltig-breadcrumb-highlight] {
+  background: color-mix(
+    in srgb,
+    var(--ltig-breadcrumb-main-color)
+      calc(var(--ltig-breadcrumb-main-opacity) * 100%),
+    transparent
+  ) !important;
+  border-radius: var(--ltig-breadcrumb-main-radius);
+  outline: var(--ltig-breadcrumb-main-outline-thickness) solid
+    color-mix(
+      in srgb,
+      var(--ltig-breadcrumb-main-color)
+        calc(var(--ltig-breadcrumb-main-outline-opacity) * 100%),
+      transparent
+    );
+  outline-offset: var(--ltig-breadcrumb-main-outline-offset);
+}
+
 .ltig-style-settings-color-input {
   box-sizing: border-box;
   width: 2.5rem;
   min-width: 2.5rem;
   height: var(--input-height);
   padding: 2px;
-  border: var(--input-border-width, 1px) solid
-    var(--background-modifier-border);
+  border: var(--input-border-width, 1px) solid var(--background-modifier-border);
   border-radius: var(--input-radius, var(--radius-s));
   background: var(--background-modifier-form-field);
   cursor: pointer;
@@ -1584,4 +2168,8 @@ body.ltig-list-threading-enabled.ltig-thread-reading-mode-enabled.ltig-thread-fr
   border-color: var(--interactive-accent);
   box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
   outline: none;
+}
+
+.ltig-breadcrumb-popover button.ltig-breadcrumb-row {
+  align-items: flex-start;
 }

@@ -28,6 +28,16 @@ jobs:
         run: npm run lint
       - name: Test
         run: npm test
+      - name: Install Chromium for layout and interaction tests
+        run: npx playwright install --with-deps chromium
+      - name: Browser regression tests
+        run: npm run test:browser
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-${{ github.sha }}
+          path: release/browser/
       - name: Build
         run: npm run build
       - name: Upload validated plugin files

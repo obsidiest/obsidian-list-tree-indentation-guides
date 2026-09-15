@@ -52,6 +52,13 @@ export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+/** Reach is a percentage of the space below the parent, including stroke-cap clearance. */
+export function threadStartY(parentBottom: number, endY: number, height: number,
+  thickness: number, gap: number): number {
+  const safeTop = Math.min(endY, parentBottom + Math.max(0, thickness) / 2 + Math.max(0, gap));
+  return endY - Math.max(0, endY - safeTop) * clamp(height, 0, 100) / 100;
+}
+
 function formatCoordinate(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }

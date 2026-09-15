@@ -1,7 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { buildGuidePath, clamp, median } from "src/guide-geometry";
+import { buildGuidePath, clamp, median, threadStartY } from "src/guide-geometry";
 
 describe("guide geometry", () => {
+  it("keeps the round/square stroke cap below the parent marker at full height", () => {
+    for (const thickness of [0.5, 4, 12]) {
+      const start = threadStartY(26, 90, 100, thickness, 4);
+      expect(start - thickness / 2).toBe(30);
+      expect(threadStartY(26, 90, 50, thickness, 4)).toBe((90 + start) / 2);
+      expect(threadStartY(26, 90, 0, thickness, 4)).toBe(90);
+    }
+    expect(threadStartY(100, 90, 100, 4, 4)).toBe(90);
+    expect(threadStartY(26, 90, 1000, 4, 4)).toBe(32);
+  });
   it("builds one continuous spine with a connector for every sibling", () => {
     expect(
       buildGuidePath({
