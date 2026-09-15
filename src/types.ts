@@ -1,4 +1,6 @@
-export interface ListTreeIndentationGuidesSettings {
+import { BREADCRUMB_DEFAULTS, normalizeBreadcrumbSettings, type BreadcrumbSettings } from "./breadcrumb-settings";
+
+export interface ListTreeIndentationGuidesSettings extends BreadcrumbSettings {
   activeCursorListThreading: boolean;
   activeListItemThreading: boolean;
   activeOrphanListItemThreading: boolean;
@@ -20,6 +22,7 @@ export interface ListTreeIndentationGuidesSettings {
 }
 
 export const DEFAULT_SETTINGS: ListTreeIndentationGuidesSettings = {
+  ...BREADCRUMB_DEFAULTS,
   activeCursorListThreading: false,
   activeListItemThreading: true,
   activeOrphanListItemThreading: true,
@@ -56,6 +59,7 @@ export function normalizeSettings(
 ): ListTreeIndentationGuidesSettings {
   const persisted = isRecord(loaded) ? (loaded as PersistedSettings) : {};
   return {
+    ...normalizeBreadcrumbSettings(persisted as Record<string, unknown>),
     activeCursorListThreading: readBoolean(
       persisted.activeCursorListThreading,
       DEFAULT_SETTINGS.activeCursorListThreading,

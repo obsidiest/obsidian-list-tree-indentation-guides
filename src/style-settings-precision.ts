@@ -14,6 +14,10 @@ const STYLE_COLOR_DEFAULTS = new Map<string, string>([
   ["ltig-thread-fallback-color-dark", "#888888"],
   ["ltig-thread-override-color-light", "#777777"],
   ["ltig-thread-override-color-dark", "#888888"],
+  ["ltig-breadcrumb-thread-fallback-color-light", "#777777"],
+  ["ltig-breadcrumb-thread-fallback-color-dark", "#888888"],
+  ["ltig-breadcrumb-thread-override-color-light", "#777777"],
+  ["ltig-breadcrumb-thread-override-color-dark", "#888888"],
 ]);
 
 type QueryableNode = ParentNode & {
@@ -63,6 +67,11 @@ export class StyleSettingsPrecisionControls {
       observer.disconnect();
     }
     this.observers.clear();
+  }
+
+  public removeDocument(doc: Document): void {
+    this.observers.get(doc)?.disconnect();
+    this.observers.delete(doc);
   }
 }
 
@@ -164,7 +173,7 @@ export function enhanceStyleSettingsNumberControls(root: ParentNode): number {
 
 /**
  * Style Settings' Pickr-backed color controls can fail to commit on some
- * Obsidian/Windows combinations. These four controls intentionally use
+ * Obsidian/Windows combinations. The fallback and override controls use
  * Style Settings' reliable variable-text persistence and add a native color
  * input beside it. Updating either control keeps the other synchronized.
  */

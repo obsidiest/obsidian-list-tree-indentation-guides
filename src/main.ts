@@ -1,11 +1,8 @@
 import { Plugin } from "obsidian";
 import { createEditorGuidesExtension } from "./editor-guides";
-import {
-  decorateExistingReadingViews,
-  decorateReadingLists,
-  observeReadingThreadHover,
-  removeReadingGuides,
-} from "./reading-guides";
+import { RenderedListGuides } from "./rendered-guides";
+import { ListBreadcrumb } from "./list-breadcrumb";
+import { createBreadcrumbEditorExtension } from "./breadcrumb-editor";
 import { ListTreeIndentationGuidesSettingTab } from "./settings";
 import { StyleSettingsPrecisionControls } from "./style-settings-precision";
 import {
@@ -37,10 +34,8 @@ const MODE_CLASSES = [
 
 export default class ListTreeIndentationGuidesPlugin extends Plugin {
   public settings: ListTreeIndentationGuidesSettings = { ...DEFAULT_SETTINGS };
-  private readonly readingThreadHoverCleanups = new Map<
-    Document,
-    () => void
-  >();
+  private readonly renderedGuides = new RenderedListGuides(() => this.settings);
+  private readonly breadcrumb = new ListBreadcrumb(this, this.renderedGuides);
   private styleSettingsPrecisionControls =
     new StyleSettingsPrecisionControls();
 
@@ -48,8 +43,9 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     await this.loadSettings();
 
     this.registerEditorExtension(createEditorGuidesExtension());
-    this.registerMarkdownPostProcessor((element) => {
-      decorateReadingLists(element);
+    this.registerEditorExtension(createBreadcrumbEditorExtension(this.breadcrumb));
+    this.registerMarkdownPostProcessor((element, context) => {
+      this.renderedGuides.process(element, context);
     });
     this.addSettingTab(
       new ListTreeIndentationGuidesSettingTab(this.app, this),
@@ -58,8 +54,8 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     this.app.workspace.trigger("parse-style-settings");
     this.styleSettingsPrecisionControls.start(this.getOwnerDocuments());
     this.applyModeClassesToAllDocuments();
-    this.decorateAllReadingViews();
-    this.observeReadingThreadHoverForDocuments(this.getOwnerDocuments());
+    this.refreshRenderedLists();
+    this.observeDocuments(this.getOwnerDocuments());
 
     this.registerEvent(
       this.app.workspace.on("window-open", (_workspaceWindow, openedWindow) => {
@@ -67,37 +63,47 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
           openedWindow.document,
         );
         this.applyModeClasses(openedWindow.document);
-        decorateExistingReadingViews(openedWindow.document);
-        this.observeReadingThreadHoverForDocuments([
+        this.renderedGuides.refresh(openedWindow.document);
+        this.observeDocuments([
           openedWindow.document,
         ]);
       }),
     );
     this.registerEvent(
+      this.app.workspace.on("window-close", (_workspaceWindow, closedWindow) => {
+        this.breadcrumb.removeDocument(closedWindow.document);
+        this.renderedGuides.removeDocument(closedWindow.document);
+        this.styleSettingsPrecisionControls.removeDocument(closedWindow.document);
+      }),
+    );
+    this.registerEvent(
       this.app.workspace.on("layout-change", () => {
+        this.breadcrumb.refresh();
         this.styleSettingsPrecisionControls.start(this.getOwnerDocuments());
         this.applyModeClassesToAllDocuments();
-        this.decorateAllReadingViews();
-        this.observeReadingThreadHoverForDocuments(
+        this.refreshRenderedLists();
+        this.observeDocuments(
           this.getOwnerDocuments(),
         );
       }),
     );
     this.app.workspace.onLayoutReady(() => {
       this.applyModeClassesToAllDocuments();
-      this.decorateAllReadingViews();
-      this.observeReadingThreadHoverForDocuments(this.getOwnerDocuments());
+      this.refreshRenderedLists();
+      this.observeDocuments(this.getOwnerDocuments());
     });
+    this.registerEvent(this.app.workspace.on("css-change", () => {
+      this.refreshRenderedLists();
+      this.breadcrumb.refresh();
+    }));
+    this.registerEvent(this.app.workspace.on("file-open", () => this.breadcrumb.refresh()));
   }
 
   public override onunload(): void {
     this.styleSettingsPrecisionControls.stop();
-    for (const cleanup of this.readingThreadHoverCleanups.values()) {
-      cleanup();
-    }
-    this.readingThreadHoverCleanups.clear();
+    this.breadcrumb.destroy();
+    this.renderedGuides.destroy();
     for (const ownerDocument of this.getOwnerDocuments()) {
-      removeReadingGuides(ownerDocument);
       for (const className of MODE_CLASSES) {
         ownerDocument.body.classList.remove(className);
       }
@@ -107,7 +113,8 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
   public async saveSettings(): Promise<void> {
     await this.saveData(this.settings);
     this.applyModeClassesToAllDocuments();
-    this.decorateAllReadingViews();
+    this.refreshRenderedLists();
+    this.breadcrumb.refresh();
   }
 
   private async loadSettings(): Promise<void> {
@@ -195,23 +202,18 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     }
   }
 
-  private decorateAllReadingViews(): void {
+  private refreshRenderedLists(): void {
     for (const ownerDocument of this.getOwnerDocuments()) {
-      decorateExistingReadingViews(ownerDocument);
+      this.renderedGuides.refresh(ownerDocument);
     }
   }
 
-  private observeReadingThreadHoverForDocuments(
+  private observeDocuments(
     ownerDocuments: Iterable<Document>,
   ): void {
     for (const ownerDocument of ownerDocuments) {
-      if (this.readingThreadHoverCleanups.has(ownerDocument)) {
-        continue;
-      }
-      this.readingThreadHoverCleanups.set(
-        ownerDocument,
-        observeReadingThreadHover(ownerDocument),
-      );
+      this.renderedGuides.observeDocument(ownerDocument);
+      this.breadcrumb.observeDocument(ownerDocument);
     }
   }
 
