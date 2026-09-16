@@ -6,6 +6,8 @@ export interface ListNode {
   line: number;
   endLine: number;
   text: string;
+  /** DOM fallback text is already rendered; do not interpret it as Markdown again. */
+  plainText?: boolean;
   marker: string;
   kind: ListKind;
   parent: number | null;

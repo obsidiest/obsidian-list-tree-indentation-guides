@@ -1,5 +1,10 @@
 // Minimal host adapter for browser fixtures. These tests do not run Obsidian.
 export class MarkdownView {}
+// Only entity tokens are passed by the label projection; never source HTML.
+export function sanitizeHTMLToDom(entity) {
+  if (!/^&(?:#\d+|#x[\da-f]+|[a-z][\da-z]+);$/i.test(entity)) throw new Error("Expected an entity token");
+  return new DOMParser().parseFromString(entity, "text/html").body;
+}
 function create(tag, options = {}, svg = false) {
   if (typeof options === "string") options = { cls: options };
   const doc = this.ownerDocument ?? document;

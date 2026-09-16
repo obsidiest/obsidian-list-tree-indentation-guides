@@ -10,7 +10,12 @@ describe("guide geometry", () => {
       expect(threadStartY(26, 90, 0, thickness, 4)).toBe(90);
     }
     expect(threadStartY(100, 90, 100, 4, 4)).toBe(90);
-    expect(threadStartY(26, 90, 1000, 4, 4)).toBe(32);
+  });
+  it("allows intentional reach above the safe default without a 100% cap", () => {
+    expect(threadStartY(26, 90, 150, 4, 4)).toBe(3);
+    expect(threadStartY(26, 90, 1000, 4, 4)).toBe(-490);
+    expect(threadStartY(26, 90, -10, 4, 4)).toBe(90);
+    expect(threadStartY(26, 90, Number.NaN, 4, 4)).toBe(32);
   });
   it("builds one continuous spine with a connector for every sibling", () => {
     expect(
