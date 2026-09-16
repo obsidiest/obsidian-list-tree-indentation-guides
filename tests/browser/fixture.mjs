@@ -1,5 +1,5 @@
 import { MarkdownView } from "obsidian";
-import { EditorState, StateField } from "@codemirror/state";
+import { EditorState, StateField, Compartment } from "@codemirror/state";
 import { EditorView, Decoration } from "@codemirror/view";
 import { markdown } from "@codemirror/lang-markdown";
 import { RenderedListGuides } from "../../src/rendered-guides.ts";
@@ -30,6 +30,7 @@ const navigations = [];
 const rendered = new RenderedListGuides(() => plugin.settings);
 const breadcrumb = new ListBreadcrumb(plugin, rendered);
 const precision = new StyleSettingsPrecisionControls();
+const editorOptions = new Compartment();
 
 const lineDecorations = StateField.define({
   create: (s) => decorations(s),
@@ -94,6 +95,7 @@ function setupEditor(text, mode = "livePreview") {
     state: EditorState.create({
       doc: text,
       extensions: [
+        editorOptions.of([]),
         markdown(),
         lineDecorations,
         EditorView.lineWrapping,
@@ -185,6 +187,7 @@ globalThis.ltigTest = {
   geometry,
   navigations,
   editor: () => cm,
+  reconfigureEditor: () => cm.dispatch({ effects: editorOptions.reconfigure(EditorView.editable.of(true)) }),
   destroy: () => {
     breadcrumb.destroy();
     rendered.destroy();

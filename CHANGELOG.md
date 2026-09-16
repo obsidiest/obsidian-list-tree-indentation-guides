@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.0.1
+
+- Prevent a recursive CodeMirror update during breadcrumb cleanup from crashing the controller and leaving an unresponsive popover. Dispose popovers before editor cleanup, and distinguish pointer focus from keyboard focus for timeout dismissal.
+- Track rendered Markdown surface mounting and replacement, reattach removed SVG overlays, and capture embed hover events before widget event interception. Reuse measured geometry on hover and outer scrolling; postprocessing invalidates only the affected surfaces.
+- Display breadcrumb labels without raw Markdown delimiters while preserving colons, escapes, entities, and Unicode. Keep already-rendered fallback text literal.
+- Allow main and breadcrumb Thread connector height values above 100%: sliders reach 500%, and precise fields accept larger nonnegative finite values without a fixed maximum.
+- Add regression coverage for independent breadcrumb threading, editor lifecycle, embed recycling, late mounting, partial replacement, scroll redraw counts, punctuation, and height persistence. See `docs/validation-2.0.1.md` for reproduced causes and the distinction between browser fixtures and unverified Obsidian desktop behavior.
+
 ## 2.0.0
 
 - Add List Hover Breadcrumb with independent mode, scope, marker, guide, threading, navigation, timeout, and Style Settings controls, adapted from Extended Headings 2.1.0.

@@ -1,5 +1,6 @@
 import { EditorView, type ViewUpdate } from "@codemirror/view";
-import { MarkdownView, type Plugin } from "obsidian";
+import { MarkdownView, sanitizeHTMLToDom, type Plugin } from "obsidian";
+import { listLabel } from "./list-label";
 import {
   breadcrumbEnabled,
   breadcrumbFeature,
@@ -57,6 +58,7 @@ interface Popup {
   restore: (() => void) | null;
   anchor: DOMRect;
   resize: ResizeObserver;
+  lifecycle: MutationObserver;
   frame: number | null;
 }
 interface WindowState {
@@ -67,6 +69,7 @@ interface WindowState {
   pointer: { x: number; y: number } | null;
   highlighted: HTMLElement | null;
   highlightEditor: EditorView | null;
+  keyboardFocus: boolean;
 }
 export function breadcrumbKeyboardTarget(
   key: string,
@@ -134,12 +137,17 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     if (!update.docChanged && !update.transactions.some((t) => t.reconfigured))
       return;
     const state = this.documents.get(update.view.dom.ownerDocument);
-    if (state?.popup?.target.cm === update.view) this.dismiss(state);
+    // ViewPlugin.update runs inside EditorView.update. Dispatching from cleanup
+    // here crashes the view plugin and can strand its already-created dialog.
+    if (state?.popup?.target.cm === update.view) {
+      this.dismiss(state, false, update.view);
+      if (!update.docChanged) this.deferEditorHighlightClear(update.view);
+    }
   }
   removeEditor(view: EditorView): void {
-    const state = this.documents.get(view.dom.ownerDocument);
-    if (state?.popup?.target.cm === view) this.dismiss(state);
     this.editors.delete(view);
+    const state = this.documents.get(view.dom.ownerDocument);
+    if (state?.popup?.target.cm === view) this.dismiss(state, false, view);
   }
   observeDocument(doc: Document): void {
     if (this.documents.has(doc) || !doc.defaultView) return;
@@ -152,10 +160,12 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       pointer: null,
       highlighted: null,
       highlightEditor: null,
+      keyboardFocus: false,
     };
     this.documents.set(doc, state);
     doc.addEventListener("pointermove", (e) => this.move(state, e), {
       passive: true,
+      capture: true,
       signal: abort.signal,
     });
     doc.addEventListener(
@@ -166,11 +176,12 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
           this.scheduleDismiss(state);
         }
       },
-      { signal: abort.signal },
+      { capture: true, signal: abort.signal },
     );
     doc.addEventListener(
       "keydown",
       (e) => {
+        state.keyboardFocus = true;
         if (e.key === "Escape" && state.popup) {
           e.preventDefault();
           this.dismiss(state);
@@ -181,10 +192,11 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     doc.addEventListener(
       "pointerdown",
       (e) => {
+        state.keyboardFocus = false;
         if (state.popup && !state.popup.element.contains(e.target as Node))
           this.dismiss(state);
       },
-      { signal: abort.signal },
+      { capture: true, signal: abort.signal },
     );
     doc.defaultView.addEventListener("blur", () => this.dismiss(state), {
       signal: abort.signal,
@@ -299,6 +311,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     };
   }
   private move(state: WindowState, event: PointerEvent): void {
+    state.keyboardFocus = false;
     state.pointer = { x: event.clientX, y: event.clientY };
     if (
       state.popup?.element.contains(event.target as Node) ||
@@ -401,11 +414,12 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
           text: node.marker,
           attr: { "aria-hidden": "true" },
         });
+      const label = node.plainText ? node.text : listLabel(node.text, entity => sanitizeHTMLToDom(entity).textContent ?? entity);
       row.createSpan({
         cls: "ltig-breadcrumb-label",
-        text: node.text.replace(/\s+\^[\w-]+\s*$/, ""),
+        text: label,
       });
-      row.setAttribute("aria-label", `${node.marker} ${node.text}`.trim());
+      row.setAttribute("aria-label", `${node.marker} ${label}`.trim());
       row.addEventListener("pointerenter", () => this.activate(state, index));
       row.addEventListener("focus", () => {
         this.cancelDismiss(state);
@@ -419,6 +433,12 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       rows.set(index, row);
     }
     const resize = new win.ResizeObserver(() => this.scheduleDraw(state));
+    // An embed can be recycled without an editor transaction or layout event.
+    const lifecycle = new win.MutationObserver(() => {
+      const connected = target.cm ? target.host.isConnected : target.element.isConnected;
+      if (state.popup === popup && (!connected || !element.isConnected))
+        this.dismiss(state);
+    });
     const popup: Popup = {
       target,
       element,
@@ -432,6 +452,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       restore: null,
       anchor: target.row,
       resize,
+      lifecycle,
       frame: null,
     };
     state.popup = popup;
@@ -450,6 +471,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       }
     });
     resize.observe(content);
+    lifecycle.observe(state.doc.body, { childList: true, subtree: true });
     this.draw(state);
     this.highlight(state, target.index);
     const current = rows.get(target.index);
@@ -569,13 +591,20 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     }
   }
   private clearHighlight(state: WindowState): void {
-    if (state.highlightEditor?.dom.isConnected)
-      state.highlightEditor.dispatch({
-        effects: listBreadcrumbHighlight.of(null),
-      });
+    const editor = state.highlightEditor;
+    // Release references first; even a disposed editor must not prevent cleanup.
     state.highlighted?.remove();
     state.highlighted = null;
     state.highlightEditor = null;
+    if (editor && this.editors.has(editor) && editor.dom.isConnected)
+      editor.dispatch({ effects: listBreadcrumbHighlight.of(null) });
+  }
+  private deferEditorHighlightClear(editor: EditorView): void {
+    editor.dom.ownerDocument.defaultView?.queueMicrotask(() => {
+      const state = this.documents.get(editor.dom.ownerDocument);
+      if (this.editors.has(editor) && editor.dom.isConnected && state?.highlightEditor !== editor)
+        editor.dispatch({ effects: listBreadcrumbHighlight.of(null) });
+    });
   }
   private scheduleDraw(state: WindowState): void {
     const popup = state.popup;
@@ -644,7 +673,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       !state.popup ||
       state.timer !== null ||
       this.inCorridor(state) ||
-      state.popup.element.contains(state.doc.activeElement)
+      (state.keyboardFocus && state.popup.element.contains(state.doc.activeElement))
     )
       return;
     const p = state.popup;
@@ -657,15 +686,20 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
         breadcrumbTimeout(this.plugin.settings, p.target.mode),
       ) ?? null;
   }
-  private dismiss(state: WindowState, timedOut = false): void {
+  private dismiss(state: WindowState, timedOut = false, updatingEditor?: EditorView): void {
     this.cancelDismiss(state);
     const p = state.popup;
     state.popup = null;
+    // DOM/lifecycle cleanup must complete before any editor operation can throw.
+    if (p) {
+      p.resize.disconnect();
+      p.lifecycle.disconnect();
+      if (p.frame !== null) state.doc.defaultView?.cancelAnimationFrame(p.frame);
+      p.element.remove();
+    }
+    if (state.highlightEditor === updatingEditor) state.highlightEditor = null;
     this.clearHighlight(state);
-    if (!p) return;
-    p.resize.disconnect();
-    if (p.frame !== null) state.doc.defaultView?.cancelAnimationFrame(p.frame);
-    p.element.remove();
+    if (!p || updatingEditor) return;
     if (
       !p.target.host.isConnected ||
       (p.target.cm && p.target.cm.state.doc !== p.target.source)

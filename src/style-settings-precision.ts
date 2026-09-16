@@ -9,6 +9,10 @@ const STYLE_SETTINGS_SECTION_SELECTOR = [
 ].join(", ");
 const NUMBER_INPUT_CLASS = "ltig-style-settings-number-input";
 const COLOR_INPUT_CLASS = "ltig-style-settings-color-input";
+const UNBOUNDED_HEIGHT_SETTINGS = new Set([
+  "ltig-thread-connector-height",
+  "ltig-breadcrumb-thread-connector-height",
+]);
 const STYLE_COLOR_DEFAULTS = new Map<string, string>([
   ["ltig-thread-fallback-color-light", "#777777"],
   ["ltig-thread-fallback-color-dark", "#888888"],
@@ -96,13 +100,25 @@ export function enhanceStyleSettingsNumberControls(root: ParentNode): number {
     }
 
     const ownerDocument = slider.ownerDocument;
+    const settingId = readStyleSettingId(row);
+    const unboundedHeight = settingId !== null && UNBOUNDED_HEIGHT_SETTINGS.has(settingId);
+    if (unboundedHeight) {
+      slider.step = "any";
+      // Native range inputs clamp saved values to max before the precision
+      // control is added. Recover the persisted CSS value when reopening.
+      const stored = Number.parseFloat(ownerDocument.defaultView?.getComputedStyle(ownerDocument.body).getPropertyValue(`--${settingId}`) ?? "");
+      if (Number.isFinite(stored) && stored >= 0) {
+        if (stored > Number(slider.max)) slider.max = String(stored);
+        slider.value = String(stored);
+      }
+    }
     const numberInput = control.createEl("input");
     numberInput.type = "text";
     numberInput.inputMode = "decimal";
     numberInput.className = NUMBER_INPUT_CLASS;
     numberInput.value = slider.value;
     numberInput.min = slider.min;
-    numberInput.max = slider.max;
+    numberInput.max = unboundedHeight ? "" : slider.max;
     numberInput.step = "any";
     const settingName = row
       .querySelector(".setting-item-name")
@@ -126,7 +142,7 @@ export function enhanceStyleSettingsNumberControls(root: ParentNode): number {
       const value = parseCompleteInRangeNumber(
         numberInput.value,
         slider.min,
-        slider.max,
+        unboundedHeight ? "" : slider.max,
       );
       if (value === null) {
         return false;
@@ -136,6 +152,7 @@ export function enhanceStyleSettingsNumberControls(root: ParentNode): number {
       syncingFromNumberInput = true;
       try {
         slider.step = "any";
+        if (unboundedHeight && Number(value) > Number(slider.max)) slider.max = value;
         const sliderChanged = slider.value !== value;
         slider.value = value;
         const EventConstructor = ownerDocument.defaultView?.Event ?? Event;
@@ -376,7 +393,7 @@ function readStyleSettingId(row: Element): string | null {
     if (dataId === null) {
       continue;
     }
-    for (const settingId of STYLE_COLOR_DEFAULTS.keys()) {
+    for (const settingId of [...STYLE_COLOR_DEFAULTS.keys(), ...UNBOUNDED_HEIGHT_SETTINGS]) {
       if (dataId === settingId || dataId.endsWith(`@@${settingId}`)) {
         return settingId;
       }

@@ -52,11 +52,12 @@ export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-/** Reach is a percentage of the space below the parent, including stroke-cap clearance. */
+/** 100% clears the parent marker; larger user-selected values extend above that point. */
 export function threadStartY(parentBottom: number, endY: number, height: number,
   thickness: number, gap: number): number {
   const safeTop = Math.min(endY, parentBottom + Math.max(0, thickness) / 2 + Math.max(0, gap));
-  return endY - Math.max(0, endY - safeTop) * clamp(height, 0, 100) / 100;
+  const reach = Number.isFinite(height) ? Math.max(0, height) : 100;
+  return endY - Math.max(0, endY - safeTop) * reach / 100;
 }
 
 function formatCoordinate(value: number): string {

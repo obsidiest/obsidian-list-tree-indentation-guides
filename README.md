@@ -123,7 +123,7 @@ Install and enable the community plugin **Style Settings** to customize:
 - An enabled-by-default global fallback for disabled list-thread colors and a disabled-by-default global override with independently persisted light- and dark-mode native color inputs.
 - Breadcrumb appearance, dimensions, spacing, typography, current/hovered-row highlights, marker styling, static guides, and threading, including separate color enablement, fallback, and override controls.
 
-**Thread connector height** defaults to **100% of the available vertical gap below the parent marker**. Marker clearance includes half the stroke width so round and square caps remain clear at the default offset. Lower percentages shorten the upper end of each elbow; they do not move the child's horizontal connector. Breadcrumb threading has its own height control.
+**Thread connector height** defaults to **100% of the available vertical gap below the parent marker**. Marker clearance includes half the stroke width so round and square caps remain clear at the default offset. Lower percentages shorten the upper end of each elbow; they do not move the child's horizontal connector. Values above 100% extend the upper end upward. The slider reaches 500%; its precise value field accepts any nonnegative finite percentage, including larger values. Breadcrumb threading has its own height control.
 
 Version 2.0.0 measures rendered markers and sibling positions directly. The old Reading-mode row-height, segment-overlap, and marker-position compensation controls are retired; they depended on fixed spacing and caused misalignment in embeds. Existing mode, threading, and color preferences retain their saved keys.
 
@@ -167,7 +167,7 @@ git diff --exit-code -- main.js
 
 The validation and release workflows run browser layout and interaction tests as well as type, lint, and unit checks. The release workflow confirms that committed `main.js` is current, creates the three standard Obsidian release assets, and publishes GitHub artifact attestations for each asset.
 
-Browser tests use Chromium, real CodeMirror, and the plugin's actual modules with a minimal Obsidian host adapter. They are **not tests inside Obsidian desktop**. See [2.0.0 validation notes](docs/validation-2.0.0.md) for evidence, coverage, and remaining desktop checks.
+Browser tests use Chromium, real CodeMirror, and the plugin's actual modules with a minimal Obsidian host adapter. They are **not tests inside Obsidian desktop**. See [2.0.1 validation notes](docs/validation-2.0.1.md) for evidence, coverage, and remaining desktop checks.
 
 ## Acknowledgements
 
