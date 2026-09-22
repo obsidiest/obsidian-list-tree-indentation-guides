@@ -87,7 +87,7 @@ export function inRect(x: number, y: number, rect: DOMRect): boolean {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 export function activationContains(
-  target: { marker: DOMRect; row: DOMRect; host: HTMLElement },
+  target: { marker: DOMRect; row: DOMRect; host: HTMLElement; unmarked?: boolean },
   x: number,
   y: number,
   field: boolean,
@@ -108,13 +108,13 @@ export function activationContains(
       y >= target.row.top &&
       y <= target.row.bottom &&
       (rtl
-        ? x >= target.marker.left &&
+        ? x >= (target.unmarked ? target.marker.right : target.marker.left) &&
           x <= target.host.getBoundingClientRect().right
         : x >= target.host.getBoundingClientRect().left &&
-          x <= target.marker.right)
+          x <= (target.unmarked ? target.marker.left : target.marker.right))
     );
   }
-  return inRect(x, y, target.marker);
+  return !target.unmarked && inRect(x, y, target.marker);
 }
 
 /** Adapted from Extended Headings 2.1.0. Source caches are scoped to open
@@ -275,7 +275,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     const node = cache.nodes[index];
     if (
       node.kind === "head" &&
-      !this.plugin.settings.listThreadingFromNonListHead
+      !this.plugin.settings.breadcrumbUnmarkedHeadActivation
     )
       return null;
     const markerEl = row.querySelector<HTMLElement>(
@@ -326,8 +326,9 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     if (
       !target ||
       !breadcrumbEnabled(this.plugin.settings, target.mode) ||
+      (target.nodes[target.index].kind === "head" && !this.plugin.settings.breadcrumbUnmarkedHeadActivation) ||
       !activationContains(
-        target,
+        { ...target, unmarked: target.nodes[target.index].kind === "head" },
         event.clientX,
         event.clientY,
         this.plugin.settings.breadcrumbFieldActivation,
@@ -578,14 +579,8 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
           target.host,
           1,
         );
-        const highlight = target.host.createDiv({
-          cls: "ltig-breadcrumb-main-highlight ltig-breadcrumb-rendered-highlight",
-          attr: { "aria-hidden": "true" },
-        });
-        highlight.style.left = `${start.x}px`;
-        highlight.style.top = `${start.y}px`;
-        highlight.style.width = `${end.x - start.x}px`;
-        highlight.style.height = `${end.y - start.y}px`;
+        const highlight = this.rendered.highlight(target.host,
+          new DOMRect(start.x, start.y, end.x - start.x, end.y - start.y));
         state.highlighted = highlight;
       }
     }
@@ -625,14 +620,14 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       const anchor = row.querySelector<HTMLElement>(
         ".ltig-breadcrumb-list-marker, .ltig-breadcrumb-label",
       )!;
-      points.set(
-        i,
-        pointWithinHost(
-          firstTextRect(anchor) ?? anchor.getBoundingClientRect(),
-          p.content,
-          geometry.direction,
-        ),
+      const point = pointWithinHost(
+        firstTextRect(anchor) ?? anchor.getBoundingClientRect(),
+        p.content,
+        geometry.direction,
       );
+      const label = row.querySelector<HTMLElement>(".ltig-breadcrumb-label")!;
+      point.rowBottom = pointWithinHost(label.getBoundingClientRect(), p.content, geometry.direction).bottom;
+      points.set(i, point);
     }
     const s = this.plugin.settings;
     drawListTree(

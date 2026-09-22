@@ -60,6 +60,7 @@ Every plugin setting is searchable from Obsidian's Settings search. List static 
 | Setting | Purpose |
 | --- | --- |
 | List Static Tree Indentation Guides | Globally enables or disables the always-visible tree guides. Enabled by default. |
+| Unmarked List Head Static Tree Indentation Guides | Gives the immediately preceding unmarked line its own static guide. Disabled by default. |
 | Render in Live Preview | Shows guides in the editable Live Preview view. |
 | Render in Source mode | Shows guides alongside raw Markdown list syntax. |
 | Render in Reading mode | Shows guides in rendered Markdown. |
@@ -80,13 +81,14 @@ Every plugin setting is searchable from Obsidian's Settings search. List static 
 
 ### List Hover Breadcrumb
 
-The breadcrumb is enabled by default in Live Preview, Source, and Reading mode, including internal embeds. Hover from the left gutter through a list marker to open it. Enable **Full-Width List Item List Hover Breadcrumb Activation** to activate across the entire row. With both full-width options off, only the marker activates it. Unmarked heads can activate the full-row scope when **Unmarked List Head List Threading** is enabled. Right-to-left layouts use the corresponding right gutter.
+The breadcrumb is enabled by default in Live Preview, Source, and Reading mode, including internal embeds. Hover from the left gutter through a list marker to open it. Enable **Full-Width List Item List Hover Breadcrumb Activation** to activate across the entire row. With both full-width options off, only the marker activates it. **Unmarked List Head Hover Breadcrumb Activation** is enabled by default and operates independently of threading. Under **List Hover Breadcrumb Activation Scope**, full-item activation includes the head row; full-marker activation includes only its gutter. With both scopes off, unmarked heads do not activate a breadcrumb because they have no marker. Right-to-left layouts use the corresponding right gutter.
 
 The popover shows the item's ancestors and highlights the current item. Hover or focus another row to preview that field in the main view. Click a row to navigate permanently. In an embed, clicking an ancestor outside the visible excerpt opens its original note at the source line. Repeated labels use source positions to identify the correct item.
 
 | Breadcrumb control | Default / behavior |
 | --- | --- |
 | List Hover Breadcrumb | On; disabling it makes subordinate controls inaccessible. |
+| Unmarked List Head Hover Breadcrumb Activation | On; independent of main and breadcrumb threading. |
 | Full-Width List Item activation | Off. |
 | Full-Width List Marker activation | On. |
 | Live Preview, Source, Reading activation | All on, independently configurable. |
@@ -100,6 +102,8 @@ The popover shows the item's ancestors and highlights the current item. Hover or
 | Popover timeout | Global on at 0.01 seconds, with optional independent decimal overrides for each viewing mode. |
 
 Arrow Up/Down, Home, and End move focus through breadcrumb rows. Enter activates a row; Escape closes the popover. The gap between the source row and the popover remains traversable while the pointer moves between them.
+
+Embed drawings use a clipped layer outside the embedded document so they do not add to its scrollable height. Each nested embed owns its own drawing layer.
 
 The breadcrumb's settings and Style Settings variables are independent of those used in the note. Child controls are disabled whenever their parent feature is disabled. List Threading in rendered embeds uses hover; an embed has no editable caret.
 
@@ -123,7 +127,7 @@ Install and enable the community plugin **Style Settings** to customize:
 - An enabled-by-default global fallback for disabled list-thread colors and a disabled-by-default global override with independently persisted light- and dark-mode native color inputs.
 - Breadcrumb appearance, dimensions, spacing, typography, current/hovered-row highlights, marker styling, static guides, and threading, including separate color enablement, fallback, and override controls.
 
-**Thread connector height** defaults to **100% of the available vertical gap below the parent marker**. Marker clearance includes half the stroke width so round and square caps remain clear at the default offset. Lower percentages shorten the upper end of each elbow; they do not move the child's horizontal connector. Values above 100% extend the upper end upward. The slider reaches 500%; its precise value field accepts any nonnegative finite percentage, including larger values. Breadcrumb threading has its own height control.
+**Thread connector height** defaults to **103%** in the main view; the independent breadcrumb control defaults to **100%**. The reference gap starts below the parent’s own row, including wrapped text but excluding its child list, with marker-gap and stroke-cap clearance. This gives numbered and bulleted parents the same vertical reference. Lower percentages shorten the upper end of each elbow; they do not move the child's horizontal connector. Values above 100% extend the upper end upward. The slider reaches 500%; its precise value field accepts any nonnegative finite percentage, including larger values. Breadcrumb threading has its own height control.
 
 Version 2.0.0 measures rendered markers and sibling positions directly. The old Reading-mode row-height, segment-overlap, and marker-position compensation controls are retired; they depended on fixed spacing and caused misalignment in embeds. Existing mode, threading, and color preferences retain their saved keys.
 

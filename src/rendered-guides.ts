@@ -1,4 +1,5 @@
 import type { MarkdownPostProcessorContext } from "obsidian";
+import { RenderedLayer } from "./rendered-layer";
 import type { ListTreeIndentationGuidesSettings } from "./types";
 import {
   isUnmarkedListHead,
@@ -12,6 +13,7 @@ import {
   listGeometry,
   pointWithinHost,
   renderedMarkerRect,
+  ownRowRect,
   type ListPoint,
 } from "./list-renderer";
 import type { ListMode } from "./breadcrumb-settings";
@@ -35,6 +37,8 @@ interface Registration {
 interface Surface {
   host: HTMLElement;
   svg: SVGSVGElement;
+  layer: RenderedLayer;
+  redraw: boolean;
   elements: Map<number, HTMLElement>;
   indices: Map<HTMLElement, number>;
   nodes: ListNode[];
@@ -174,11 +178,13 @@ export class RenderedListGuides {
     const contentObserver = new doc.defaultView.MutationObserver(records => {
       const affected = new Set<HTMLElement>();
       let removed = false;
+      let layoutChanged = false;
       for (const record of records) {
         const element = record.target.nodeType === 1
           ? record.target as Element : record.target.parentElement;
-        if (element?.closest(".ltig-rendered-overlay, .ltig-breadcrumb-popover, .ltig-breadcrumb-rendered-highlight")) continue;
+        if (element?.closest(".ltig-embed-layer, .ltig-rendered-overlay, .ltig-breadcrumb-popover, .ltig-breadcrumb-rendered-highlight")) continue;
         if (record.type === "attributes") {
+          layoutChanged = true;
           const host = element && owner(element);
           if (host) affected.add(host);
           if (host && host === element && !this.surfaces.has(host)) {
@@ -189,12 +195,13 @@ export class RenderedListGuides {
         }
         const changed = [...Array.from(record.addedNodes), ...Array.from(record.removedNodes)];
         if (record.type !== "characterData" && changed.length && changed.every(n =>
-          n.nodeType === 1 && (n as Element).matches(".ltig-rendered-overlay, .ltig-breadcrumb-rendered-highlight"))) {
+          n.nodeType === 1 && (n as Element).matches(".ltig-embed-layer, .ltig-rendered-overlay, .ltig-breadcrumb-rendered-highlight"))) {
           // An externally removed overlay needs reattachment; our own insertion does not.
           const host = element && owner(element);
           if (host && this.surfaces.has(host) && !this.surfaces.get(host)!.svg.isConnected) affected.add(host);
           continue;
         }
+        layoutChanged = true;
         const host = element && owner(element);
         if (host) affected.add(host);
         for (const node of Array.from(record.addedNodes)) {
@@ -207,14 +214,30 @@ export class RenderedListGuides {
       }
       if (removed) this.prune();
       for (const host of affected) this.refreshHost(host);
+      // An edit above an embed can move it without changing its own dimensions.
+      // Reposition external layers without rebuilding paths or writing into widgets.
+      if (layoutChanged)
+        for (const surface of this.surfaces.values())
+          if (surface.host.ownerDocument === doc && surface.layer.portal)
+            this.schedule(surface, false);
     });
     contentObserver.observe(doc.body, {
       childList: true, subtree: true, characterData: true,
       attributes: true, attributeFilter: ["style", "class", "open"],
     });
+    const scroll = (event: Event) => {
+      for (const surface of this.surfaces.values()) {
+        if (surface.host.ownerDocument !== doc || !surface.layer.portal) continue;
+        const target = event.target;
+        if (target === doc || (target instanceof doc.defaultView!.Element && target.contains(surface.host)))
+          this.schedule(surface, false);
+      }
+    };
+    doc.addEventListener("scroll", scroll, { passive: true, capture: true });
     doc.addEventListener("pointermove", move, { passive: true, capture: true });
     doc.addEventListener("pointerout", leave, { passive: true, capture: true });
     this.documents.set(doc, () => {
+      doc.removeEventListener("scroll", scroll, true);
       bodyObserver.disconnect();
       contentObserver.disconnect();
       doc.removeEventListener("pointermove", move, true);
@@ -247,10 +270,8 @@ export class RenderedListGuides {
       let surface = this.surfaces.get(host);
       if (!surface && doc.defaultView) {
         host.classList.add("ltig-rendered-host");
-        const svg = host.createSvg("svg", {
-          cls: "ltig-rendered-overlay",
-          attr: { "aria-hidden": "true", width: "0", height: "0" },
-        });
+        const layer = new RenderedLayer(host);
+        const svg = layer.svg;
         const resize = new doc.defaultView.ResizeObserver(() => {
           surface!.dirty = true;
           this.schedule(surface!);
@@ -258,6 +279,8 @@ export class RenderedListGuides {
         surface = {
           host,
           svg,
+          layer,
+          redraw: true,
           resize,
           nodes: [],
           elements: new Map(),
@@ -308,8 +331,6 @@ export class RenderedListGuides {
         ? Math.min(rect.bottom, children[0].getBoundingClientRect().top)
         : rect.bottom;
       if (event.clientY < rect.top || event.clientY > bottom) continue;
-      if (node.kind === "head" && !this.settings().listThreadingFromNonListHead)
-        continue;
       if (!candidate || node.depth >= surface.nodes[candidate.index].depth)
         candidate = {
           index,
@@ -345,12 +366,20 @@ export class RenderedListGuides {
         this.surfaces.delete(host);
       }
   }
-  private schedule(surface: Surface): void {
+  overlayFor(host: HTMLElement): SVGSVGElement | null {
+    return this.surfaces.get(host)?.svg ?? null;
+  }
+  highlight(host: HTMLElement, rect: DOMRect): HTMLElement | null {
+    return this.surfaces.get(host)?.layer.addHighlight(rect) ?? null;
+  }
+  private schedule(surface: Surface, redraw = true): void {
+    surface.redraw ||= redraw;
     if (surface.frame !== null) return;
     surface.frame =
       surface.host.ownerDocument.defaultView?.requestAnimationFrame(() => {
         surface.frame = null;
-        this.draw(surface);
+        if (surface.redraw) { surface.redraw = false; this.draw(surface); }
+        else surface.layer.position();
       }) ?? null;
   }
   private collect(surface: Surface): void {
@@ -464,8 +493,8 @@ export class RenderedListGuides {
     );
   }
   private draw(surface: Surface): void {
+    surface.layer.position();
     if (!surface.host.isConnected || !surface.host.getClientRects().length) return;
-    if (surface.svg.parentElement !== surface.host) surface.host.append(surface.svg);
     if (surface.dirty || !surface.geometry) {
       surface.dirty = false;
       this.collect(surface);
@@ -473,10 +502,11 @@ export class RenderedListGuides {
       surface.points.clear();
       for (const [index, element] of surface.elements) {
         if (!element.getClientRects().length) continue;
-        surface.points.set(index, pointWithinHost(renderedMarkerRect(element), surface.host, surface.geometry.direction));
+        const point = pointWithinHost(renderedMarkerRect(element), surface.host, surface.geometry.direction);
+        point.rowBottom = pointWithinHost(ownRowRect(element), surface.host, surface.geometry.direction).bottom;
+        surface.points.set(index, point);
       }
-      surface.svg.setAttribute("width", String(surface.host.clientWidth));
-      surface.svg.setAttribute("height", String(surface.host.clientHeight));
+      surface.layer.copyStyle();
     }
     const mode = renderedMode(surface.host),
       s = this.settings();
@@ -494,6 +524,7 @@ export class RenderedListGuides {
       surface.points,
       {
         guides,
+        unmarkedGuides: s.unmarkedListHeadStaticGuides,
         connect: s.connectSeparateListBlocks,
         threading: mainThreadOptions(s, mode),
         active: surface.active,
@@ -503,7 +534,7 @@ export class RenderedListGuides {
   }
   private remove(surface: Surface): void {
     surface.resize.disconnect();
-    surface.svg.remove();
+    surface.layer.remove();
     if (surface.frame !== null)
       surface.host.ownerDocument.defaultView?.cancelAnimationFrame(
         surface.frame,

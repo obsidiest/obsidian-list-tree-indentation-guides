@@ -526,13 +526,13 @@ try {
     await hover("#editor .cm-line:first-child");
     assert.equal(await page.locator(".ltig-breadcrumb-row").count(), 1);
     await page.evaluate(() =>
-      ltigTest.setSettings({ listThreadingFromNonListHead: false }),
+      ltigTest.setSettings({ breadcrumbUnmarkedHeadActivation: false }),
     );
     await hover("#editor .cm-line:first-child");
     assert.equal(await page.locator(".ltig-breadcrumb-popover").count(), 0);
     await page.evaluate(() =>
       ltigTest.setSettings({
-        listThreadingFromNonListHead: true,
+        breadcrumbUnmarkedHeadActivation: true,
         breadcrumbFieldActivation: false,
         breadcrumbMarkerActivation: false,
       }),

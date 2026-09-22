@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:browser": "node tests/browser/run.mjs && node tests/browser/regressions.mjs"
+    "test:browser": "node tests/browser/run.mjs && node tests/browser/regressions.mjs && node tests/browser/followup.mjs"
   },
   "devDependencies": {
     "@codemirror/lang-markdown": "6.5.2",

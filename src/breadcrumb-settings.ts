@@ -4,6 +4,7 @@ import type { ListThreadOptions } from "./list-model";
 export type ListMode = "livePreview" | "source" | "reading";
 export const BREADCRUMB_DEFAULTS = {
   listHoverBreadcrumb: true,
+  breadcrumbUnmarkedHeadActivation: true,
   breadcrumbFieldActivation: false,
   breadcrumbMarkerActivation: true,
   breadcrumbLivePreview: true,
@@ -165,18 +166,24 @@ export function breadcrumbSettingDefinitions(
       [],
       "Show a floating, navigable ancestor hierarchy for the hovered list.",
     ),
-    heading("List Hovering Breadcrumb Activation Scope"),
+    toggle(
+      "breadcrumbUnmarkedHeadActivation",
+      "Unmarked List Head Hover Breadcrumb Activation",
+      root,
+      "Allow breadcrumbs on the immediately preceding unmarked list head, using the item or gutter activation scope below. Independent of list threading.",
+    ),
+    heading("List Hover Breadcrumb Activation Scope"),
     toggle(
       "breadcrumbFieldActivation",
       "Full-Width List Item List Hover Breadcrumb Activation",
       root,
-      "Activate from the left gutter through the complete list row. Includes unmarked list heads when Unmarked List Head List Threading is enabled. Takes priority over marker activation.",
+      "Activate from the left gutter through the complete list row. Includes unmarked heads when Unmarked List Head Hover Breadcrumb Activation is enabled. Takes priority over marker activation.",
     ),
     toggle(
       "breadcrumbMarkerActivation",
       "Full-Width List Marker List Hover Breadcrumb Activation",
       root,
-      "Activate from the left gutter through the list marker. With both scope toggles off, only the marker itself activates the breadcrumb.",
+      "Activate from the left gutter through the list marker. For enabled unmarked heads, activate only in the left gutter (right gutter in RTL). With both scope toggles off, only actual markers activate breadcrumbs.",
     ),
     heading("List Hover Breadcrumb Viewing Modes"),
   ];

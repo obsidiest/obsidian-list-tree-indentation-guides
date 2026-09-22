@@ -1,6 +1,6 @@
 import { MarkdownView } from "obsidian";
 import { EditorState, StateField, Compartment } from "@codemirror/state";
-import { EditorView, Decoration } from "@codemirror/view";
+import { EditorView, Decoration, WidgetType } from "@codemirror/view";
 import { markdown } from "@codemirror/lang-markdown";
 import { RenderedListGuides } from "../../src/rendered-guides.ts";
 import { ListBreadcrumb } from "../../src/list-breadcrumb.ts";
@@ -61,6 +61,7 @@ function setSettings(values) {
   Object.assign(plugin.settings, values);
   const classes = {
     "ltig-static-guides-enabled": "enableListStaticTreeIndentationGuides",
+    "ltig-static-unmarked-head-enabled": "unmarkedListHeadStaticGuides",
     "ltig-list-threading-enabled": "enableListThreading",
     "ltig-thread-active-cursor-enabled": "activeCursorListThreading",
     "ltig-thread-active-item-enabled": "activeListItemThreading",
@@ -82,7 +83,7 @@ function setSettings(values) {
   rendered.refresh(document);
   breadcrumb.refresh();
 }
-function setupEditor(text, mode = "livePreview") {
+function setupEditor(text, mode = "livePreview", extra = []) {
   const source = document.body.createDiv({
     cls: `markdown-source-view mod-cm6 ${mode === "livePreview" ? "is-live-preview" : ""}`,
   });
@@ -95,7 +96,7 @@ function setupEditor(text, mode = "livePreview") {
     state: EditorState.create({
       doc: text,
       extensions: [
-        editorOptions.of([]),
+        editorOptions.of(extra),
         markdown(),
         lineDecorations,
         EditorView.lineWrapping,
@@ -165,7 +166,7 @@ function geometry(id) {
         rect: el.getBoundingClientRect().toJSON(),
       })),
     rect: box.toJSON(),
-    paths: Array.from(host.querySelectorAll(":scope > svg > path")).map(
+    paths: Array.from(rendered.overlayFor(host)?.querySelectorAll("path") ?? []).map(
       (p) => ({
         d: p.getAttribute("d"),
         cls: p.getAttribute("class"),
@@ -183,8 +184,29 @@ globalThis.ltigTest = {
   precision,
   setSettings,
   setupEditor,
+  setupEmbedEditor: () => {
+    class Embed extends WidgetType {
+      toDOM() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "internal-embed markdown-embed inline-embed";
+        const container = wrapper.createDiv({ cls: "markdown-embed-content" });
+        const host = container.createDiv({ cls: "markdown-preview-view markdown-rendered", attr: { id: "widget-list" } });
+        host.innerHTML = "<h5>Embedded heading</h5><ul>" + Array.from({length:40}, (_, i) => `<li>Item ${i}: wrapped text in a long embedded list with enough text to span several rows<ul><li>Child ${i}</li></ul></li>`).join("") + "</ul>";
+        rendered.process(host, { sourcePath: "Embed.md", getSectionInfo: () => null });
+        return wrapper;
+      }
+      ignoreEvent() { return true; }
+    }
+    const decoration = StateField.define({
+      create: () => Decoration.set([Decoration.replace({widget:new Embed(), block:true}).range(0, 10)]),
+      update: value => value,
+      provide: f => EditorView.decorations.from(f),
+    });
+    setupEditor("![[Embed]]\n" + "Outer text\n".repeat(150), "livePreview", [decoration]);
+  },
   addSurface,
   geometry,
+  overlay: id => rendered.overlayFor(document.getElementById(id)),
   navigations,
   editor: () => cm,
   reconfigureEditor: () => cm.dispatch({ effects: editorOptions.reconfigure(EditorView.editable.of(true)) }),

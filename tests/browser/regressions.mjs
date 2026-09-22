@@ -84,14 +84,14 @@ test("reconfiguration and destruction dispose popovers without recursive updates
 });
 test("replacing embed contents recreates the connected SVG", async page => {
   await surface(page);
-  assert(await page.locator("#list > svg > path").count());
+  assert(await page.evaluate(() => ltigTest.overlay("list")?.querySelectorAll("path").length));
   await page.evaluate(() => {
     const host = document.getElementById("list");
     host.replaceChildren(...Array.from(host.children).filter(n => n.tagName !== "svg").map(n => n.cloneNode(true)));
   });
   await frames(page);
-  assert.equal(await page.locator("#list > svg").count(), 1);
-  assert(await page.locator("#list > svg > path").count());
+  assert.equal(await page.evaluate(() => ltigTest.overlay("list")?.isConnected), true);
+  assert(await page.evaluate(() => ltigTest.overlay("list")?.querySelectorAll("path").length));
 });
 test("recycling an embed closes its stale breadcrumb and preserves literal DOM text", async page => {
   await surface(page); await hover(page, "#list ul ul li");
@@ -114,7 +114,7 @@ test("a partially replaced list uses every visible row in DOM order", async page
   });
   await frames(page); await hover(page, "#list > ul > li:last-child");
   assert.deepEqual(await page.locator(".ltig-breadcrumb-label").allTextContents(), ["Head:", "New first", "parent", "child", "New last"]);
-  assert.equal(await page.locator("#list .ltig-thread-path").count(), 2);
+  assert.equal(await page.evaluate(() => ltigTest.overlay("list").querySelectorAll(".ltig-thread-path").length), 2);
 });
 test("an embed mounted after postprocessing is discovered without a layout-change event", async page => {
   await page.evaluate(() => {
@@ -126,14 +126,14 @@ test("an embed mounted after postprocessing is discovered without a layout-chang
     globalThis.mountLate = () => document.body.append(embed);
   });
   await frames(page); await page.evaluate(() => globalThis.mountLate()); await frames(page);
-  assert(await page.locator("#late > svg > path").count());
+  assert(await page.evaluate(() => ltigTest.overlay("late")?.querySelectorAll("path").length));
 });
 test("ordinary outer scrolling does not rebuild unchanged embed paths", async page => {
   await surface(page);
   await page.evaluate(() => {
     globalThis.guideMutations = 0;
     new MutationObserver(records => globalThis.guideMutations += records.length)
-      .observe(document.querySelector("#list > svg"), { childList: true, subtree: true });
+      .observe(ltigTest.overlay("list"), { childList: true, subtree: true });
   });
   for (let i = 0; i < 5; i++) {
     await page.evaluate(() => document.dispatchEvent(new Event("scroll")));
@@ -146,7 +146,7 @@ test("embed hover threading survives event interception inside a widget", async 
   await surface(page, { mode: "livePreview" });
   await page.evaluate(() => document.querySelector(".internal-embed").addEventListener("pointermove", event => event.stopPropagation()));
   await hover(page, "#list ul ul li");
-  assert.equal(await page.locator("#list .ltig-thread-path").count(), 2);
+  assert.equal(await page.evaluate(() => ltigTest.overlay("list").querySelectorAll(".ltig-thread-path").length), 2);
 });
 test("labels preserve punctuation while displaying inline Markdown", async page => {
   await page.evaluate(() => ltigTest.setupEditor("In `List Tree` version `2.0.0`:\n- Colon\\: &amp; &#58; C:\\\\Notes : emoji 🙂\n  - child"));
@@ -183,7 +183,7 @@ test("breadcrumb threading retains independent mode and orphan gates", async pag
 test("connector height can increase beyond 100 percent", async page => {
   await page.evaluate(() => ltigTest.setSettings({ enableListThreading: true, listHoverBreadcrumb: false }));
   await surface(page); await hover(page, "#list ul ul li");
-  const start = async () => Number((await page.locator("#list .ltig-thread-path").last().getAttribute("d")).split(" ")[2]);
+  const start = async () => Number((await page.evaluate(() => Array.from(ltigTest.overlay("list").querySelectorAll(".ltig-thread-path")).at(-1).getAttribute("d"))).split(" ")[2]);
   const normal = await start();
   await page.evaluate(() => { document.body.style.setProperty("--ltig-thread-connector-height", "150%"); ltigTest.rendered.refresh(document); });
   await frames(page); assert((await start()) < normal);

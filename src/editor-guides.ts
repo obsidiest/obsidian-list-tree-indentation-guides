@@ -5,6 +5,7 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import { buildGuidePath, clamp, median, threadStartY } from "./guide-geometry";
+import { isUnmarkedListHead } from "./list-model";
 
 const LIST_LINE_CLASS_PREFIX = "HyperMD-list-line-";
 const THREAD_COLOR_COUNT = 8;
@@ -67,6 +68,7 @@ interface MeasuredListRow extends VisibleListRow {
   documentLineNumber: number;
   element: HTMLElement;
   headRect?: CoordinateRect;
+  headMarkerRect?: CoordinateRect;
   lineRect: CoordinateRect;
   markerRect: CoordinateRect;
 }
@@ -724,6 +726,7 @@ class EditorGuideOverlay {
     const rows: MeasuredListRow[] = [];
     let boundaryBefore: ListBlockBoundary | undefined;
     let candidateHeadRect: CoordinateRect | undefined;
+    let candidateHeadMarkerRect: CoordinateRect | undefined;
     for (const line of Array.from(
       this.view.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
     )) {
@@ -743,9 +746,9 @@ class EditorGuideOverlay {
       if (depth === null || markerKind === null) {
         if (isHardListBoundary(line, sourceLine)) {
           boundaryBefore = "content";
-          candidateHeadRect = toCoordinateRect(
-            line.getBoundingClientRect(),
-          );
+          candidateHeadRect = isUnmarkedListHead(sourceLine.trim())
+            ? toCoordinateRect(line.getBoundingClientRect()) : undefined;
+          candidateHeadMarkerRect = candidateHeadRect ? measureTextRect(line, true) ?? candidateHeadRect : undefined;
         } else {
           candidateHeadRect = undefined;
         }
@@ -772,6 +775,7 @@ class EditorGuideOverlay {
         element: line,
         headRect:
           boundaryBefore === "content" ? candidateHeadRect : undefined,
+        headMarkerRect: candidateHeadRect ? candidateHeadMarkerRect : undefined,
         lineRect,
         markerRect,
       });
@@ -850,9 +854,23 @@ class EditorGuideOverlay {
           connectSeparateListBlocks,
         );
       const endsBelowViewport = last.itemIndex !== group.itemIndices.at(-1);
+      const headRow = group.parentIndex === null && this.view.dom.ownerDocument.body.classList.contains("ltig-static-unmarked-head-enabled")
+        ? rows[group.itemIndices[0]] : undefined;
+      const head = headRow?.headRect;
       const startY = startsAboveViewport
         ? clipTop
-        : clamp(first.y - style.firstBranchRise, clipTop, clipBottom);
+        : clamp(head ? head.bottom - hostRect.top : first.y - style.firstBranchRise, clipTop, clipBottom);
+      const headMarker = headRow?.headMarkerRect;
+      if (head && headMarker) {
+        const y = markerCenterY(headMarker) - hostRect.top + style.connectorOffset;
+        const endX = (style.direction === "rtl" ? headMarker.right : headMarker.left) - hostRect.left + (style.direction === "rtl" ? style.markerGap : -style.markerGap);
+        container.createSvg("path", {
+          cls: ["ltig-guide-path", "ltig-head-guide-path"],
+          attr: { d: buildGuidePath({ connectors: [{ endX, y }],
+            spineX: endX + (style.direction === "rtl" ? style.connectorLength : -style.connectorLength),
+            startY: Math.max(clipTop, y - style.firstBranchRise), endY: y }) },
+        });
+      }
       const endY = endsBelowViewport
         ? clipBottom
         : clamp(last.y, clipTop, clipBottom);
@@ -1121,7 +1139,7 @@ class EditorGuideOverlay {
         continue;
       }
       const parentY = clamp(
-        threadStartY(parent.markerRect.bottom - hostRect.top,
+        threadStartY(parent.lineRect.bottom - hostRect.top,
           markerCenterY(child.markerRect) - hostRect.top + style.verticalOffset,
           style.connectorHeight, style.thickness, style.markerGap),
         clipTop,
@@ -1280,7 +1298,7 @@ class EditorGuideOverlay {
       if (parent === undefined) {
         continue;
       }
-      const parentY = parent.markerRect.bottom - hostRect.top;
+      const parentY = parent.lineRect.bottom - hostRect.top;
       appendGroupPath(
         group,
         parentY,
@@ -1548,14 +1566,14 @@ function measureMarkerRect(
   };
 }
 
-function measureTextRect(element: HTMLElement): CoordinateRect | null {
+function measureTextRect(element: HTMLElement, firstLine = false): CoordinateRect | null {
   if (element.textContent?.trim() === "") {
     return null;
   }
   try {
     const range = element.ownerDocument.createRange();
     range.selectNodeContents(element);
-    const rect = toCoordinateRect(range.getBoundingClientRect());
+    const rect = toCoordinateRect((firstLine ? Array.from(range.getClientRects()).find(r => r.width > 0 && r.height > 0) : null) ?? range.getBoundingClientRect());
     return rect;
   } catch {
     return null;
@@ -1665,7 +1683,7 @@ function readGuideStyleGeometry(element: HTMLElement): GuideStyleGeometry {
 function readThreadStyleGeometry(element: HTMLElement): ThreadStyleGeometry {
   const style = element.ownerDocument.defaultView?.getComputedStyle(element);
   return {
-    connectorHeight: readPixelValue(style?.getPropertyValue("--ltig-thread-connector-height"), 100),
+    connectorHeight: readPixelValue(style?.getPropertyValue("--ltig-thread-connector-height"), 103),
     thickness: readPixelValue(style?.getPropertyValue("--ltig-thread-thickness"), 4),
     connectorLength: readPixelValue(
       style?.getPropertyValue("--ltig-thread-connector-length"),

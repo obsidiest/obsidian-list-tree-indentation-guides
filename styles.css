@@ -212,9 +212,9 @@ settings:
   -
     id: ltig-thread-connector-height
     title: Thread connector height
-    description: Vertical reach as a percentage of the gap below the parent marker. 100% clears the marker; higher values extend upward. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
+    description: Vertical reach as a percentage of the gap below the parent row. 100% starts below that row; higher values extend upward. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
     type: variable-number-slider
-    default: 100
+    default: 103
     min: 0
     max: 500
     step: 1
@@ -1039,7 +1039,7 @@ settings:
   -
     id: ltig-breadcrumb-thread-connector-height
     title: Thread connector height
-    description: Vertical reach as a percentage of the gap below the parent marker. 100% clears the marker; higher values extend upward. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
+    description: Vertical reach as a percentage of the gap below the parent row. 100% starts below that row; higher values extend upward. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
     type: variable-number-slider
     default: 100
     min: 0
@@ -1245,7 +1245,7 @@ body {
   --ltig-thread-thickness: 4px;
   --ltig-thread-corner-radius: 8px;
   --ltig-thread-connector-length: 28px;
-  --ltig-thread-connector-height: 100%;
+  --ltig-thread-connector-height: 103%;
   --ltig-thread-marker-gap: 4px;
   --ltig-thread-vertical-offset: 0px;
   --ltig-thread-color-1: #ff5a00;
@@ -1556,6 +1556,17 @@ body.ltig-static-guides-enabled.ltig-source-mode-enabled
 }
 
 /* Measured rendered lists: includes heading and block embeds in every mode. */
+/* Clip external embed drawings without adding scrollable content to the embed. */
+.ltig-embed-layer {
+  position: fixed;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  z-index: 3;
+}
+.ltig-embed-layer > .ltig-rendered-overlay {
+  overflow: hidden;
+}
 .ltig-rendered-host {
   position: relative;
 }

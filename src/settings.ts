@@ -94,6 +94,17 @@ export class ListTreeIndentationGuidesSettingTab extends PluginSettingTab {
             },
           },
           {
+            name: "Unmarked List Head Static Tree Indentation Guides",
+            desc: "Give the immediately preceding unmarked line its own static guide and connect its list below it.",
+            aliases: ["unmarked list head", "plain text list head", "static head guide"],
+            control: {
+              type: "toggle",
+              key: "unmarkedListHeadStaticGuides",
+              defaultValue: DEFAULT_SETTINGS.unmarkedListHeadStaticGuides,
+              disabled: () => !this.host.settings.enableListStaticTreeIndentationGuides,
+            },
+          },
+          {
             name: "Connect separate list blocks",
             desc: "Allow continuation or gutter spines to bridge non-list content between separate list blocks in Live Preview and Source mode.",
             aliases: [

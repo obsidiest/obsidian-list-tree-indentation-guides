@@ -9,6 +9,7 @@ export interface ListTreeIndentationGuidesSettings extends BreadcrumbSettings {
   allBranchesOfActiveOrphanListThreading: boolean;
   enableListThreading: boolean;
   enableListStaticTreeIndentationGuides: boolean;
+  unmarkedListHeadStaticGuides: boolean;
   listThreadingFromNonListHead: boolean;
   listThreadingInLivePreview: boolean;
   listThreadingInReadingMode: boolean;
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: ListTreeIndentationGuidesSettings = {
   allBranchesOfActiveOrphanListThreading: false,
   enableListThreading: false,
   enableListStaticTreeIndentationGuides: true,
+  unmarkedListHeadStaticGuides: false,
   listThreadingFromNonListHead: true,
   listThreadingInLivePreview: true,
   listThreadingInReadingMode: true,
@@ -100,6 +102,10 @@ export function normalizeSettings(
         persisted.enableStaticListTreeIndentationGuides,
         DEFAULT_SETTINGS.enableListStaticTreeIndentationGuides,
       ),
+    ),
+    unmarkedListHeadStaticGuides: readBoolean(
+      persisted.unmarkedListHeadStaticGuides,
+      DEFAULT_SETTINGS.unmarkedListHeadStaticGuides,
     ),
     listThreadingFromNonListHead: readBoolean(
       persisted.listThreadingFromNonListHead,

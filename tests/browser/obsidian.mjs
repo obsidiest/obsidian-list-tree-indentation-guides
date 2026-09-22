@@ -11,7 +11,10 @@ function create(tag, options = {}, svg = false) {
   const el = svg
     ? doc.createElementNS("http://www.w3.org/2000/svg", tag)
     : doc.createElement(tag);
-  if (options.cls)
+  // Obsidian 1.13.7 enhance.js uses DOMTokenList.add for SVG, unlike HTML.
+  // A space-delimited SVG class string is ONE invalid token at runtime.
+  if (options.cls && svg) el.classList.add(...(Array.isArray(options.cls) ? options.cls : [options.cls]));
+  else if (options.cls)
     el.setAttribute(
       "class",
       Array.isArray(options.cls) ? options.cls.join(" ") : options.cls,

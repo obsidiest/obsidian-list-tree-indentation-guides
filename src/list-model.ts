@@ -241,7 +241,6 @@ export function breadcrumbEntries(
   for (const index of listThreadPlan(nodes, current, options)) {
     for (const ancestor of listAncestors(nodes, index)) result.add(ancestor);
   }
-  return [...result]
-    .filter((i) => options.unmarked || nodes[i].kind !== "head")
-    .sort((a, b) => a - b);
+  // Thread visibility must not remove the structural head from the breadcrumb.
+  return [...result].sort((a, b) => a - b);
 }

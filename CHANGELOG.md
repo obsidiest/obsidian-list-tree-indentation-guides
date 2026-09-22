@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## 2.0.1
 
+- Fix SVG class assignment using Obsidian's runtime helper semantics. The previous space-separated class strings threw when drawing embed and breadcrumb threading, preventing marked-item breadcrumbs from opening.
+- Move embed guide, thread, and preview-highlight drawings outside the transclusion DOM into clipped layers. Scroll and surrounding layout changes reposition those layers without writing into CodeMirror widgets or rebuilding unchanged paths.
+- Measure visible task checkboxes after skipping hidden bullet placeholders; measure Obsidian's zero-width bullet pseudo-element. Keep embed-only parent markers on their first line, and account for scale and nested clip boundaries.
+- Start breadcrumb static connectors below the full parent label so wrapped unmarked heads are clear. Base threading height on the parent's own row for consistent numbered/bulleted marker clearance; change the main height default to 103%, retaining the breadcrumb default of 100%.
+- Rename List Hover Breadcrumb Activation Scope. Add Unmarked List Head Hover Breadcrumb Activation (on by default), independent of threading, with separate full-row and gutter scope behavior.
+- Add Unmarked List Head Static Tree Indentation Guides (off by default) for immediately preceding unmarked heads of ordered and unordered lists.
+
 - Prevent a recursive CodeMirror update during breadcrumb cleanup from crashing the controller and leaving an unresponsive popover. Dispose popovers before editor cleanup, and distinguish pointer focus from keyboard focus for timeout dismissal.
 - Track rendered Markdown surface mounting and replacement, reattach removed SVG overlays, and capture embed hover events before widget event interception. Reuse measured geometry on hover and outer scrolling; postprocessing invalidates only the affected surfaces.
 - Display breadcrumb labels without raw Markdown delimiters while preserving colons, escapes, entities, and Unicode. Keep already-rendered fallback text literal.
