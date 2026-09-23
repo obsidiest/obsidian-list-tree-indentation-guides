@@ -123,7 +123,7 @@ function setupMarkerEditor(text, mode = "livePreview") {
       const el = document.createElement("span");
       el.className = `cm-formatting-list cm-formatting-list-${/^\d/.test(this.token) ? "ol" : "ul"}`;
       if (this.task) {
-        el.innerHTML = '<span class="list-bullet" style="display:none"></span><input type="checkbox" class="task-list-item-checkbox">';
+        el.innerHTML = `${/^\d/.test(this.token) ? `<span class="fixture-ordinal">${this.token}</span>` : '<span class="list-bullet" style="display:none"></span>'}<span class="task-list-label"><input type="checkbox" class="task-list-item-checkbox"></span>`;
       } else if (/^\d/.test(this.token)) el.textContent = this.token;
       else el.innerHTML = '<span class="list-bullet"></span>';
       return el;

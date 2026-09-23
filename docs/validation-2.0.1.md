@@ -47,15 +47,29 @@ The replacement separates the percentage calculation from the marker boundary:
 - This change covers active-item/all-branches editor paths and the shared Reading/embed/breadcrumb renderer. Unmarked heads still use their full label/row bottom. The wrapped-head **static** guide correction is retained.
 - Earlier assertions that required a start below the entire wrapped row, or required the full 100% gap at 103%, have been replaced with actual marker-clearance and reach checks. The updated tests require both a nearby start and a cap that does not cross the marker.
 
+## Follow-up to draft commit ce34c7a
+
+The [ce34c7a measurements](evidence/ce34c7a-checkbox-geometry.json) were recorded before changing production code. All nine initial checkbox scenarios failed. The earlier task widget omitted the number for an ordered checkbox, so it could not expose the number being crossed. The widget now includes the visible numeral and a separate checkbox label.
+
+Two distinct geometry errors were located:
+
+- Both marker readers returned the checkbox immediately, discarding a preceding visible number. For a `1.` task in the editor fixture, the number began at 134.80 px while both connectors reached 161.70 px. For a `12.` task the endpoint reached 176.16 px. Static guides and threads therefore passed through the numeral before reaching the checkbox.
+- Thread spines were derived from the child's leading edge minus gap and length. With the same parent bullet centered at 77 px, changing the hovered child from an unnumbered checkbox to a numbered checkbox moved the spine from 104.80 px to 148.16 px. The all-branches path averaged these mismatched positions instead of attaching beneath the parent.
+
+The replacement separates the marker's **protected bounds** from its **primary anchor**. Protected bounds include the numeral and checkbox; the anchor uses the numeral's text range, the visible bullet glyph, or an unordered task's checkbox. Static/thread endpoints stop before the protected bounds. Thread spines attach under the primary parent anchor at the default length of 28 px; custom lengths adjust that attachment outward/inward, independently of child marker kind and gap. Static sibling spines stay outside the outermost marker edge. Rendered native decimal markers are measured with font metrics off-document and positioned from the list item's content edge, not from label text after the checkbox. Nothing is inserted into live embed content to measure them.
+
+The main gap default is 6.5 px in Style Settings metadata, CSS, and runtime fallbacks. Breadcrumbs retain 4 px; saved overrides retain their values. Height defaults and the parent stroke-cap bound are retained. The expanded checkbox suite has 14 scenarios, including Source, RTL, scaled embeds, saved gap overrides, and the length control. Its initial nine failing cases are preserved above. The native `12.` embed fixture uses a blank line before that nested list so its source hierarchy is valid CommonMark; the initial measurement fixture lacked that blank line, but still reproduced the separate ordinal-overlap defect.
+
 ## Automated checks
 
-- Local checks passed: TypeScript, Obsidian ESLint rules, 59 unit tests, 72 browser scenarios (16 original + 15 lifecycle + 17 follow-up + 24 height regressions), and the production build.
+- Local checks: TypeScript, Obsidian ESLint rules, 59 unit tests, 86 browser scenarios (16 original + 15 lifecycle + 17 follow-up + 24 height + 14 checkbox regressions), and the production build.
 - The existing 16 browser scenarios remain in `tests/browser/run.mjs`.
 - `tests/browser/regressions.mjs` adds editor edit/reconfigure/destroy cleanup; pointer timeout and keyboard focus; replaced/detached/late-mounted/partially replaced embeds; unchanged-scroll redraw counts; intercepted widget hover; source and literal DOM labels; independent breadcrumb threading gates; geometry beyond 100%; and precise-height reconstruction at 725.25%.
 - The new runner captures both uncaught page errors and console errors. This matters because CodeMirror logs a crashed view plugin to the console instead of necessarily raising a page error.
 - `tests/browser/followup.mjs` covers the SVG helper failures, wrapped-head clearance, real nested/outer wheel scrolling, both unmarked-head features in three modes, 110% height for wrapped ordered/unordered parents, hidden task placeholders, embed-only parents, nested LTR/RTL scale, surrounding layout changes, and clip boundaries.
 - `tests/browser/thread-height.mjs` covers short/wrapped bullet, number, and checkbox parents in Live Preview and Source; active/all-branches distant children; Reading/embed/breadcrumb parents; and 0–725.25% reach with a thick stroke and vertical offset. The baseline evidence includes the initial eight failures; the expanded suite has 24 scenarios.
-- `npm run test:browser` runs all four suites. The additional suites write `release/browser/regressions-2.0.1.json`, `release/browser/followup-2.0.1.json`, and `release/browser/thread-height-2.0.1.json`; CI uploads them with the existing browser evidence. Local browser: Chromium 143.0.7499.0. CI uses the version supplied by Playwright 1.58.2.
+- `tests/browser/checkbox-geometry.mjs` checks actual numeral/control bounds independently of the production measurement helper: numbered-checkbox static/thread clearance, stable parent attachments for mixed children in active/all-branches modes, Source, RTL, native numbers in scaled embeds, and saved gap/length settings.
+- `npm run test:browser` runs all five suites. The additional suites write `release/browser/regressions-2.0.1.json`, `release/browser/followup-2.0.1.json`, `release/browser/thread-height-2.0.1.json`, and `release/browser/checkbox-2.0.1.json`; CI uploads them with the existing browser evidence. Local browser: Chromium 143.0.7499.0. CI uses the version supplied by Playwright 1.58.2.
 
 The precision-control fixture verifies events and reconstruction from saved CSS values, not Style Settings' disk persistence. The embed fixtures are representative DOM structures, not Obsidian's live transclusion renderer. The main default is 103%, with a 100% breadcrumb default. Existing saved values are preserved. For connectors with a parent, the stroke stops at that parent marker even at very large percentages.
 
@@ -68,5 +82,7 @@ The precision-control fixture verifies events and reconstruction from saved CSS 
 5. Set both height controls to 150% and to a precise value above 500%. Close/reopen Style Settings and restart Obsidian; verify each value and the visible reach. Check the main default at 103%, breadcrumb default at 100%, and the reported numbered/bulleted/checkbox cases at 110%. Include short and wrapped parents, first and distant later children, active/all-branches modes, and enlarged stroke thickness. Confirm the connector reaches near its marker without obscuring it or extending above it.
 
 6. In nested heading/block embeds, check visible checkboxes, numbered and bulleted markers, and embed-only parent items; test outer/inner scrolling and edited content above an embed. Toggle both new unmarked-head options, both activation scopes, and their parent toggles in all three modes.
+
+7. Recheck the ce34c7a screenshot cases with Minimal: numbered checkboxes at several depths, mixed checkbox/numbered-checkbox children, and wrapped checkbox parents. Confirm both static and highlighted endpoints leave the numeral clear, and active/all-branches threads attach beneath the parent. Compare the new 6.5 px gap default with saved overrides and custom lengths. Browser fixtures do not verify theme-specific native counter styling or disk persistence in Style Settings.
 
 The PR is for review and these desktop checks. Building successfully is not runtime verification.

@@ -1,3 +1,36 @@
+export interface MarkerGeometry {
+  /** Every visible part of the marker, including a task's preceding number. */
+  bounds: DOMRect;
+  /** The primary marker: numeral, bullet glyph, or unordered task checkbox. */
+  anchor: DOMRect;
+}
+
+export function markerGeometry(anchor: DOMRect, control?: DOMRect | null): MarkerGeometry {
+  if (!control) return { bounds: anchor, anchor };
+  const left = Math.min(anchor.left, control.left), top = Math.min(anchor.top, control.top);
+  return { anchor, bounds: new DOMRect(left, top,
+    Math.max(anchor.right, control.right) - left, Math.max(anchor.bottom, control.bottom) - top) };
+}
+
+/** Text nodes only: an enclosing formatting span can also contain a checkbox,
+ * padding, and hidden task syntax. None of those belongs to the numeral. */
+export function ordinalTextRect(element: HTMLElement): DOMRect | null {
+  const walker = element.ownerDocument.createTreeWalker(element, 4);
+  while (walker.nextNode()) {
+    const text = walker.currentNode as Text;
+    const match = text.data.match(/\d+[.)]/u);
+    const parent = text.parentElement;
+    if (!match || !parent || parent.closest(".task-list-label, .hmd-hidden-token")) continue;
+    if (element.ownerDocument.defaultView?.getComputedStyle(parent).visibility === "hidden") continue;
+    const range = element.ownerDocument.createRange();
+    range.setStart(text, match.index!);
+    range.setEnd(text, match.index! + match[0].length);
+    const rect = range.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return rect;
+  }
+  return null;
+}
+
 /** Visible control/glyph bounds, independent of an inline marker's line box. */
 export function visibleListMarkerRect(marker: HTMLElement, scaleHost: HTMLElement): DOMRect | null {
   const win = marker.ownerDocument.defaultView;

@@ -1,11 +1,11 @@
-import { visibleListMarkerRect } from "./marker-geometry";
+import { markerGeometry, ordinalTextRect, visibleListMarkerRect } from "./marker-geometry";
 import type { Extension } from "@codemirror/state";
 import {
   EditorView,
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import { buildGuidePath, clamp, median, threadStartY } from "./guide-geometry";
+import { buildGuidePath, clamp, median, threadSpineX, threadStartY } from "./guide-geometry";
 import { isUnmarkedListHead } from "./list-model";
 
 const LIST_LINE_CLASS_PREFIX = "HyperMD-list-line-";
@@ -48,6 +48,8 @@ export interface CoordinateRect {
   left: number;
   right: number;
   top: number;
+  anchorX?: number;
+  anchorY?: number;
 }
 
 export interface ListRowHitBox {
@@ -840,7 +842,8 @@ class EditorGuideOverlay {
         continue;
       }
 
-      const spineX = median(rendered.map((connector) => connector.startX));
+      const starts = rendered.map((connector) => connector.startX);
+      const spineX = style.direction === "rtl" ? Math.max(...starts) : Math.min(...starts);
       const first = rendered[0];
       const last = rendered.at(-1);
       if (spineX === null || first === undefined || last === undefined) {
@@ -1159,10 +1162,8 @@ class EditorGuideOverlay {
         direction === "rtl"
           ? markerEdge + style.markerGap
           : markerEdge - style.markerGap;
-      const spineX =
-        direction === "rtl"
-          ? endX + style.connectorLength
-          : endX - style.connectorLength;
+      const spineX = threadSpineX(markerCenterX(parent.markerRect) - hostRect.left,
+        style.connectorLength, direction === "rtl" ? -1 : 1);
       const path = container.createSvg("path");
       addThreadPathClasses(
         path,
@@ -1223,6 +1224,7 @@ class EditorGuideOverlay {
       group: VisibleListGroup,
       parentBottom: number | undefined,
       colorDepth: number,
+      parentCenter?: number,
     ): void => {
       const connectors = group.itemIndices
         .map((itemIndex) =>
@@ -1242,7 +1244,9 @@ class EditorGuideOverlay {
             connector.y >= clipTop - 32 &&
             connector.y <= clipBottom + 32,
         );
-      const spineX = median(connectors.map((connector) => connector.startX));
+      const spineX = parentCenter === undefined
+        ? median(connectors.map((connector) => connector.startX))
+        : threadSpineX(parentCenter, style.connectorLength, direction === "rtl" ? -1 : 1);
       const firstConnector = connectors[0];
       if (
         spineX === null ||
@@ -1306,6 +1310,7 @@ class EditorGuideOverlay {
         group.depth -
           rootDepth +
           (hasListHead || hasOrphanRoot ? 1 : 0),
+        markerCenterX(parent.markerRect) - hostRect.left,
       );
     }
   }
@@ -1514,7 +1519,15 @@ function measureMarkerRect(
       for (const marker of Array.from(line.querySelectorAll<HTMLElement>(selector))) {
         if (marker.closest(".cm-line") !== line || marker.closest(".internal-embed")) continue;
         const rect = visibleListMarkerRect(marker, line);
-        if (rect) return toCoordinateRect(rect);
+        if (rect) {
+          const formatting = markerKind === "ordered"
+            ? line.querySelector<HTMLElement>(".cm-formatting-list-ol") ?? line.querySelector<HTMLElement>(".cm-formatting-list") : null;
+          const numeral = formatting ? ordinalTextRect(formatting) : null;
+          const geometry = markerGeometry(numeral ?? rect, numeral ? rect : null);
+          return { ...toCoordinateRect(geometry.bounds),
+            anchorX: (geometry.anchor.left + geometry.anchor.right) / 2,
+            anchorY: (geometry.anchor.top + geometry.anchor.bottom) / 2 };
+        }
       }
     }
   }
@@ -1532,7 +1545,7 @@ function measureMarkerRect(
       markerKind,
       lineRect,
       toCoordinateRect(marker.getBoundingClientRect()),
-      markerKind === "ordered" ? measureTextRect(marker, true) : null,
+      markerKind === "ordered" ? ordinalTextRect(marker) : null,
     );
     if (markerRect !== null) {
       return markerRect;
@@ -1628,7 +1641,11 @@ function toCoordinateRect(rect: DOMRect): CoordinateRect {
 }
 
 function markerCenterY(rect: CoordinateRect): number {
-  return (rect.top + rect.bottom) / 2;
+  return rect.anchorY ?? (rect.top + rect.bottom) / 2;
+}
+
+function markerCenterX(rect: CoordinateRect): number {
+  return rect.anchorX ?? (rect.left + rect.right) / 2;
 }
 
 function inferIndentWidth(rows: readonly MeasuredListRow[]): number {
@@ -1695,7 +1712,7 @@ function readThreadStyleGeometry(element: HTMLElement): ThreadStyleGeometry {
     ),
     markerGap: readPixelValue(
       style?.getPropertyValue("--ltig-thread-marker-gap"),
-      4,
+      6.5,
     ),
     verticalOffset: readPixelValue(
       style?.getPropertyValue("--ltig-thread-vertical-offset"),

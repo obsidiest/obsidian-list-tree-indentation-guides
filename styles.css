@@ -202,7 +202,7 @@ settings:
   -
     id: ltig-thread-connector-length
     title: Thread connector length
-    description: Horizontal reach of each highlighted threading elbow
+    description: Horizontal reach adjustment. 28 px aligns branches below the parent marker; larger values move the spine outward. Child marker width and marker gap do not shift the parent attachment.
     type: variable-number-slider
     default: 28
     min: 4
@@ -224,7 +224,7 @@ settings:
     title: Thread marker gap
     description: Empty distance between threading and its list marker
     type: variable-number-slider
-    default: 4
+    default: 6.5
     min: 0
     max: 32
     step: 0.5
@@ -1029,7 +1029,7 @@ settings:
   -
     id: ltig-breadcrumb-thread-connector-length
     title: Thread connector length
-    description: Horizontal reach of each highlighted threading elbow
+    description: Horizontal reach adjustment. 28 px aligns branches below the parent marker; larger values move the spine outward. Child marker width and marker gap do not shift the parent attachment.
     type: variable-number-slider
     default: 28
     min: 4
@@ -1246,7 +1246,7 @@ body {
   --ltig-thread-corner-radius: 8px;
   --ltig-thread-connector-length: 28px;
   --ltig-thread-connector-height: 103%;
-  --ltig-thread-marker-gap: 4px;
+  --ltig-thread-marker-gap: 6.5px;
   --ltig-thread-vertical-offset: 0px;
   --ltig-thread-color-1: #ff5a00;
   --ltig-thread-color-2: #ffc400;

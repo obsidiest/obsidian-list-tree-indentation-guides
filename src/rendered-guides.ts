@@ -13,6 +13,7 @@ import {
   listGeometry,
   pointWithinHost,
   renderedMarkerRect,
+  renderedMarkerGeometry,
   ownRowRect,
   type ListPoint,
 } from "./list-renderer";
@@ -502,7 +503,8 @@ export class RenderedListGuides {
       surface.points.clear();
       for (const [index, element] of surface.elements) {
         if (!element.getClientRects().length) continue;
-        const point = pointWithinHost(renderedMarkerRect(element), surface.host, surface.geometry.direction);
+        const marker = renderedMarkerGeometry(element);
+        const point = pointWithinHost(marker.bounds, surface.host, surface.geometry.direction, marker.anchor);
         point.rowBottom = pointWithinHost(ownRowRect(element), surface.host, surface.geometry.direction).bottom;
         surface.points.set(index, point);
       }

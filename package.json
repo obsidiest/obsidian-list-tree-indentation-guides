@@ -15,7 +15,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:browser": "node tests/browser/run.mjs && node tests/browser/regressions.mjs && node tests/browser/followup.mjs && node tests/browser/thread-height.mjs"
+    "test:browser": "node tests/browser/run.mjs && node tests/browser/regressions.mjs && node tests/browser/followup.mjs && node tests/browser/thread-height.mjs && node tests/browser/checkbox-geometry.mjs"
   },
   "devDependencies": {
     "@codemirror/lang-markdown": "6.5.2",

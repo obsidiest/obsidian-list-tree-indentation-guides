@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## 2.0.1
 
+- Treat a numbered task's numeral and checkbox as one protected marker area. Measure numeral text separately from control wrappers, and reserve native marker space before the list item's content edge in rendered lists and embeds.
+- Anchor child thread spines below the measured parent marker instead of deriving them from the child's changing checkbox/number width. Keep active-item and all-branches attachments consistent, with the horizontal reach control adjusting from that parent anchor.
+- Change the main Thread marker gap default to 6.5 px; retain the independent breadcrumb default of 4 px and saved overrides.
 - Fix SVG class assignment using Obsidian's runtime helper semantics. The previous space-separated class strings threw when drawing embed and breadcrumb threading, preventing marked-item breadcrumbs from opening.
 - Move embed guide, thread, and preview-highlight drawings outside the transclusion DOM into clipped layers. Scroll and surrounding layout changes reposition those layers without writing into CodeMirror widgets or rebuilding unchanged paths.
 - Measure visible task checkboxes after skipping hidden bullet placeholders; measure Obsidian's zero-width bullet pseudo-element. Keep embed-only parent markers on their first line, and account for scale and nested clip boundaries.

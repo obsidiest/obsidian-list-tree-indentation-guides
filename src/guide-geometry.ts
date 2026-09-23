@@ -64,6 +64,12 @@ export function threadStartY(parentBottom: number, endY: number, height: number,
   return Math.max(markerLimit, endY - Math.max(0, endY - normalTop) * reach / 100);
 }
 
+/** At the default reach, attach below the measured parent marker. Changing
+ * reach moves the spine, independently of the child's marker kind or gap. */
+export function threadSpineX(parentCenter: number, reach: number, direction: number): number {
+  return parentCenter + (28 - reach) * direction;
+}
+
 function formatCoordinate(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
