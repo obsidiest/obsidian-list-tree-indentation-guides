@@ -22,6 +22,13 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 With their corresponding toggles enabled:
 
+<p align="center">
+  <img src="screenshots/List%20Static%20Tree%20Indentation%20Guides%20-%20List%20Tree%20Indentation%20Guides%20Plugin.png"
+       alt="List Static Tree Indentation Guides">
+  <br>
+  <em>List Static Tree Indentation Guides</em>
+</p>
+
 ![List Static Tree Indentation Guides](screenshots/List%20Static%20Tree%20Indentation%20Guides%20-%20List%20Tree%20Indentation%20Guides%20Plugin.png)
 
 ![Active List Item Threading](screenshots/Active%20List%20Item%20Threading%20-%20List%20Indentation%20Guides%20Plugin.png)
