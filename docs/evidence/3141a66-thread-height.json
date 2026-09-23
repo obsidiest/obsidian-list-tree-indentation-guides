@@ -1,0 +1,60 @@
+{
+  "browser": "143.0.7499.0",
+  "host": "Chromium with real plugin modules and CodeMirror; not Obsidian desktop",
+  "results": [
+    {
+      "name": "livePreview -: 110% reaches a wrapped parent's visible marker",
+      "passed": false,
+      "error": "{\"top\":70.40625,\"bottom\":77.59375,\"start\":198.2,\"capTop\":196.2,\"rowBottom\":194}",
+      "console": []
+    },
+    {
+      "name": "livePreview 1.: 110% reaches a wrapped parent's visible marker",
+      "passed": false,
+      "error": "{\"top\":60,\"bottom\":88,\"start\":198.2,\"capTop\":196.2,\"rowBottom\":194}",
+      "console": []
+    },
+    {
+      "name": "livePreview - [ ]: 110% reaches a wrapped parent's visible marker",
+      "passed": false,
+      "error": "{\"top\":64,\"bottom\":86,\"start\":198.2,\"capTop\":196.2,\"rowBottom\":194}",
+      "console": []
+    },
+    {
+      "name": "source -: 110% reaches a wrapped parent's visible marker",
+      "passed": false,
+      "error": "{\"top\":60,\"bottom\":88,\"start\":198.2,\"capTop\":196.2,\"rowBottom\":194}",
+      "console": []
+    },
+    {
+      "name": "source 1.: 110% reaches a wrapped parent's visible marker",
+      "passed": false,
+      "error": "{\"top\":60,\"bottom\":88,\"start\":198.2,\"capTop\":196.2,\"rowBottom\":194}",
+      "console": []
+    },
+    {
+      "name": "source - [ ]: 110% reaches a wrapped parent's visible marker",
+      "passed": false,
+      "error": "{\"top\":60,\"bottom\":88,\"start\":198.2,\"capTop\":196.2,\"rowBottom\":194}",
+      "console": []
+    },
+    {
+      "name": "110% active item: a distant child cannot pull the stroke above its parent",
+      "passed": false,
+      "error": "{\"top\":70.40625,\"bottom\":77.59375,\"start\":63.80000000000001,\"capTop\":61.80000000000001,\"rowBottom\":98}",
+      "console": []
+    },
+    {
+      "name": "110% all branches: a distant child cannot pull the stroke above its parent",
+      "passed": false,
+      "error": "{\"top\":70.40625,\"bottom\":77.59375,\"start\":102.2,\"capTop\":100.2,\"rowBottom\":98}",
+      "console": []
+    }
+  ],
+  "baselineCommit": "3141a6652c69530f175dd9798ac6e05e56a13170",
+  "notes": [
+    "Captured before editing production geometry.",
+    "Fixture depth follows nested indentation levels; the previous fixed indent-width fixture misclassified four-space children as separate root lists.",
+    "Visible bullet pseudo-elements and checkbox widgets replace the former text-only Live Preview marker fixture. No Obsidian desktop session was run."
+  ]
+}

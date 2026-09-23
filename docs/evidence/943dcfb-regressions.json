@@ -1,0 +1,54 @@
+{
+  "browser": "143.0.7499.0",
+  "host": "Chromium with real plugin modules and a minimal Obsidian adapter; not Obsidian desktop",
+  "results": [
+    {
+      "name": "wrapped breadcrumb head clears its last text line",
+      "passed": false,
+      "error": "{\"bottom\":58.640625,\"start\":24.5}",
+      "console": []
+    },
+    {
+      "name": "long live embed permits wheel scrolling without continuous redraw",
+      "passed": null,
+      "error": "{\"top\":0,\"height\":11308,\"inner\":[{\"cls\":\"internal-embed markdown-embed inline-embed\",\"top\":0,\"height\":4000,\"scroll\":4000},{\"cls\":\"markdown-embed-content\",\"top\":420,\"height\":4000,\"scroll\":6680},{\"cls\":\"markdown-preview-view markdown-rendered ltig-rendered-host ltig-rendered-static\",\"top\":0,\"height\":6680,\"scroll\":6680}],\"mutations\":4}",
+      "console": [],
+      "status": "invalid initial scroll assertion; not a reproduced freeze",
+      "explanation": "The pointer was inside the scrollable embed. Its scrollTop correctly changed to 420 while the outer editor stayed at 0. The corrected regression explicitly wheels the inner scroller and outer gutter separately. The mutation count records widget DOM writes, not proof of the reported freeze."
+    },
+    {
+      "name": "threaded breadcrumb opens for a marked editor item with host SVG semantics",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n0 !== 2\n",
+      "console": [
+        "Failed to execute 'add' on 'DOMTokenList': The token provided ('ltig-breadcrumb-thread-path ltig-breadcrumb-thread-depth-1') contains HTML space characters, which are not valid in tokens.",
+        "Failed to execute 'add' on 'DOMTokenList': The token provided ('ltig-breadcrumb-thread-path ltig-breadcrumb-thread-depth-1') contains HTML space characters, which are not valid in tokens."
+      ]
+    },
+    {
+      "name": "embed threads render with host SVG semantics",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n0 !== 2\n",
+      "console": [
+        "Failed to execute 'add' on 'DOMTokenList': The token provided ('ltig-thread-path ltig-thread-depth-1') contains HTML space characters, which are not valid in tokens."
+      ]
+    }
+  ],
+  "additional_before_fix_measurements": [
+    {
+      "name": "hidden bullet placeholder followed by a visible checkbox",
+      "checkboxLeft": 93,
+      "connectorEndX": 111,
+      "expected": "connector endpoint at least 3 px before checkboxLeft",
+      "result": "overlap reproduced before changing renderedMarkerRect"
+    },
+    {
+      "name": "embed-only parent list item",
+      "markerCenterY": 163,
+      "rowTop": 72,
+      "firstLineHeight": 48,
+      "expected": "marker on first line, centerY no greater than 120",
+      "result": "midpoint connector reproduced before changing the empty-text fallback"
+    }
+  ]
+}

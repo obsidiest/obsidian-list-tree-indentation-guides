@@ -14,6 +14,7 @@ import {
 const MODE_CLASSES = [
   "ltig-list-threading-enabled",
   "ltig-static-guides-enabled",
+  "ltig-static-unmarked-head-enabled",
   "ltig-thread-active-cursor-enabled",
   "ltig-thread-active-item-enabled",
   "ltig-thread-all-branches-enabled",
@@ -129,6 +130,10 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
     ownerDocument.body.classList.toggle(
       "ltig-static-guides-enabled",
       this.settings.enableListStaticTreeIndentationGuides,
+    );
+    ownerDocument.body.classList.toggle(
+      "ltig-static-unmarked-head-enabled",
+      this.settings.unmarkedListHeadStaticGuides,
     );
     ownerDocument.body.classList.toggle(
       "ltig-thread-active-cursor-enabled",

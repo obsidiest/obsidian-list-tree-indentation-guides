@@ -1,4 +1,6 @@
-import { buildGuidePath, threadStartY } from "./guide-geometry";
+import { elementScale, markerGeometry, visibleListMarkerRect, type MarkerGeometry } from "./marker-geometry";
+export { elementScale } from "./marker-geometry";
+import { buildGuidePath, threadSpineX, threadStartY } from "./guide-geometry";
 import { buildRoundedThreadGroupPath } from "./editor-guides";
 import {
   listThreadPlan,
@@ -10,6 +12,9 @@ export interface ListPoint {
   x: number;
   y: number;
   bottom: number;
+  centerX: number;
+  /** Bottom of the full own row, excluding nested lists. */
+  rowBottom?: number;
 }
 export interface ListGeometry {
   length: number;
@@ -60,8 +65,8 @@ export function listGeometry(
     rise: number("first-branch-rise", 10),
     offset: number("connector-offset", 0),
     threadLength: number("thread-connector-length", 28),
-    threadGap: number("thread-marker-gap", 4),
-    threadHeight: number("thread-connector-height", 100),
+    threadGap: number("thread-marker-gap", breadcrumb ? 4 : 6.5),
+    threadHeight: number("thread-connector-height", breadcrumb ? 100 : 103),
     threadThickness: number("thread-thickness", 4),
     threadOffset: number("thread-vertical-offset", 0),
     radius: number("thread-corner-radius", 8),
@@ -75,11 +80,12 @@ export function listGeometry(
 
 /** One connected spine per sibling group; size comes from layout, never the old SVG. */
 export function drawListTree(
-  svg: SVGSVGElement,
+  svg: SVGElement,
   nodes: readonly ListNode[],
   points: ReadonlyMap<number, ListPoint>,
   options: {
     guides: boolean;
+    unmarkedGuides?: boolean;
     connect: boolean;
     threading: ListThreadOptions;
     active: number | null;
@@ -104,7 +110,7 @@ export function drawListTree(
   };
   const append = (d: string, cls: string) => {
     if (d && !/NaN|Infinity/.test(d))
-      fragment.createSvg("path", { cls, attr: { d } });
+      fragment.createSvg("path", { cls: cls.split(" "), attr: { d } });
   };
   if (options.guides)
     for (const group of groups([...points.keys()], options.connect)) {
@@ -112,12 +118,13 @@ export function drawListTree(
         endX: points.get(i)!.x - geometry.gap * geometry.direction,
         y: points.get(i)!.y + geometry.offset,
       }));
-      const spineX = connectors[0].endX - geometry.length * geometry.direction;
+      const edges = connectors.map(c => c.endX);
+      const spineX = (geometry.direction < 0 ? Math.max(...edges) : Math.min(...edges)) - geometry.length * geometry.direction;
       const parentIndex = nodes[group[0]].parent;
       const parent = parentIndex === null ? undefined : points.get(parentIndex);
       const startY =
-        options.breadcrumb && parent
-          ? Math.min(connectors[0].y, parent.y + geometry.rise)
+        parent && (options.breadcrumb || (options.unmarkedGuides && nodes[parentIndex!].kind === "head"))
+          ? Math.min(connectors[0].y, Math.max(parent.y + geometry.rise, parent.rowBottom ?? parent.bottom))
           : connectors[0].y - geometry.rise;
       append(
         buildGuidePath({
@@ -129,6 +136,19 @@ export function drawListTree(
         `${prefix}guide-path`,
       );
     }
+  if (options.guides && options.unmarkedGuides) {
+    for (const [index, point] of points) {
+      if (nodes[index].kind !== "head") continue;
+      const endX = point.x - geometry.gap * geometry.direction;
+      const y = point.y + geometry.offset;
+      append(buildGuidePath({
+        connectors: [{ endX, y }],
+        spineX: endX - geometry.length * geometry.direction,
+        startY: y - geometry.rise,
+        endY: y,
+      }), `${prefix}guide-path ${prefix}head-guide-path`);
+    }
+  }
   const plan = listThreadPlan(nodes, options.active, options.threading);
   const active = options.active === null ? undefined : nodes[options.active];
   const hasHead =
@@ -162,7 +182,7 @@ export function drawListTree(
         : points.get(parentIndex);
     const startY = parent
       ? threadStartY(
-          parent.bottom,
+          nodes[parentIndex!]?.kind === "head" ? parent.rowBottom ?? parent.bottom : parent.bottom,
           connectors[0].y,
           geometry.threadHeight,
           geometry.threadThickness,
@@ -174,8 +194,9 @@ export function drawListTree(
           geometry.rise) *
           geometry.threadHeight) /
           100;
-    const spineX =
-      connectors[0].endX - geometry.threadLength * geometry.direction;
+    const spineX = parent && nodes[parentIndex!]?.kind !== "head"
+      ? threadSpineX(parent.centerX, geometry.threadLength, geometry.direction)
+      : connectors[0].endX - geometry.threadLength * geometry.direction;
     const color = Math.min(
       8,
       Math.max(
@@ -227,70 +248,99 @@ export function firstTextRect(element: HTMLElement): DOMRect | null {
 }
 
 export function renderedMarkerRect(element: HTMLElement): DOMRect {
-  const rect = firstTextRect(element) ?? element.getBoundingClientRect();
-  const style = element.ownerDocument.defaultView!.getComputedStyle(element);
+  return renderedMarkerGeometry(element).bounds;
+}
+
+export function renderedMarkerGeometry(element: HTMLElement): MarkerGeometry {
+  const win = element.ownerDocument.defaultView!;
+  const style = win.getComputedStyle(element);
   const rtl = style.direction === "rtl";
-  const explicit = Array.from(
-    element.querySelectorAll<HTMLElement>(
-      ".list-bullet, .task-list-item-checkbox",
-    ),
-  ).find((marker) => marker.closest("li") === element);
-  if (explicit) {
-    const measured = explicit.getBoundingClientRect();
-    if (measured.width > 0 && measured.height > 0) return measured;
+  let control: DOMRect | null = null;
+  // A task can have a hidden .list-bullet before its visible checkbox. Do not
+  // let that placeholder (or a marker in a subordinate embed) win the search.
+  for (const selector of [".task-list-item-checkbox", ".list-bullet"]) {
+    for (const marker of Array.from(element.querySelectorAll<HTMLElement>(selector))) {
+      if (marker.closest("li") !== element ||
+        marker.closest(".internal-embed") !== element.closest(".internal-embed")) continue;
+      const measured = visibleListMarkerRect(marker, element);
+      if (measured) { control = measured; break; }
+    }
+    if (control) break;
   }
-  if (element.tagName !== "LI") return rect;
-  const font = Number.parseFloat(style.fontSize) || 16;
   const ordered = element.parentElement?.tagName === "OL";
+  const markerStyle = win.getComputedStyle(element, "::marker");
+  const nativeNumber = ordered && style.listStyleType !== "none" && markerStyle.content !== '""';
+  if (control && !nativeNumber) return markerGeometry(control);
+  const font = Number.parseFloat(style.fontSize) || 16;
+  const box = element.getBoundingClientRect();
+  const scale = elementScale(element);
+  // Embed-only items have no own text. Their native marker belongs on the
+  // first line, never at the vertical midpoint of the entire embedded block.
+  const lineHeight = (Number.parseFloat(style.lineHeight) || font * 1.5) * scale.y;
+  const rect = firstTextRect(element) ?? new DOMRect(box.left, box.top, box.width, Math.min(box.height, lineHeight));
+  if (element.tagName !== "LI") return markerGeometry(rect);
   const siblings = element.parentElement
     ? Array.from(element.parentElement.children).filter(
         (e) => e.tagName === "LI",
       )
     : [];
-  const number =
-    Number(element.getAttribute("value")) ||
-    (Number(element.parentElement?.getAttribute("start")) || 1) +
-      siblings.indexOf(element);
-  const width = ordered
+  const reversed = element.parentElement?.hasAttribute("reversed") ?? false;
+  let number = Number(element.parentElement?.getAttribute("start") ?? (reversed ? siblings.length : 1));
+  for (const sibling of siblings) {
+    if (sibling.hasAttribute("value")) number = Number(sibling.getAttribute("value"));
+    if (sibling === element) break;
+    number += reversed ? -1 : 1;
+  }
+  if (nativeNumber) {
+    // Native ::marker has no DOM box. Measure its glyph advance off-document,
+    // and anchor to the li content edge, not to text after the checkbox.
+    const canvas = markerCanvas(element.ownerDocument);
+    const context = canvas.getContext("2d")!;
+    const size = Number.parseFloat(markerStyle.fontSize) || font;
+    context.font = `${markerStyle.fontStyle} ${markerStyle.fontWeight} ${size}px ${markerStyle.fontFamily}`;
+    const label = `${style.listStyleType === "decimal-leading-zero" && number >= 0 && number < 10 ? "0" : ""}${number}.`;
+    const spacing = Number.parseFloat(markerStyle.letterSpacing) || 0;
+    const width = (context.measureText(label).width + spacing * label.length) * scale.x;
+    const space = (context.measureText(" ").width + spacing) * scale.x;
+    const padding = Number.parseFloat(rtl ? style.paddingRight : style.paddingLeft) || 0;
+    const border = Number.parseFloat(rtl ? style.borderRightWidth : style.borderLeftWidth) || 0;
+    const edge = rtl ? box.right - (padding + border) * scale.x : box.left + (padding + border) * scale.x;
+    const outside = style.listStylePosition !== "inside";
+    const left = rtl ? edge + (outside ? space : -width) : edge - (outside ? width + space : 0);
+    return markerGeometry(new DOMRect(left, rect.top, width, rect.height), control);
+  }
+  const width = (ordered
     ? font * (String(number).length * 0.6 + 0.3)
-    : font * 0.45;
-  return new DOMRect(
-    rtl ? rect.right + font * 0.3 : rect.left - font * 0.3 - width,
+    : font * 0.45) * scale.x;
+  return markerGeometry(new DOMRect(
+    rtl ? rect.right + font * 0.3 * scale.x : rect.left - font * 0.3 * scale.x - width,
     rect.top,
     width,
     rect.height,
-  );
+  ), control);
+}
+
+const markerCanvases = new WeakMap<Document, HTMLCanvasElement>();
+function markerCanvas(doc: Document): HTMLCanvasElement {
+  let canvas = markerCanvases.get(doc);
+  if (!canvas) {
+    canvas = doc.adoptNode(createFragment().createEl("canvas"));
+    markerCanvases.set(doc, canvas);
+  }
+  return canvas;
 }
 
 export function pointWithinHost(
   marker: DOMRect,
   host: HTMLElement,
   direction: number,
+  anchor: DOMRect = marker,
 ): ListPoint {
   const rect = host.getBoundingClientRect();
   const style = host.ownerDocument.defaultView!.getComputedStyle(host);
   const px = (key: string) =>
     Number.parseFloat(style.getPropertyValue(key)) || 0;
-  const borderBox = style.boxSizing === "border-box";
-  // offsetWidth/Height round fractional CSS pixels, which introduces drift in tall embeds.
-  const width =
-    px("width") +
-    (borderBox
-      ? 0
-      : px("padding-left") +
-        px("padding-right") +
-        px("border-left-width") +
-        px("border-right-width"));
-  const height =
-    px("height") +
-    (borderBox
-      ? 0
-      : px("padding-top") +
-        px("padding-bottom") +
-        px("border-top-width") +
-        px("border-bottom-width"));
-  const scaleX = width ? rect.width / width : 1,
-    scaleY = height ? rect.height / height : 1;
+  const { x: scaleX, y: scaleY } = elementScale(host);
   const left = host.scrollLeft - px("border-left-width"),
     top = host.scrollTop - px("border-top-width");
   return {
@@ -298,7 +348,15 @@ export function pointWithinHost(
       ((direction < 0 ? marker.right : marker.left) - rect.left) /
         (scaleX || 1) +
       left,
-    y: ((marker.top + marker.bottom) / 2 - rect.top) / (scaleY || 1) + top,
+    centerX: ((anchor.left + anchor.right) / 2 - rect.left) / (scaleX || 1) + left,
+    y: ((anchor.top + anchor.bottom) / 2 - rect.top) / (scaleY || 1) + top,
     bottom: (marker.bottom - rect.top) / (scaleY || 1) + top,
   };
+}
+
+export function ownRowRect(element: HTMLElement): DOMRect {
+  const rect = element.getBoundingClientRect();
+  const nested = Array.from(element.children).find(child => /^(UL|OL)$/.test(child.tagName));
+  const bottom = nested ? Math.min(rect.bottom, nested.getBoundingClientRect().top) : rect.bottom;
+  return new DOMRect(rect.left, rect.top, rect.width, Math.max(0, bottom - rect.top));
 }

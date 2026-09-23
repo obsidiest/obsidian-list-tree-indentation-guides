@@ -52,11 +52,22 @@ export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-/** Reach is a percentage of the space below the parent, including stroke-cap clearance. */
+/** Scale toward the parent glyph, with a separate bound for the stroke cap.
+ * Above 100% reduces the configured gap but never crosses the parent's marker.
+ * This bound does not depend on how far away the selected child happens to be.
+ */
 export function threadStartY(parentBottom: number, endY: number, height: number,
   thickness: number, gap: number): number {
-  const safeTop = Math.min(endY, parentBottom + Math.max(0, thickness) / 2 + Math.max(0, gap));
-  return endY - Math.max(0, endY - safeTop) * clamp(height, 0, 100) / 100;
+  const markerLimit = Math.min(endY, parentBottom + Math.max(0, thickness) / 2);
+  const normalTop = Math.min(endY, markerLimit + Math.max(0, gap));
+  const reach = Number.isFinite(height) ? Math.max(0, height) : 100;
+  return Math.max(markerLimit, endY - Math.max(0, endY - normalTop) * reach / 100);
+}
+
+/** At the default reach, attach below the measured parent marker. Changing
+ * reach moves the spine, independently of the child's marker kind or gap. */
+export function threadSpineX(parentCenter: number, reach: number, direction: number): number {
+  return parentCenter + (28 - reach) * direction;
 }
 
 function formatCoordinate(value: number): string {

@@ -89,6 +89,11 @@ describe("source list hierarchy", () => {
     ).toEqual([0, 1, 2, 3]);
     expect(listThreadPlan(nodes, 0, { ...options, orphan: false })).toEqual([]);
   });
+  it("retains unmarked ancestry independently of unmarked threading", () => {
+    const nodes = parseListDocument("Head:\n1. parent\n   - child");
+    expect(breadcrumbEntries(nodes, 2, { ...options, unmarked: false })).toEqual([0, 1, 2]);
+    expect(listThreadPlan(nodes, 2, { ...options, unmarked: false })).toEqual([2]);
+  });
 });
 
 describe("breadcrumb settings", () => {

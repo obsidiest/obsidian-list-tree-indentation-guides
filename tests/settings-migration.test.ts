@@ -12,8 +12,20 @@ describe("plugin settings normalization", () => {
       allBranchesOfActiveListThreading: false,
       allBranchesOfActiveOrphanListThreading: false,
       enableListThreading: false,
+      breadcrumbUnmarkedHeadActivation: true,
+      unmarkedListHeadStaticGuides: false,
       threadBlankLineSeparatedListBlocksForActiveItem: false,
       threadBlankLineSeparatedListBlocksForAllBranches: false,
+    });
+  });
+
+  it("retains independent unmarked-head choices through reload", () => {
+    const saved = normalizeSettings({ listThreadingFromNonListHead: false,
+      breadcrumbUnmarkedHeadActivation: false, unmarkedListHeadStaticGuides: true });
+    expect(normalizeSettings(JSON.parse(JSON.stringify(saved)))).toMatchObject({
+      listThreadingFromNonListHead: false,
+      breadcrumbUnmarkedHeadActivation: false,
+      unmarkedListHeadStaticGuides: true,
     });
   });
 

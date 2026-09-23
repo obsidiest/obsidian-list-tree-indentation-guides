@@ -202,7 +202,7 @@ settings:
   -
     id: ltig-thread-connector-length
     title: Thread connector length
-    description: Horizontal reach of each highlighted threading elbow
+    description: Horizontal reach adjustment. 28 px aligns branches below the parent marker; larger values move the spine outward. Child marker width and marker gap do not shift the parent attachment.
     type: variable-number-slider
     default: 28
     min: 4
@@ -212,11 +212,11 @@ settings:
   -
     id: ltig-thread-connector-height
     title: Thread connector height
-    description: Vertical reach as a percentage of the available gap below the parent marker. 100% spans the gap while leaving the marker and stroke cap clear; lower values shorten the elbow.
+    description: Vertical reach toward the parent marker. 100% leaves the configured marker gap; higher values reduce that gap until the stroke meets the marker boundary. Wrapped parent text does not shorten the thread. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
     type: variable-number-slider
-    default: 100
+    default: 103
     min: 0
-    max: 100
+    max: 500
     step: 1
     format: '%'
   -
@@ -224,7 +224,7 @@ settings:
     title: Thread marker gap
     description: Empty distance between threading and its list marker
     type: variable-number-slider
-    default: 4
+    default: 6.5
     min: 0
     max: 32
     step: 0.5
@@ -1029,7 +1029,7 @@ settings:
   -
     id: ltig-breadcrumb-thread-connector-length
     title: Thread connector length
-    description: Horizontal reach of each highlighted threading elbow
+    description: Horizontal reach adjustment. 28 px aligns branches below the parent marker; larger values move the spine outward. Child marker width and marker gap do not shift the parent attachment.
     type: variable-number-slider
     default: 28
     min: 4
@@ -1039,11 +1039,11 @@ settings:
   -
     id: ltig-breadcrumb-thread-connector-height
     title: Thread connector height
-    description: Vertical reach as a percentage of the available gap below the parent marker. 100% spans the gap while leaving the marker and stroke cap clear; lower values shorten the elbow.
+    description: Vertical reach toward the parent marker. 100% leaves the configured marker gap; higher values reduce that gap until the stroke meets the marker boundary. Wrapped parent text does not shorten the thread. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
     type: variable-number-slider
     default: 100
     min: 0
-    max: 100
+    max: 500
     step: 1
     format: '%'
   -
@@ -1245,8 +1245,8 @@ body {
   --ltig-thread-thickness: 4px;
   --ltig-thread-corner-radius: 8px;
   --ltig-thread-connector-length: 28px;
-  --ltig-thread-connector-height: 100%;
-  --ltig-thread-marker-gap: 4px;
+  --ltig-thread-connector-height: 103%;
+  --ltig-thread-marker-gap: 6.5px;
   --ltig-thread-vertical-offset: 0px;
   --ltig-thread-color-1: #ff5a00;
   --ltig-thread-color-2: #ffc400;
@@ -1556,6 +1556,17 @@ body.ltig-static-guides-enabled.ltig-source-mode-enabled
 }
 
 /* Measured rendered lists: includes heading and block embeds in every mode. */
+/* Clip external embed drawings without adding scrollable content to the embed. */
+.ltig-embed-layer {
+  position: fixed;
+  pointer-events: none;
+  overflow: hidden;
+  contain: strict;
+  z-index: 3;
+}
+.ltig-embed-layer > .ltig-rendered-overlay {
+  overflow: hidden;
+}
 .ltig-rendered-host {
   position: relative;
 }

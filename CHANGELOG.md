@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.0.1
+
+- Treat a numbered task's numeral and checkbox as one protected marker area. Measure numeral text separately from control wrappers, and reserve native marker space before the list item's content edge in rendered lists and embeds.
+- Anchor child thread spines below the measured parent marker instead of deriving them from the child's changing checkbox/number width. Keep active-item and all-branches attachments consistent, with the horizontal reach control adjusting from that parent anchor.
+- Change the main Thread marker gap default to 6.5 px; retain the independent breadcrumb default of 4 px and saved overrides.
+- Fix SVG class assignment using Obsidian's runtime helper semantics. The previous space-separated class strings threw when drawing embed and breadcrumb threading, preventing marked-item breadcrumbs from opening.
+- Move embed guide, thread, and preview-highlight drawings outside the transclusion DOM into clipped layers. Scroll and surrounding layout changes reposition those layers without writing into CodeMirror widgets or rebuilding unchanged paths.
+- Measure visible task checkboxes after skipping hidden bullet placeholders; measure Obsidian's zero-width bullet pseudo-element. Keep embed-only parent markers on their first line, and account for scale and nested clip boundaries.
+- Correct the 3141a66 threading regression: anchor vertical reach at the parent marker, not the full wrapped row. Bound the stroke cap at the marker so large percentages and distant children cannot pull it through or above the parent. Share visible bullet/checkbox measurement with the editor, and preserve numeral text-range anchors.
+- Start breadcrumb static connectors below the full parent label so wrapped unmarked heads are clear. Keep the main height default at 103% and the breadcrumb default at 100%.
+- Rename List Hover Breadcrumb Activation Scope. Add Unmarked List Head Hover Breadcrumb Activation (on by default), independent of threading, with separate full-row and gutter scope behavior.
+- Add Unmarked List Head Static Tree Indentation Guides (off by default) for immediately preceding unmarked heads of ordered and unordered lists.
+
+- Prevent a recursive CodeMirror update during breadcrumb cleanup from crashing the controller and leaving an unresponsive popover. Dispose popovers before editor cleanup, and distinguish pointer focus from keyboard focus for timeout dismissal.
+- Track rendered Markdown surface mounting and replacement, reattach removed SVG overlays, and capture embed hover events before widget event interception. Reuse measured geometry on hover and outer scrolling; postprocessing invalidates only the affected surfaces.
+- Display breadcrumb labels without raw Markdown delimiters while preserving colons, escapes, entities, and Unicode. Keep already-rendered fallback text literal.
+- Allow main and breadcrumb Thread connector height values above 100%: sliders reach 500%, and precise fields accept larger nonnegative finite values without a fixed maximum.
+- Add regression coverage for independent breadcrumb threading, editor lifecycle, embed recycling, late mounting, partial replacement, scroll redraw counts, punctuation, and height persistence. See `docs/validation-2.0.1.md` for reproduced causes and the distinction between browser fixtures and unverified Obsidian desktop behavior.
+
 ## 2.0.0
 
 - Add List Hover Breadcrumb with independent mode, scope, marker, guide, threading, navigation, timeout, and Style Settings controls, adapted from Extended Headings 2.1.0.
