@@ -22,7 +22,7 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 With their corresponding toggles enabled:
 
-![List Static Tree Indentation Guides](screenshots/List Static Indentation Guides - List Indentation Guides Plugin.png)
+![List Static Tree Indentation Guides](/screenshots/List Static Indentation Guides - List Indentation Guides Plugin.png)
 
 ![Active List Item Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/Active List Item Threading - List Indentation Guides Plugin.png)
 
