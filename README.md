@@ -22,17 +22,17 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 With their corresponding toggles enabled:
 
-![List Static Tree Indentation Guides](/screenshots/List Static Tree Indentation Guides - List Tree Indentation Guides Plugin.png)
+![List Static Tree Indentation Guides](screenshots/List%20Static%20Tree%20Indentation%20Guides%20-%20List%20Tree%20Indentation%20Guides%20Plugin.png)
 
-![Active List Item Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/Active List Item Threading - List Indentation Guides Plugin.png)
+![Active List Item Threading](screenshots/Active%20List%20Item%20Threading%20-%20List%20Indentation%20Guides%20Plugin.png)
 
-![Active List Item Threading - Orphan List](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/Active List Item Threading - Orphan List - List Indentation Guides Plugin.png)
+![Active List Item Threading - Orphan List](screenshots/Active%20List%20Item%20Threading%20-%20Orphan%20List%20-%20List%20Indentation%20Guides%20Plugin.png)
 
-![All Branches of an Active List Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/All Branches of an Active List Threading - List Indentation Guides Plugin.png)
+![All Branches of an Active List Threading](screenshots/All%20Branches%20of%20an%20Active%20List%20Threading%20-%20List%20Indentation%20Guides%20Plugin.png)
 
-![All Branches of an Active List Threading - Orphan List](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/All Branches of an Active List Threading - Orphan List - List Indentation Guides Plugin.png)
+![All Branches of an Active List Threading - Orphan List](screenshots/All%20Branches%20of%20an%20Active%20List%20Threading%20-%20Orphan%20List%20-%20List%20Indentation%20Guides%20Plugin.png)
 
-![List Hover Breadcrumb](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/List Hover Breadcrumb - List Tree Indentation Guides Plugin.png)
+![List Hover Breadcrumb](screenshots/List%20Hover%20Breadcrumb%20-%20List%20Tree%20Indentation%20Guides%20Plugin.png)
 
 ## Features
 
