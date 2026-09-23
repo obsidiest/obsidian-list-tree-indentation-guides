@@ -1,3 +1,5 @@
+import { elementScale, visibleListMarkerRect } from "./marker-geometry";
+export { elementScale } from "./marker-geometry";
 import { buildGuidePath, threadStartY } from "./guide-geometry";
 import { buildRoundedThreadGroupPath } from "./editor-guides";
 import {
@@ -178,7 +180,7 @@ export function drawListTree(
         : points.get(parentIndex);
     const startY = parent
       ? threadStartY(
-          Math.max(parent.bottom, parent.rowBottom ?? parent.bottom),
+          nodes[parentIndex!]?.kind === "head" ? parent.rowBottom ?? parent.bottom : parent.bottom,
           connectors[0].y,
           geometry.threadHeight,
           geometry.threadThickness,
@@ -252,21 +254,8 @@ export function renderedMarkerRect(element: HTMLElement): DOMRect {
     for (const marker of Array.from(element.querySelectorAll<HTMLElement>(selector))) {
       if (marker.closest("li") !== element ||
         marker.closest(".internal-embed") !== element.closest(".internal-embed")) continue;
-      const measured = marker.getBoundingClientRect();
-      if (measured.height <= 0) continue;
-      if (selector === ".list-bullet") {
-        // Obsidian's bullet is a centered ::after glyph on a zero-width inline
-        // box. The box height is the line height, not the glyph height.
-        const glyph = win.getComputedStyle(marker, "::after");
-        const width = Number.parseFloat(glyph.width), height = Number.parseFloat(glyph.height);
-        if (glyph.content !== "none" && width > 0 && height > 0) {
-          const scale = elementScale(element);
-          const w = width * scale.x, h = height * scale.y;
-          return new DOMRect(measured.left + (measured.width - w) / 2,
-            measured.top + (measured.height - h) / 2, w, h);
-        }
-      }
-      if (measured.width > 0) return measured;
+      const measured = visibleListMarkerRect(marker, element);
+      if (measured) return measured;
     }
   }
   const font = Number.parseFloat(style.fontSize) || 16;
@@ -296,17 +285,6 @@ export function renderedMarkerRect(element: HTMLElement): DOMRect {
     width,
     rect.height,
   );
-}
-
-/** Fractional CSS dimensions preserve alignment inside zoomed/scaled embeds. */
-export function elementScale(element: HTMLElement): { x: number; y: number } {
-  const rect = element.getBoundingClientRect();
-  const style = element.ownerDocument.defaultView!.getComputedStyle(element);
-  const px = (key: string) => Number.parseFloat(style.getPropertyValue(key)) || 0;
-  const borderBox = style.boxSizing === "border-box";
-  const width = px("width") + (borderBox ? 0 : px("padding-left") + px("padding-right") + px("border-left-width") + px("border-right-width"));
-  const height = px("height") + (borderBox ? 0 : px("padding-top") + px("padding-bottom") + px("border-top-width") + px("border-bottom-width"));
-  return { x: width ? rect.width / width || 1 : 1, y: height ? rect.height / height || 1 : 1 };
 }
 
 export function pointWithinHost(

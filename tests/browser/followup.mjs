@@ -170,7 +170,7 @@ for (const marker of ["1.", "-"]) {
         rowBottom:parent.getBoundingClientRect().bottom, thickness:parseFloat(getComputedStyle(path).strokeWidth)};
     });
     assert(result.start-result.thickness/2 >= result.markerBottom,JSON.stringify(result));
-    assert(result.start >= result.rowBottom-5, JSON.stringify(result));
+    assert(result.start-result.thickness/2 <= result.markerBottom+4.1, JSON.stringify(result));
   });
 }
 

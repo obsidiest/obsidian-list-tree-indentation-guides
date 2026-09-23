@@ -11,11 +11,25 @@ describe("guide geometry", () => {
     }
     expect(threadStartY(100, 90, 100, 4, 4)).toBe(90);
   });
-  it("allows intentional reach above the safe default without a 100% cap", () => {
-    expect(threadStartY(26, 90, 150, 4, 4)).toBe(3);
-    expect(threadStartY(26, 90, 1000, 4, 4)).toBe(-490);
+  it("allows reach above 100% until the stroke cap meets the parent marker", () => {
+    expect(threadStartY(26, 90, 103, 4, 4)).toBeCloseTo(30.26);
+    expect(threadStartY(26, 90, 110, 4, 4)).toBe(28);
+    expect(threadStartY(26, 90, 150, 4, 4)).toBe(28);
+    expect(threadStartY(26, 90, 1000, 4, 4)).toBe(28);
     expect(threadStartY(26, 90, -10, 4, 4)).toBe(90);
     expect(threadStartY(26, 90, Number.NaN, 4, 4)).toBe(32);
+  });
+  it("never pulls the cap through its parent when a later child is selected", () => {
+    for (const thickness of [0.5, 4, 12]) {
+      for (const endY of [60, 300, 3000]) {
+        for (const height of [103, 110, 150, 725.25, Number.MAX_VALUE]) {
+          const start = threadStartY(26, endY, height, thickness, 4);
+          expect(Number.isFinite(start)).toBe(true);
+          expect(start - thickness / 2).toBeGreaterThanOrEqual(26);
+          expect(start - thickness / 2).toBeLessThanOrEqual(30);
+        }
+      }
+    }
   });
   it("builds one continuous spine with a connector for every sibling", () => {
     expect(

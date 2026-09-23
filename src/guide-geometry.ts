@@ -52,12 +52,16 @@ export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-/** 100% clears the parent marker; larger user-selected values extend above that point. */
+/** Scale toward the parent glyph, with a separate bound for the stroke cap.
+ * Above 100% reduces the configured gap but never crosses the parent's marker.
+ * This bound does not depend on how far away the selected child happens to be.
+ */
 export function threadStartY(parentBottom: number, endY: number, height: number,
   thickness: number, gap: number): number {
-  const safeTop = Math.min(endY, parentBottom + Math.max(0, thickness) / 2 + Math.max(0, gap));
+  const markerLimit = Math.min(endY, parentBottom + Math.max(0, thickness) / 2);
+  const normalTop = Math.min(endY, markerLimit + Math.max(0, gap));
   const reach = Number.isFinite(height) ? Math.max(0, height) : 100;
-  return endY - Math.max(0, endY - safeTop) * reach / 100;
+  return Math.max(markerLimit, endY - Math.max(0, endY - normalTop) * reach / 100);
 }
 
 function formatCoordinate(value: number): string {

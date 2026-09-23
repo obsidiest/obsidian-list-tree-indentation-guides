@@ -212,7 +212,7 @@ settings:
   -
     id: ltig-thread-connector-height
     title: Thread connector height
-    description: Vertical reach as a percentage of the gap below the parent row. 100% starts below that row; higher values extend upward. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
+    description: Vertical reach toward the parent marker. 100% leaves the configured marker gap; higher values reduce that gap until the stroke meets the marker boundary. Wrapped parent text does not shorten the thread. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
     type: variable-number-slider
     default: 103
     min: 0
@@ -1039,7 +1039,7 @@ settings:
   -
     id: ltig-breadcrumb-thread-connector-height
     title: Thread connector height
-    description: Vertical reach as a percentage of the gap below the parent row. 100% starts below that row; higher values extend upward. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
+    description: Vertical reach toward the parent marker. 100% leaves the configured marker gap; higher values reduce that gap until the stroke meets the marker boundary. Wrapped parent text does not shorten the thread. The slider reaches 500%; the precise value field accepts any nonnegative finite percentage.
     type: variable-number-slider
     default: 100
     min: 0

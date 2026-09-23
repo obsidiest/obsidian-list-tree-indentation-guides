@@ -1,3 +1,4 @@
+import { visibleListMarkerRect } from "./marker-geometry";
 import type { Extension } from "@codemirror/state";
 import {
   EditorView,
@@ -1139,7 +1140,7 @@ class EditorGuideOverlay {
         continue;
       }
       const parentY = clamp(
-        threadStartY(parent.lineRect.bottom - hostRect.top,
+        threadStartY(parent.markerRect.bottom - hostRect.top,
           markerCenterY(child.markerRect) - hostRect.top + style.verticalOffset,
           style.connectorHeight, style.thickness, style.markerGap),
         clipTop,
@@ -1298,7 +1299,7 @@ class EditorGuideOverlay {
       if (parent === undefined) {
         continue;
       }
-      const parentY = parent.lineRect.bottom - hostRect.top;
+      const parentY = parent.markerRect.bottom - hostRect.top;
       appendGroupPath(
         group,
         parentY,
@@ -1506,21 +1507,20 @@ function measureMarkerRect(
   isLivePreview: boolean,
   markerKind: MarkdownListMarkerKind,
 ): CoordinateRect | null {
-  const selectors =
-    markerKind === "ordered"
-      ? [".cm-formatting-list-ol", ".cm-formatting-list"]
-      : isLivePreview
-        ? [
-            ".list-bullet",
-            ".task-list-item-checkbox",
-            ".cm-formatting-list-ul",
-            ".cm-formatting-list",
-          ]
-        : [
-            ".cm-formatting-list-ul",
-            ".cm-formatting-list",
-            ".list-bullet",
-          ];
+  if (isLivePreview) {
+    // A task's hidden bullet placeholder must not mask its visible checkbox.
+    // A bullet's inline line box is not the size of its ::after glyph.
+    for (const selector of [".task-list-item-checkbox", ".list-bullet"]) {
+      for (const marker of Array.from(line.querySelectorAll<HTMLElement>(selector))) {
+        if (marker.closest(".cm-line") !== line || marker.closest(".internal-embed")) continue;
+        const rect = visibleListMarkerRect(marker, line);
+        if (rect) return toCoordinateRect(rect);
+      }
+    }
+  }
+  const selectors = markerKind === "ordered"
+    ? [".cm-formatting-list-ol", ".cm-formatting-list"]
+    : [".cm-formatting-list-ul", ".cm-formatting-list"];
   let markerFound = false;
   for (const selector of selectors) {
     const marker = line.querySelector<HTMLElement>(selector);
@@ -1532,7 +1532,7 @@ function measureMarkerRect(
       markerKind,
       lineRect,
       toCoordinateRect(marker.getBoundingClientRect()),
-      markerKind === "ordered" ? measureTextRect(marker) : null,
+      markerKind === "ordered" ? measureTextRect(marker, true) : null,
     );
     if (markerRect !== null) {
       return markerRect;

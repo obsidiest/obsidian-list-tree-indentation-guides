@@ -39,13 +39,16 @@ const lineDecorations = StateField.define({
 });
 function decorations(state) {
   const result = [];
+  const indents = [];
   for (let i = 1; i <= state.doc.lines; i++) {
     const line = state.doc.line(i),
       m = line.text.match(/^(\s*)([-+*]|\d+[.)])\s/);
     if (!m) continue;
+    while (indents.length && indents.at(-1) >= m[1].length) indents.pop();
+    indents.push(m[1].length);
     result.push(
       Decoration.line({
-        class: `HyperMD-list-line HyperMD-list-line-${Math.floor(m[1].length / 2) + 1}`,
+        class: `HyperMD-list-line HyperMD-list-line-${indents.length}`,
       }).range(line.from),
     );
     result.push(
@@ -110,6 +113,36 @@ function setupEditor(text, mode = "livePreview", extra = []) {
       ],
     }),
   });
+}
+// Host-shaped marker widgets for geometry tests. In particular, the bullet's
+// line box is much taller than its ::after glyph, and task bullets are hidden.
+function setupMarkerEditor(text, mode = "livePreview") {
+  class Marker extends WidgetType {
+    constructor(token, task) { super(); this.token = token; this.task = task; }
+    toDOM() {
+      const el = document.createElement("span");
+      el.className = `cm-formatting-list cm-formatting-list-${/^\d/.test(this.token) ? "ol" : "ul"}`;
+      if (this.task) {
+        el.innerHTML = '<span class="list-bullet" style="display:none"></span><input type="checkbox" class="task-list-item-checkbox">';
+      } else if (/^\d/.test(this.token)) el.textContent = this.token;
+      else el.innerHTML = '<span class="list-bullet"></span>';
+      return el;
+    }
+  }
+  const markers = StateField.define({
+    create: state => {
+      const ranges = [];
+      for (let i = 1; i <= state.doc.lines; i++) {
+        const line = state.doc.line(i), m = line.text.match(/^(\s*)([-+*]|\d+[.)]) (\[[ xX]\] )?/);
+        if (m) ranges.push(Decoration.replace({widget:new Marker(m[2], Boolean(m[3]))})
+          .range(line.from + m[1].length, line.from + m[0].length - 1));
+      }
+      return Decoration.set(ranges, true);
+    },
+    update: value => value,
+    provide: f => EditorView.decorations.from(f),
+  });
+  setupEditor(text, mode, mode === "livePreview" ? [markers] : []);
 }
 function addSurface({
   id,
@@ -184,6 +217,7 @@ globalThis.ltigTest = {
   precision,
   setSettings,
   setupEditor,
+  setupMarkerEditor,
   setupEmbedEditor: () => {
     class Embed extends WidgetType {
       toDOM() {

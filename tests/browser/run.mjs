@@ -148,7 +148,7 @@ try {
     assert.equal(paths.length, 3);
     for (let i = 1; i < 3; i++) {
       const start = Number(paths[i].d.match(/^M [-.\d]+ ([-.\d]+)/)[1]);
-      assert(start + g.rect.top >= g.items[i - 1].marker.bottom + 6 - 0.1);
+      assert(start + g.rect.top >= g.items[i - 1].marker.bottom + 2 - 0.1);
     }
     await page.evaluate(() => {
       document.body.style.setProperty("--ltig-thread-connector-height", "50%");
@@ -553,9 +553,9 @@ try {
         .slice(1)
         .every(
           (p, i) =>
-            Number(p.getAttribute("d").split(" ")[2]) + origin >=
-            markers[i].getBoundingClientRect().bottom +
-              5.9,
+            Number(p.getAttribute("d").split(" ")[2]) + origin -
+              parseFloat(getComputedStyle(p).strokeWidth) / 2 >=
+            markers[i].getBoundingClientRect().bottom - 0.1,
         );
     });
     assert(safe);

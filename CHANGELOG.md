@@ -7,7 +7,8 @@ All notable changes to this project are documented in this file.
 - Fix SVG class assignment using Obsidian's runtime helper semantics. The previous space-separated class strings threw when drawing embed and breadcrumb threading, preventing marked-item breadcrumbs from opening.
 - Move embed guide, thread, and preview-highlight drawings outside the transclusion DOM into clipped layers. Scroll and surrounding layout changes reposition those layers without writing into CodeMirror widgets or rebuilding unchanged paths.
 - Measure visible task checkboxes after skipping hidden bullet placeholders; measure Obsidian's zero-width bullet pseudo-element. Keep embed-only parent markers on their first line, and account for scale and nested clip boundaries.
-- Start breadcrumb static connectors below the full parent label so wrapped unmarked heads are clear. Base threading height on the parent's own row for consistent numbered/bulleted marker clearance; change the main height default to 103%, retaining the breadcrumb default of 100%.
+- Correct the 3141a66 threading regression: anchor vertical reach at the parent marker, not the full wrapped row. Bound the stroke cap at the marker so large percentages and distant children cannot pull it through or above the parent. Share visible bullet/checkbox measurement with the editor, and preserve numeral text-range anchors.
+- Start breadcrumb static connectors below the full parent label so wrapped unmarked heads are clear. Keep the main height default at 103% and the breadcrumb default at 100%.
 - Rename List Hover Breadcrumb Activation Scope. Add Unmarked List Head Hover Breadcrumb Activation (on by default), independent of threading, with separate full-row and gutter scope behavior.
 - Add Unmarked List Head Static Tree Indentation Guides (off by default) for immediately preceding unmarked heads of ordered and unordered lists.
 
