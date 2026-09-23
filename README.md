@@ -1,6 +1,6 @@
 # List Tree Indentation Guides
 
-> List Tree Indentation Guides renders nested Obsidian lists as a visually connected tree. Each sibling group receives a continuous vertical spine, and each ordered, unordered, or task-list item receives a horizontal connector.
+List Tree Indentation Guides renders nested Obsidian lists as a visually connected tree. Each sibling group receives a continuous vertical spine, and each ordered, unordered, or task-list item receives a horizontal connector.
 
 ```text
 Example
