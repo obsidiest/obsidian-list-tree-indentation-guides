@@ -22,17 +22,17 @@ The implementation is scoped to rendered list items and CodeMirror's visible `Hy
 
 With their corresponding toggles enabled:
 
-![List Static Indentation Guides](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots\List Static Indentation Guides - List Indentation Guides Plugin.png)
+![List Static Indentation Guides](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/List Static Indentation Guides - List Indentation Guides Plugin.png)
 
-![Active List Item Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots\Active List Item Threading - List Indentation Guides Plugin.png)
+![Active List Item Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/Active List Item Threading - List Indentation Guides Plugin.png)
 
-![Active List Item Threading - Orphan List](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots\Active List Item Threading - Orphan List - List Indentation Guides Plugin.png)
+![Active List Item Threading - Orphan List](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/Active List Item Threading - Orphan List - List Indentation Guides Plugin.png)
 
-![All Branches of an Active List Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots\All Branches of an Active List Threading - List Indentation Guides Plugin.png)
+![All Branches of an Active List Threading](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/All Branches of an Active List Threading - List Indentation Guides Plugin.png)
 
-![All Branches of an Active List Threading - Orphan List](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots\All Branches of an Active List Threading - Orphan List - List Indentation Guides Plugin.png)
+![All Branches of an Active List Threading - Orphan List](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/All Branches of an Active List Threading - Orphan List - List Indentation Guides Plugin.png)
 
-![List Hover Breadcrumb](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots\List Hover Breadcrumb - List Tree Indentation Guides Plugin.png)
+![List Hover Breadcrumb](Images - List Tree Indentation Guides Plugin Feature Examples Screenshots/List Hover Breadcrumb - List Tree Indentation Guides Plugin.png)
 
 ## Features
 
