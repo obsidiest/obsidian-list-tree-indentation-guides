@@ -9,6 +9,7 @@ import { createEditorGuidesExtension } from "../../src/editor-guides.ts";
 import { renderedMarkerRect, firstTextRect } from "../../src/list-renderer.ts";
 import { DEFAULT_SETTINGS } from "../../src/types.ts";
 import { StyleSettingsPrecisionControls } from "../../src/style-settings-precision.ts";
+import { StyleSettingsColors } from "../../src/style-settings-colors.ts";
 
 const plugin = {
   settings: { ...DEFAULT_SETTINGS },
@@ -215,6 +216,7 @@ globalThis.ltigTest = {
   rendered,
   breadcrumb,
   precision,
+  StyleSettingsColors,
   setSettings,
   setupEditor,
   setupMarkerEditor,

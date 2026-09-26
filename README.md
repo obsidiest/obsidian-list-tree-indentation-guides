@@ -94,6 +94,8 @@ The breadcrumb is enabled by default in Live Preview, Source, and Reading mode, 
 
 The popover shows the item's ancestors and highlights the current item. Hover or focus another row to preview that field in the main view. Click a row to navigate permanently. In an embed, clicking an ancestor outside the visible excerpt opens its original note at the source line. Repeated labels use source positions to identify the correct item.
 
+Breadcrumb labels use Obsidian's Markdown rendering for LaTeX, SVG, links, and formatting, including multiline content belonging to the item. Links inside a label remain clickable. Each popover releases its render resources when dismissed.
+
 | Breadcrumb control | Default / behavior |
 | --- | --- |
 | List Hover Breadcrumb | On; disabling it makes subordinate controls inaccessible. |
@@ -144,6 +146,8 @@ Version 2.0.0 measures rendered markers and sibling positions directly. The old 
 
 Every numerical Style Settings slider receives a synchronized editable field. Typed in-range decimals are preserved exactly, including transient input such as `1.` while editing; invalid or incomplete values revert only when editing finishes.
 
+Themed colors have separate **Light** and **Dark** buttons. Choose a color or enter a hex value, then click **Save** to persist and apply it. The dialog closes after saving succeeds; a failed save leaves it open with an error. **Default** fills the declared default for that theme, and **Cancel** or Escape discards the draft. Existing color preferences retain their Style Settings keys. Saving also repairs malformed hex/non-finite values in this plugin's themed colors that would otherwise prevent Style Settings from generating CSS.
+
 ## Installation
 
 ### From a release
@@ -182,7 +186,7 @@ git diff --exit-code -- main.js
 
 The validation and release workflows run browser layout and interaction tests as well as type, lint, and unit checks. The release workflow confirms that committed `main.js` is current, creates the three standard Obsidian release assets, and publishes GitHub artifact attestations for each asset.
 
-Browser tests use Chromium, real CodeMirror, and the plugin's actual modules with a minimal Obsidian host adapter. They are **not tests inside Obsidian desktop**. See [2.0.1 validation notes](docs/validation-2.0.1.md) for evidence, coverage, and remaining desktop checks.
+Browser tests use Chromium, real CodeMirror, and the plugin's actual modules with a minimal Obsidian host adapter. They are **not tests inside Obsidian desktop**. See [2.0.2 validation notes](docs/validation-2.0.2.md) for evidence, the optional Style Settings integration check, and remaining desktop checks.
 
 ## Acknowledgements
 

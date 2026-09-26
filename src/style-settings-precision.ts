@@ -1,3 +1,5 @@
+import { StyleSettingsColors, type StyleSettingsColorStore } from "./style-settings-colors";
+
 const STYLE_SETTING_MARKER_SELECTOR = [
   '[data-id^="ltig-"]',
   '[data-id^="list-tree-indentation-guides@@ltig-"]',
@@ -30,6 +32,14 @@ type QueryableNode = ParentNode & {
 
 export class StyleSettingsPrecisionControls {
   private readonly observers = new Map<Document, MutationObserver>();
+  private readonly colors: StyleSettingsColors;
+  constructor(getColors: () => StyleSettingsColorStore | null = () => null) {
+    this.colors = new StyleSettingsColors(getColors);
+  }
+
+  public refreshColors(): void {
+    for (const doc of this.observers.keys()) this.colors.enhance(doc);
+  }
 
   public start(documents?: Iterable<Document>): void {
     const initialDocuments = documents ?? getDefaultDocuments();
@@ -44,6 +54,7 @@ export class StyleSettingsPrecisionControls {
     }
 
     enhanceStyleSettingsControls(ownerDocument);
+    this.colors.enhance(ownerDocument);
 
     const Observer =
       ownerDocument.defaultView?.MutationObserver ??
@@ -55,6 +66,7 @@ export class StyleSettingsPrecisionControls {
     const observer = new Observer((mutations) => {
       if (mutations.some(isRelevantStyleSettingsMutation)) {
         enhanceStyleSettingsControls(ownerDocument);
+        this.colors.enhance(ownerDocument);
       }
     });
     observer.observe(ownerDocument.body, {
@@ -71,11 +83,13 @@ export class StyleSettingsPrecisionControls {
       observer.disconnect();
     }
     this.observers.clear();
+    this.colors.stop();
   }
 
   public removeDocument(doc: Document): void {
     this.observers.get(doc)?.disconnect();
     this.observers.delete(doc);
+    this.colors.removeDocument(doc);
   }
 }
 

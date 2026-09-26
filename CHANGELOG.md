@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.0.2
+
+- Render breadcrumb labels with Obsidian's Markdown renderer, preserving math, SVG, links, formatting, and each item's own multiline content. Exclude descendant items from ancestor labels and retain the originating note path for links and embeds.
+- Give each popover its own render lifecycle. Dispose postprocessor resources on dismissal, clean up late registrations, and retain a navigable text fallback if a renderer fails. Redraw guides after rich content changes size.
+- Replace this plugin's remaining themed Pickr controls with Light/Dark color dialogs that validate hex input, await Style Settings persistence and CSS regeneration, and close after a successful Save. Preserve existing setting IDs, theme keys, and valid saved colors; keep failed saves editable.
+- Recover malformed hex/non-finite values in this plugin's themed colors on Save, since those values can prevent Style Settings 1.0.9 from generating CSS even for another color field.
+- Add browser regressions for rich-content delegation, popup lifecycle, and color persistence, plus an optional integration check using the released Style Settings 1.0.9 manager. See [2.0.2 validation notes](docs/validation-2.0.2.md) for reproduced causes and checks still needed inside Obsidian.
+
 ## 2.0.1
 
 - Treat a numbered task's numeral and checkbox as one protected marker area. Measure numeral text separately from control wrappers, and reserve native marker space before the list item's content edge in rendered lists and embeds.
