@@ -2080,7 +2080,7 @@ body.theme-light {
   pointer-events: none;
   z-index: 2;
 }
-.ltig-breadcrumb-popover button.ltig-breadcrumb-row {
+.ltig-breadcrumb-popover .ltig-breadcrumb-row {
   display: flex;
   align-items: center;
   position: relative;
@@ -2111,18 +2111,23 @@ body.theme-light {
   text-align: start;
   cursor: var(--cursor-link);
 }
-.ltig-breadcrumb-label {
+.ltig-breadcrumb-label.markdown-rendered {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ltig-breadcrumb-expand .ltig-breadcrumb-label {
+.ltig-breadcrumb-expand .ltig-breadcrumb-label.markdown-rendered {
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.ltig-breadcrumb-popover button.ltig-breadcrumb-row.is-current {
+.ltig-breadcrumb-popover .ltig-breadcrumb-row.is-current {
   color: var(--ltig-breadcrumb-current-color);
   background: color-mix(
     in srgb,
@@ -2132,7 +2137,7 @@ body.theme-light {
   );
 }
 .ltig-breadcrumb-popover
-  button.ltig-breadcrumb-row:is(.is-active, :focus-visible) {
+  .ltig-breadcrumb-row:is(.is-active, :focus-visible) {
   color: var(--ltig-breadcrumb-current-color);
   background: var(--ltig-breadcrumb-hover-color);
   outline: var(--ltig-breadcrumb-main-outline-thickness) solid
@@ -2181,6 +2186,45 @@ body.theme-light {
   outline: none;
 }
 
-.ltig-breadcrumb-popover button.ltig-breadcrumb-row {
+.ltig-breadcrumb-popover .ltig-breadcrumb-row {
   align-items: flex-start;
 }
+
+/* Keep Obsidian-rendered inline content within the breadcrumb row. */
+.ltig-breadcrumb-label.markdown-rendered > :first-child { margin-block-start: 0; }
+.ltig-breadcrumb-label.markdown-rendered > :last-child { margin-block-end: 0; }
+.ltig-breadcrumb-label.markdown-rendered p { margin-block: 0; }
+.ltig-breadcrumb-label.markdown-rendered :is(img, svg) { max-width: 100%; }
+.ltig-breadcrumb-label.markdown-rendered .math-block { overflow-x: auto; }
+
+/* The plugin's themed colors use an awaited Save/Cancel dialog. */
+.ltig-style-color-original { display: none !important; }
+.ltig-style-color-controls, .ltig-color-dialog-fields, .ltig-color-dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ltig-style-color-swatch::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: 6px;
+  vertical-align: middle;
+  border-radius: 3px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--ltig-chosen-color);
+}
+.ltig-color-dialog {
+  color: var(--text-normal);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-l, 12px);
+  padding: 24px;
+  max-width: min(480px, calc(100vw - 32px));
+}
+.ltig-color-dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
+.ltig-color-dialog-fields input[type="text"] { min-width: 0; flex: 1; }
+.ltig-color-dialog-fields input[type="color"] { width: 48px; height: 32px; padding: 2px; }
+.ltig-color-dialog-status { min-height: 1.5em; margin-block: 8px; }
+.ltig-color-dialog-actions { justify-content: flex-end; }

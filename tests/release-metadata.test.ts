@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { THEMED_COLOR_DEFAULTS } from "../src/style-settings-colors";
 
 async function readProjectFile(path: string): Promise<string> {
   const { readFile } = await import("node:fs/promises");
@@ -18,6 +19,9 @@ describe("release metadata", () => {
     expect(new Set(controls.map(c => c.id)).size).toBe(controls.length);
     const supported = new Set(["heading", "class-toggle", "class-select", "variable-themed-color", "variable-text", "variable-number-slider", "variable-select"]);
     for (const control of controls) {
+      if (control.type === "variable-themed-color") {
+        expect(THEMED_COLOR_DEFAULTS.get(String(control.id))).toEqual([control["default-light"], control["default-dark"]]);
+      }
       expect(supported.has(String(control.type)), String(control.id)).toBe(true);
       if (control.type === "heading") expect(typeof control.level).toBe("number");
       if (control.type === "variable-number-slider") {
@@ -26,6 +30,7 @@ describe("release metadata", () => {
         expect(control.default).toBeLessThanOrEqual(control.max as number);
       }
     }
+    expect(THEMED_COLOR_DEFAULTS.size).toBe(controls.filter(c => c.type === "variable-themed-color").length);
   });
   it("keeps every version source synchronized", async () => {
     const manifest = JSON.parse(await readProjectFile("manifest.json")) as {
