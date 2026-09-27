@@ -5,6 +5,7 @@ import { ListBreadcrumb } from "./list-breadcrumb";
 import { createBreadcrumbEditorExtension } from "./breadcrumb-editor";
 import { ListTreeIndentationGuidesSettingTab } from "./settings";
 import { StyleSettingsPrecisionControls } from "./style-settings-precision";
+import { styleSettingsColorStore } from "./style-settings-colors";
 import {
   DEFAULT_SETTINGS,
   normalizeSettings,
@@ -38,7 +39,7 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
   private readonly renderedGuides = new RenderedListGuides(() => this.settings);
   private readonly breadcrumb = new ListBreadcrumb(this, this.renderedGuides);
   private styleSettingsPrecisionControls =
-    new StyleSettingsPrecisionControls();
+    new StyleSettingsPrecisionControls(() => styleSettingsColorStore(this.app));
 
   public override async onload(): Promise<void> {
     await this.loadSettings();
@@ -94,6 +95,7 @@ export default class ListTreeIndentationGuidesPlugin extends Plugin {
       this.observeDocuments(this.getOwnerDocuments());
     });
     this.registerEvent(this.app.workspace.on("css-change", () => {
+      this.styleSettingsPrecisionControls.refreshColors();
       this.refreshRenderedLists();
       this.breadcrumb.refresh();
     }));

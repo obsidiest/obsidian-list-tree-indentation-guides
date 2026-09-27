@@ -6,6 +6,8 @@ export interface ListNode {
   line: number;
   endLine: number;
   text: string;
+  /** Own Markdown blocks, without descendant list items or their indentation. */
+  markdown?: string;
   /** DOM fallback text is already rendered; do not interpret it as Markdown again. */
   plainText?: boolean;
   marker: string;
@@ -31,22 +33,40 @@ export function parseListDocument(text: string): ListNode[] {
     }
     return low;
   };
-  const raw: { line: number; end: number; parentLine: number | null }[] = [];
+  const raw: { line: number; end: number; parentLine: number | null; markdown?: string }[] = [];
   const excluded = new Set<number>();
   parser.parse(text).iterate({
     enter: ({ node }) => {
       if (/^(FencedCode|CodeBlock|HTMLBlock)$/.test(node.name)) {
-        for (let line = lineAt(node.from); line <= lineAt(node.to); line++)
+        // Exclude apparent list markers inside code/HTML, but keep the actual
+        // enclosing list item (e.g. a list item containing a multiline SVG).
+        const start = node.parent?.name === "ListItem" && lineAt(node.parent.from) === lineAt(node.from)
+          ? lineAt(node.from) + 1 : lineAt(node.from);
+        for (let line = start; line <= lineAt(node.to); line++)
           excluded.add(line);
         return false;
       }
       if (node.name !== "ListItem") return;
       let parent = node.parent;
       while (parent && parent.name !== "ListItem") parent = parent.parent;
+      const firstLine = lines[lineAt(node.from)];
+      const prefix = /^\s*(?:>\s*)*([-+*]|\d+[.)])\s+(?:\[([^\]])\]\s*)?/.exec(firstLine);
+      const indent = prefix?.[0].replace(/\[[^\]]\]\s*$/, "").length ?? 0;
+      const blocks: string[] = [];
+      for (let child = node.firstChild; child; child = child.nextSibling) {
+        if (/^(ListMark|BulletList|OrderedList)$/.test(child.name)) continue;
+        let block = text.slice(child.from, child.to).split(/\r?\n/).map((line, i) => {
+          if (i === 0) return line;
+          return line.replace(new RegExp(`^ {0,${indent}}`), "");
+        }).join("\n");
+        if (!blocks.length && prefix?.[2] !== undefined) block = block.replace(/^\[[^\]]\]\s*/, "");
+        blocks.push(block);
+      }
       raw.push({
         line: lineAt(node.from),
         end: lineAt(Math.max(node.from, node.to - 1)),
         parentLine: parent ? lineAt(parent.from) : null,
+        markdown: blocks.join("\n\n"),
       });
     },
   });
@@ -130,6 +150,7 @@ export function parseListDocument(text: string): ListNode[] {
       line: row.line,
       endLine: row.end,
       text: match[3] || "(Empty list item)",
+      markdown: row.markdown || match[3] || "(Empty list item)",
       marker:
         match[2] !== undefined
           ? match[2] === " "

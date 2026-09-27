@@ -1,6 +1,7 @@
 import { EditorView, type ViewUpdate } from "@codemirror/view";
 import { MarkdownView, sanitizeHTMLToDom, type Plugin } from "obsidian";
 import { listLabel } from "./list-label";
+import { BreadcrumbContent } from "./breadcrumb-content";
 import {
   breadcrumbEnabled,
   breadcrumbFeature,
@@ -51,7 +52,8 @@ interface Popup {
   tree: HTMLElement;
   content: HTMLElement;
   svg: SVGSVGElement;
-  rows: Map<number, HTMLButtonElement>;
+  rows: Map<number, HTMLElement>;
+  renderer: BreadcrumbContent;
   active: number;
   selected: number;
   hovered: number | null;
@@ -386,16 +388,18 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       cls: "ltig-breadcrumb-guides",
       attr: { "aria-hidden": "true", width: "0", height: "0" },
     });
-    const rows = new Map<number, HTMLButtonElement>();
+    const rows = new Map<number, HTMLElement>();
+    const renderer = new BreadcrumbContent();
+    renderer.load();
+    const labels: { index: number; element: HTMLElement }[] = [];
     const options = breadcrumbThreadOptions(this.plugin.settings, target.mode);
     const indexes = breadcrumbEntries(target.nodes, target.index, options);
     const minDepth = Math.min(...indexes.map((i) => target.nodes[i].depth));
     for (const index of indexes) {
       const node = target.nodes[index];
-      const row = content.createEl("button", {
+      const row = content.createDiv({
         cls: "ltig-breadcrumb-row",
         attr: {
-          type: "button",
           role: "treeitem",
           "aria-level": String(node.depth - minDepth + 1),
         },
@@ -416,10 +420,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
           attr: { "aria-hidden": "true" },
         });
       const label = node.plainText ? node.text : listLabel(node.text, entity => sanitizeHTMLToDom(entity).textContent ?? entity);
-      row.createSpan({
-        cls: "ltig-breadcrumb-label",
-        text: label,
-      });
+      labels.push({ index, element: row.createDiv({ cls: "ltig-breadcrumb-label markdown-rendered" }) });
       row.setAttribute("aria-label", `${node.marker} ${label}`.trim());
       row.addEventListener("pointerenter", () => this.activate(state, index));
       row.addEventListener("focus", () => {
@@ -427,6 +428,15 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
         this.activate(state, index);
       });
       row.addEventListener("click", (e) => {
+        const clicked = e.target as Element | null;
+        const link = clicked?.closest<HTMLAnchorElement>("a.internal-link");
+        if (link) {
+          e.preventDefault();
+          e.stopPropagation();
+          void this.plugin.app.workspace.openLinkText(link.dataset.href ?? link.getAttribute("href") ?? "", target.file, e.ctrlKey || e.metaKey);
+          return;
+        }
+        if (clicked?.closest("a, button, input, select, textarea")) return;
         e.preventDefault();
         e.stopPropagation();
         this.activate(state, index, true);
@@ -447,6 +457,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       content,
       svg,
       rows,
+      renderer,
       active: target.index,
       selected: target.index,
       hovered: null,
@@ -461,6 +472,13 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     element.addEventListener("pointerleave", () => this.scheduleDismiss(state));
     element.addEventListener("focusout", () => this.scheduleDismiss(state));
     tree.addEventListener("keydown", (event) => {
+      if (!(event.target as Element | null)?.matches(".ltig-breadcrumb-row")) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        const index = indexes.find(i => rows.get(i) === state.doc.activeElement);
+        if (index !== undefined) this.activate(state, index, true);
+        return;
+      }
       const position = breadcrumbKeyboardTarget(
         event.key,
         indexes.findIndex((i) => rows.get(i) === state.doc.activeElement),
@@ -473,15 +491,33 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     });
     resize.observe(content);
     lifecycle.observe(state.doc.body, { childList: true, subtree: true });
+    let userScrolled = false;
+    tree.addEventListener("wheel", () => { userScrolled = true; }, { passive: true });
+    tree.addEventListener("pointerdown", () => { userScrolled = true; });
+    const renders = labels.map(({ index, element: label }) =>
+      renderer.render(this.plugin.app, target.nodes[index], label, target.file,
+        target.elements?.get(index)).then(() => {
+        if (state.popup !== popup) return;
+        rows.get(index)?.setAttribute("aria-label", `${target.nodes[index].marker} ${label.textContent ?? ""}`.trim());
+        this.scheduleDraw(state);
+      }));
     this.draw(state);
     this.highlight(state, target.index);
-    const current = rows.get(target.index);
-    if (current) {
-      const delta =
-        current.getBoundingClientRect().bottom -
-        tree.getBoundingClientRect().bottom;
+    const revealCurrent = () => {
+      const current = rows.get(target.index);
+      if (!current) return;
+      const delta = current.getBoundingClientRect().bottom - tree.getBoundingClientRect().bottom;
       if (delta > 0) tree.scrollTop += delta;
-    }
+    };
+    revealCurrent();
+    const initialScroll = tree.scrollTop;
+    void Promise.all(renders).then(() => {
+      if (state.popup !== popup || userScrolled || popup.hovered !== null || tree.scrollTop !== initialScroll) return;
+      // Math/embeds can finish after the first layout. Keep the initial current
+      // item visible without moving the note or overriding a user's scrolling.
+      this.draw(state);
+      revealCurrent();
+    });
   }
   private activate(state: WindowState, index: number, select = false): void {
     const popup = state.popup;
@@ -691,6 +727,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       p.lifecycle.disconnect();
       if (p.frame !== null) state.doc.defaultView?.cancelAnimationFrame(p.frame);
       p.element.remove();
+      p.renderer.dispose();
     }
     if (state.highlightEditor === updatingEditor) state.highlightEditor = null;
     this.clearHighlight(state);

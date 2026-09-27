@@ -28,6 +28,15 @@ const options: ListThreadOptions = {
   joinAll: false,
 };
 describe("source list hierarchy", () => {
+  it("retains complete own Markdown for math and SVG without copying child lists", () => {
+    const nodes = parseListDocument("- [ ] **Math:** $\\approx$\n  and [[Note|alias]]\n  - $$\n    x^2 + y^2\n    $$\n    - child");
+    expect(nodes.map(node => node.markdown)).toEqual([
+      "**Math:** $\\approx$\nand [[Note|alias]]", "$$\nx^2 + y^2\n$$", "child",
+    ]);
+    const svg = parseListDocument('- <svg width="20">\n  <path d="M0 0 H20"/>\n  </svg>\n\n- next');
+    expect(svg[0].markdown).toBe('<svg width="20">\n<path d="M0 0 H20"/>\n</svg>');
+    expect(svg[1].text).toBe("next");
+  });
   it.each(["-", "1.", "2."])(
     "threads %s items from an unmarked list head",
     (marker) => {
