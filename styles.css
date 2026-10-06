@@ -2191,6 +2191,9 @@ body.theme-light {
 }
 
 /* Keep Obsidian-rendered inline content within the breadcrumb row. */
+.ltig-breadcrumb-label.markdown-rendered > p {
+  margin-block: var(--ltig-breadcrumb-paragraph-spacing, var(--p-spacing, 1em));
+}
 .ltig-breadcrumb-label.markdown-rendered > :first-child { margin-block-start: 0; }
 .ltig-breadcrumb-label.markdown-rendered > :last-child { margin-block-end: 0; }
 .ltig-breadcrumb-label.markdown-rendered :is(img, svg) { max-width: 100%; }

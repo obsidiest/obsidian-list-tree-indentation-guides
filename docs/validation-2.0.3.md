@@ -2,6 +2,20 @@
 
 This update targets the reported 2.0.2 failures and Obsidian 1.14.4. **Obsidian desktop was not available for runtime verification.** Browser fixtures and the optional host-parser check below do not establish that the original symptoms are resolved in the user's vault.
 
+## Follow-up after the user's test of `6d4d736`
+
+The user reported that paragraph spacing was still incorrect and that static breadcrumb guides sometimes extended into long parent text. These reports supersede any inference of desktop correctness from the first candidate's passing tests. The new screenshots were inspected before editing.
+
+**Spacing:** the previous test activated an editor breadcrumb but compared it with a hand-styled Reading-mode paragraph fragment. It did not compare the actual empty editor line with the popup, or exercise spacing scoped to the originating note. Removing the zero-margin override was insufficient: Live Preview and Source have authored empty editor lines even when the theme's Reading-mode `--p-spacing` is zero. A popup mounted under `document.body` also loses a note-local override of that variable.
+
+The follow-up reproduces a 48 px empty editor line at a 24 px font versus a 0 px breadcrumb paragraph gap in both editor modes. A Reading note with a locally scoped 36 px paragraph margin also produced a 0 px popup gap. Minimal exposes its paragraph-spacing setting specifically for Reading mode; the inspected upstream reference is [theme commit `1394a35`](https://github.com/kepano/obsidian-minimal/blob/1394a35f84db3b52e6cf59c435d7c7862242837b/theme.css). Obsidian 1.14.4's renderer with default Minimal styling did produce a normal paragraph gap in an isolated browser probe. **The user's exact theme settings/source note were not available, so these reproduced mechanisms are not a claim that their paragraph-spacing setting is zero.**
+
+The replacement approach measures an empty editor line (or the editor line height when no empty line is visible) and expresses that spacing relative to the breadcrumb's font. Reading-mode breadcrumbs inherit `--p-spacing` from the originating element, including an intentional zero. A dedicated paragraph rule applies that value instead of relying on the popup's body-level styling. The old paragraph-margin test now opens from Reading mode; separate tests compare editor blank-line spacing.
+
+**Guide overdraw:** the observer previously watched only the total content size. In a reproduction, a late renderer expanded a wrapped parent's text by 210.56 px while another row shrank by the same amount. Total content height stayed 719.73 px, so no redraw occurred; the first guide still started 210.56 px above the new parent-text bottom. This failed in both LTR and RTL. The follow-up observes each row and label, positions the popup before measuring, and starts static branches below the full padded parent row.
+
+[Pre-edit evidence for `6d4d736`](evidence/6d4d736-breadcrumb-layout.json) records five failures plus a passing zero-margin Reading control. `tests/browser/breadcrumb-layout.mjs` runs these six checks with a paragraph-only renderer adapter, or optionally with Obsidian 1.14.4's actual parser. The late-layout change is simulated; it does not identify which host/theme/postprocessor event caused the user's screenshot.
+
 ## Causes located before editing
 
 The supplied screenshots and recording were inspected. The unchanged 2.0.2 source at `1c335fa00390666e58cc8ee86c514411eb3917c1` reproduced ten failing assertions across the four reported mechanisms. [Baseline evidence](evidence/2.0.2-breadcrumb-structure.json) records those failures and two passing full-item activation controls.
@@ -17,7 +31,8 @@ The continuation fixture now places indentation in a separate CodeMirror token. 
 
 ## Automated checks
 
-- Passed locally: 64 unit tests, 111 browser scenarios, TypeScript, ESLint, and the production build. The optional 1.14.4 run passed all twelve scenarios (three use the host parser); [its result record](evidence/2.0.3-host-parser.json) is retained alongside the baseline failures.
+- The follow-up passes 64 unit tests and 117 browser scenarios, plus TypeScript, ESLint, and the production build. The optional parser run passes the twelve structure cases and all six new layout cases; [the layout result](evidence/2.0.3-breadcrumb-layout.json) records the latter. The guide checks assert visible strokes and compare screen-space paths with the expanded parent text before and after scrolling.
+- The first candidate passed 64 unit tests, 111 browser scenarios, TypeScript, ESLint, and the production build. Its optional 1.14.4 run passed all twelve scenarios (three use the host parser); [that result record](evidence/2.0.3-host-parser.json) is retained alongside the baseline failures. Those checks missed the follow-up cases described above.
 - Unit tests cover external/multiline definitions, numbering, unresolved references, HTML escaping, and exclusions for code, escapes, math, YAML, and wiki links.
 - `tests/browser/breadcrumb-structure.mjs` adds twelve scenarios: four restricted-scope cases, two full-item controls, paragraph gap comparison, two native-callout marker cases, and footnotes in Live Preview, Source, and Reading mode.
 - The normal browser suite uses Chromium, real CodeMirror, plugin modules, and representative Obsidian DOM/rendering adapters. The three footnote scenarios can additionally run with the actual Obsidian 1.14.4 parser and HTML transformations.
@@ -44,6 +59,9 @@ Extract the archive locally, then point the test at the directory containing `in
 ```bash
 LTIG_OBSIDIAN_ASSETS=/path/to/extracted/obsidian-1.14.4 \
 node tests/browser/breadcrumb-structure.mjs
+
+LTIG_OBSIDIAN_ASSETS=/path/to/extracted/obsidian-1.14.4 \
+node tests/browser/breadcrumb-layout.mjs
 ```
 
 `tests/browser/host-markdown.mjs` omits the desktop startup expression and exposes the original parser/HTML transformation functions. These functions run unchanged. The helper deliberately expects the 1.14.4 bundle boundary; it must be reviewed for another host version. This check does **not** run the desktop application, its CodeMirror decorations, Markdown postprocessors, MathJax, themes, vault lifecycle, or plugin interaction stack. The layout and hover cases still use browser fixtures in this optional run.
@@ -56,5 +74,7 @@ Use [the focused note fixture](../tests/fixtures/breadcrumb-structure.md) and th
 2. With full-item activation off, move across long continuation paragraphs with full-marker activation on and then off. Neither setting combination should activate over paragraph text. The actual marker should still activate. Enable full-item activation and confirm continuation paragraphs activate again. Repeat with the item's opening line scrolled outside the viewport.
 3. In the outer callout, compare static guides and active threads at the ordinary bullet, icon-only subordinate callout, and named subordinate callout. Check that a later callout does not move an ordinary item's marker. Repeat in rendered Live Preview callouts, Reading mode, embeds, and right-to-left layout.
 4. Repeat with the user's theme, zoom, and other enabled plugins. Verify popup dismissal/reopening and footnote link behavior after note edits.
+5. Compare multi-paragraph spacing in Live Preview/Source with the authored empty line, including when Reading-mode paragraph spacing is zero. Separately compare Reading-mode breadcrumbs with the note's paragraph-margin setting, including note-local overrides.
+6. Use the long unmarked head and parent paragraphs near the end of the fixture. Watch the first static branch during opening, scrolling, viewport resizing, and late math/image rendering. It must remain below the entire parent row. Retest the user's original guide-overdraw example directly.
 
 The version metadata is 2.0.3. The minimum supported version remains 1.13.0 because no newer API was introduced. This work is a draft PR for review; desktop acceptance, merge, and release are separate steps.

@@ -48,15 +48,15 @@ for (const mode of ['livePreview', 'source']) test(`${mode}: full item scope sti
   await page.mouse.move(box.x+200,box.y+16);await frames(page);
   assert.equal(await count(page),1);
 });
-test('paragraphs in a breadcrumb retain the same spacing as rendered note paragraphs', async page => {
+test('Reading-mode breadcrumb paragraphs retain the originating note margins', async page => {
   await page.evaluate(() => {
     globalThis.ltigRenderMarkdown = async (_app, _source, el) => { el.innerHTML='<p>First paragraph</p><p>Second paragraph</p><p>Third paragraph</p>'; };
     ltigTest.setSettings({breadcrumbFieldActivation:true});
-    ltigTest.setupEditor('- First paragraph\n\n  Second paragraph\n\n  Third paragraph');
+    ltigTest.addSurface({id:'list',text:'- First paragraph\n\n  Second paragraph\n\n  Third paragraph',html:'<ul><li><p>First paragraph</p><p>Second paragraph</p><p>Third paragraph</p></li></ul>'});
     document.body.createDiv({cls:'markdown-rendered',attr:{id:'reference'}}).innerHTML='<p>First paragraph</p><p>Second paragraph</p><p>Third paragraph</p>';
   });
   await frames(page);
-  const box=await page.locator('#editor .cm-line').first().boundingBox();
+  const box=await page.locator('#list li').first().boundingBox();
   await page.mouse.move(box.x+120,box.y+15);await frames(page);
   const gaps=await page.evaluate(()=>{
     const gap=selector=>{const p=[...document.querySelectorAll(selector)];return p[1].getBoundingClientRect().top-p[0].getBoundingClientRect().bottom;};

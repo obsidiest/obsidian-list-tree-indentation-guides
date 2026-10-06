@@ -26,3 +26,11 @@ This earlier footnote sets the list item's reference number to two.[^first]
 [^second]: Second definition, outside the list.
 
     This continuation paragraph belongs to the second definition.
+
+## Long breadcrumb rows
+
+This unmarked head deliberately contains enough text to wrap onto several lines in a narrow breadcrumb. Its first static branch should begin below the whole head, including the last wrapped line, as the popup opens and the viewport changes width.
+1. This parent paragraph also wraps across several lines. The next static branch must start below this entire parent row. Compare the layout with a narrower window and with delayed rich content in the original failing note. Scrolling the breadcrumb must preserve the relationship between the branch and the text above it.
+   1. The first paragraph of this child is separate from the next paragraph. Use a zero Reading-mode paragraph-spacing setting while testing in Live Preview or Source: the authored empty line below still needs space in the breadcrumb.
+
+      This is the second paragraph. Reading mode should follow its own paragraph-spacing setting; an explicit zero there should remain zero.
