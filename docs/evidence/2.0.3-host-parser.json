@@ -1,0 +1,53 @@
+{
+  "host": "Obsidian 1.14.4 parser/HTML transforms in Chromium; desktop startup omitted",
+  "results": [
+    {
+      "name": "livePreview, marker scope false: continuation text never becomes a marker",
+      "passed": true
+    },
+    {
+      "name": "livePreview, marker scope true: continuation text never becomes a marker",
+      "passed": true
+    },
+    {
+      "name": "source, marker scope false: continuation text never becomes a marker",
+      "passed": true
+    },
+    {
+      "name": "source, marker scope true: continuation text never becomes a marker",
+      "passed": true
+    },
+    {
+      "name": "livePreview: full item scope still covers continuation paragraphs",
+      "passed": true
+    },
+    {
+      "name": "source: full item scope still covers continuation paragraphs",
+      "passed": true
+    },
+    {
+      "name": "paragraphs in a breadcrumb retain the same spacing as rendered note paragraphs",
+      "passed": true
+    },
+    {
+      "name": "nested callout native bullet: connector uses the outer marker (LTR)",
+      "passed": true
+    },
+    {
+      "name": "nested callout native bullet: connector uses the outer marker (RTL)",
+      "passed": true
+    },
+    {
+      "name": "livePreview: footnotes keep source context and superscript links",
+      "passed": true
+    },
+    {
+      "name": "source: footnotes keep source context and superscript links",
+      "passed": true
+    },
+    {
+      "name": "reading: footnotes keep source context and superscript links",
+      "passed": true
+    }
+  ]
+}

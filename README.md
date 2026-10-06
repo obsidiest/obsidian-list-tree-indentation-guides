@@ -94,7 +94,7 @@ The breadcrumb is enabled by default in Live Preview, Source, and Reading mode, 
 
 The popover shows the item's ancestors and highlights the current item. Hover or focus another row to preview that field in the main view. Click a row to navigate permanently. In an embed, clicking an ancestor outside the visible excerpt opens its original note at the source line. Repeated labels use source positions to identify the correct item.
 
-Breadcrumb labels use Obsidian's Markdown rendering for LaTeX, SVG, links, and formatting, including multiline content belonging to the item. Links inside a label remain clickable. Each popover releases its render resources when dismissed.
+Breadcrumb labels use Obsidian's Markdown rendering for LaTeX, SVG, links, and formatting, including multiline content belonging to the item. Paragraphs retain their rendered Markdown spacing. Footnotes use definitions and reference numbering from the originating note; clicking a footnote opens that note's definition. Links inside a label remain clickable. Each popover releases its render resources when dismissed.
 
 | Breadcrumb control | Default / behavior |
 | --- | --- |
@@ -186,7 +186,7 @@ git diff --exit-code -- main.js
 
 The validation and release workflows run browser layout and interaction tests as well as type, lint, and unit checks. The release workflow confirms that committed `main.js` is current, creates the three standard Obsidian release assets, and publishes GitHub artifact attestations for each asset.
 
-Browser tests use Chromium, real CodeMirror, and the plugin's actual modules with a minimal Obsidian host adapter. They are **not tests inside Obsidian desktop**. See [2.0.2 validation notes](docs/validation-2.0.2.md) for evidence, the optional Style Settings integration check, and remaining desktop checks.
+Browser tests use Chromium, real CodeMirror, and the plugin's actual modules with a minimal Obsidian host adapter. They are **not tests inside Obsidian desktop**. See [2.0.3 validation notes](docs/validation-2.0.3.md) for baseline failures, the optional Obsidian 1.14.4 parser check, and remaining desktop checks. The [2.0.2 validation notes](docs/validation-2.0.2.md) also describe the optional Style Settings integration check.
 
 ## Acknowledgements
 

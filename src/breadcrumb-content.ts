@@ -1,6 +1,7 @@
 import { Component, MarkdownRenderer, sanitizeHTMLToDom, type App } from "obsidian";
 import { listLabel } from "./list-label";
 import type { ListNode } from "./list-model";
+import { withFootnoteContext } from "./footnote-context";
 
 /** Obsidian can register cleanup after an asynchronous render has completed.
  * A closed scope must release those late registrations immediately. */
@@ -39,7 +40,14 @@ export class BreadcrumbContent extends RenderScope {
         else label.textContent = node.text;
         return;
       }
-      await MarkdownRenderer.render(app, markdown, label, sourcePath, child);
+      await MarkdownRenderer.render(app, withFootnoteContext(markdown, node.footnotes), label, sourcePath, child);
+      // Definitions give the isolated renderer its missing context; only the
+      // item's own content belongs in its breadcrumb row.
+      label.querySelectorAll(":scope > .footnotes").forEach(section => section.remove());
+      for (const link of Array.from(label.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a[data-footref]"))) {
+        const number = node.footnotes?.numbers.get(link.dataset.footref!.toLowerCase());
+        if (number !== undefined) link.textContent = link.textContent?.replace(/^\[\d+/, `[${number}`) ?? `[${number}]`;
+      }
     } catch (error) {
       if (!this.disposed) {
         label.textContent = node.plainText ? node.text : listLabel(markdown, entity => entity);

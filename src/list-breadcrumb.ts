@@ -280,17 +280,28 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       !this.plugin.settings.breadcrumbUnmarkedHeadActivation
     )
       return null;
-    const markerEl = row.querySelector<HTMLElement>(
+    // Continuation paragraphs belong to this item, but contain no list marker.
+    // A text-range fallback on such a row made the whole first visual line a
+    // marker, bypassing both activation-scope toggles.
+    const markerRow = line.number - 1 === node.line ? row : Array.from(
+      cm.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
+    ).find(element => {
+      if (element.closest(".cm-editor") !== cm.dom) return false;
+      try { return cm.state.doc.lineAt(cm.posAtDOM(element)).number - 1 === node.line; }
+      catch { return false; }
+    });
+    if (!markerRow && !this.plugin.settings.breadcrumbFieldActivation) return null;
+    const markerEl = markerRow?.querySelector<HTMLElement>(
       ".list-bullet, .task-list-item-checkbox, .cm-formatting-list",
     );
     let marker =
       markerEl?.getBoundingClientRect() ??
-      firstTextRect(row) ??
-      row.getBoundingClientRect();
-    const match = line.text.match(/^\s*(?:>\s*)*([-+*]|\d+[.)])\s/);
+      (markerRow ? firstTextRect(markerRow) ?? markerRow.getBoundingClientRect() : new DOMRect());
+    const markerLine = cm.state.doc.line(node.line + 1);
+    const match = markerLine.text.match(/^\s*(?:>\s*)*([-+*]|\d+[.)])\s/);
     if (match && (!markerEl || marker.width > 128)) {
-      const start = cm.coordsAtPos(line.from + match[0].indexOf(match[1])),
-        end = cm.coordsAtPos(line.from + match[0].length - 1);
+      const start = cm.coordsAtPos(markerLine.from + match[0].indexOf(match[1])),
+        end = cm.coordsAtPos(markerLine.from + match[0].length - 1);
       if (start && end)
         marker = new DOMRect(
           start.left,
@@ -429,6 +440,13 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       });
       row.addEventListener("click", (e) => {
         const clicked = e.target as Element | null;
+        const footnote = clicked?.closest<HTMLAnchorElement>("a.footnote-link[data-footref]");
+        if (footnote) {
+          e.preventDefault();
+          e.stopPropagation();
+          void this.plugin.app.workspace.openLinkText(`#[^${footnote.dataset.footref!}]`, target.file, e.ctrlKey || e.metaKey);
+          return;
+        }
         const link = clicked?.closest<HTMLAnchorElement>("a.internal-link");
         if (link) {
           e.preventDefault();
