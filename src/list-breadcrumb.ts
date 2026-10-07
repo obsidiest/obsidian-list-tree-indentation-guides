@@ -18,6 +18,7 @@ import {
 import {
   cssPixels,
   drawListTree,
+  elementScale,
   firstTextRect,
   listGeometry,
   pointWithinHost,
@@ -73,6 +74,29 @@ interface WindowState {
   highlightEditor: EditorView | null;
   keyboardFocus: boolean;
 }
+
+/** Editor paragraphs are separated by authored empty lines, independently of
+ * the theme's Reading-mode paragraph margins. Preserve that space at the
+ * breadcrumb's text size instead of inheriting unrelated body-level margins. */
+function paragraphSpacing(target: Target): string {
+  const win = target.host.ownerDocument.defaultView!;
+  if (target.cm) {
+    const lines = Array.from(target.cm.contentDOM.querySelectorAll<HTMLElement>(".cm-line"))
+      .filter(line => line.closest(".cm-editor") === target.cm!.dom);
+    const empty = lines.find(line => !line.textContent?.trim());
+    const reference = empty ?? lines[0] ?? target.cm.contentDOM;
+    const style = win.getComputedStyle(reference);
+    const font = Number.parseFloat(style.fontSize);
+    const height = empty
+      ? empty.getBoundingClientRect().height / elementScale(empty).y
+      : Number.parseFloat(style.lineHeight) || target.cm.defaultLineHeight;
+    if (font > 0 && height > 0) return `${height / font}em`;
+  }
+  // A note or embed can override this variable below document.body, where the
+  // popup lives. Retain an explicit zero in Reading mode as well.
+  return win.getComputedStyle(target.element).getPropertyValue("--p-spacing").trim() || "1em";
+}
+
 export function breadcrumbKeyboardTarget(
   key: string,
   index: number,
@@ -280,17 +304,28 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       !this.plugin.settings.breadcrumbUnmarkedHeadActivation
     )
       return null;
-    const markerEl = row.querySelector<HTMLElement>(
+    // Continuation paragraphs belong to this item, but contain no list marker.
+    // A text-range fallback on such a row made the whole first visual line a
+    // marker, bypassing both activation-scope toggles.
+    const markerRow = line.number - 1 === node.line ? row : Array.from(
+      cm.contentDOM.querySelectorAll<HTMLElement>(".cm-line"),
+    ).find(element => {
+      if (element.closest(".cm-editor") !== cm.dom) return false;
+      try { return cm.state.doc.lineAt(cm.posAtDOM(element)).number - 1 === node.line; }
+      catch { return false; }
+    });
+    if (!markerRow && !this.plugin.settings.breadcrumbFieldActivation) return null;
+    const markerEl = markerRow?.querySelector<HTMLElement>(
       ".list-bullet, .task-list-item-checkbox, .cm-formatting-list",
     );
     let marker =
       markerEl?.getBoundingClientRect() ??
-      firstTextRect(row) ??
-      row.getBoundingClientRect();
-    const match = line.text.match(/^\s*(?:>\s*)*([-+*]|\d+[.)])\s/);
+      (markerRow ? firstTextRect(markerRow) ?? markerRow.getBoundingClientRect() : new DOMRect());
+    const markerLine = cm.state.doc.line(node.line + 1);
+    const match = markerLine.text.match(/^\s*(?:>\s*)*([-+*]|\d+[.)])\s/);
     if (match && (!markerEl || marker.width > 128)) {
-      const start = cm.coordsAtPos(line.from + match[0].indexOf(match[1])),
-        end = cm.coordsAtPos(line.from + match[0].length - 1);
+      const start = cm.coordsAtPos(markerLine.from + match[0].indexOf(match[1])),
+        end = cm.coordsAtPos(markerLine.from + match[0].length - 1);
       if (start && end)
         marker = new DOMRect(
           start.left,
@@ -374,6 +409,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       cls: "ltig-breadcrumb-popover",
       attr: { role: "dialog", "aria-label": "List hierarchy" },
     });
+    element.style.setProperty("--ltig-breadcrumb-paragraph-spacing", paragraphSpacing(target));
     element.classList.toggle(
       "ltig-breadcrumb-expand",
       this.plugin.settings.breadcrumbExpandTitles,
@@ -429,6 +465,13 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       });
       row.addEventListener("click", (e) => {
         const clicked = e.target as Element | null;
+        const footnote = clicked?.closest<HTMLAnchorElement>("a.footnote-link[data-footref]");
+        if (footnote) {
+          e.preventDefault();
+          e.stopPropagation();
+          void this.plugin.app.workspace.openLinkText(`#[^${footnote.dataset.footref!}]`, target.file, e.ctrlKey || e.metaKey);
+          return;
+        }
         const link = clicked?.closest<HTMLAnchorElement>("a.internal-link");
         if (link) {
           e.preventDefault();
@@ -490,6 +533,11 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       }
     });
     resize.observe(content);
+    // Two rows can reflow in opposite directions without changing the total
+    // content size. Watch each row and label so late Markdown/media layout
+    // cannot leave a guide drawn through a newly wrapped parent paragraph.
+    for (const row of rows.values()) resize.observe(row);
+    for (const { element: label } of labels) resize.observe(label);
     lifecycle.observe(state.doc.body, { childList: true, subtree: true });
     let userScrolled = false;
     tree.addEventListener("wheel", () => { userScrolled = true; }, { passive: true });
@@ -650,6 +698,20 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     const p = state.popup,
       win = state.doc.defaultView;
     if (!p || !win) return;
+    // Establish the popup's final placement before measuring wrapped content.
+    const gap = cssPixels(p.element, "--ltig-breadcrumb-anchor-gap", 8),
+      edge = cssPixels(p.element, "--ltig-breadcrumb-viewport-gap", 8);
+    const left = Math.max(
+      edge,
+      Math.min(p.anchor.left, win.innerWidth - p.element.offsetWidth - edge),
+    );
+    const below = p.anchor.bottom + gap;
+    const top =
+      below + p.element.offsetHeight <= win.innerHeight - edge
+        ? below
+        : Math.max(edge, p.anchor.top - p.element.offsetHeight - gap);
+    p.element.style.left = `${left}px`;
+    p.element.style.top = `${top}px`;
     const geometry = listGeometry(p.element, true),
       points = new Map<number, ListPoint>();
     for (const [i, row] of p.rows) {
@@ -661,8 +723,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
         p.content,
         geometry.direction,
       );
-      const label = row.querySelector<HTMLElement>(".ltig-breadcrumb-label")!;
-      point.rowBottom = pointWithinHost(label.getBoundingClientRect(), p.content, geometry.direction).bottom;
+      point.rowBottom = pointWithinHost(row.getBoundingClientRect(), p.content, geometry.direction).bottom;
       points.set(i, point);
     }
     const s = this.plugin.settings;
@@ -681,19 +742,6 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
     );
     p.svg.setAttribute("width", String(p.content.offsetWidth));
     p.svg.setAttribute("height", String(p.content.offsetHeight));
-    const gap = cssPixels(p.element, "--ltig-breadcrumb-anchor-gap", 8),
-      edge = cssPixels(p.element, "--ltig-breadcrumb-viewport-gap", 8);
-    const left = Math.max(
-      edge,
-      Math.min(p.anchor.left, win.innerWidth - p.element.offsetWidth - edge),
-    );
-    const below = p.anchor.bottom + gap;
-    const top =
-      below + p.element.offsetHeight <= win.innerHeight - edge
-        ? below
-        : Math.max(edge, p.anchor.top - p.element.offsetHeight - gap);
-    p.element.style.left = `${left}px`;
-    p.element.style.top = `${top}px`;
   }
   private cancelDismiss(state: WindowState): void {
     if (state.timer !== null) state.doc.defaultView?.clearTimeout(state.timer);

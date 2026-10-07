@@ -1,0 +1,63 @@
+{
+  "host": "Obsidian 1.14.4 parser/HTML transforms in Chromium; desktop startup omitted",
+  "results": [
+    {
+      "name": "livePreview, marker scope false: continuation text never becomes a marker",
+      "passed": false,
+      "error": "continuation text opened a breadcrumb\n\n1 !== 0\n"
+    },
+    {
+      "name": "livePreview, marker scope true: continuation text never becomes a marker",
+      "passed": false,
+      "error": "continuation text opened a breadcrumb\n\n1 !== 0\n"
+    },
+    {
+      "name": "source, marker scope false: continuation text never becomes a marker",
+      "passed": false,
+      "error": "continuation text opened a breadcrumb\n\n1 !== 0\n"
+    },
+    {
+      "name": "source, marker scope true: continuation text never becomes a marker",
+      "passed": false,
+      "error": "continuation text opened a breadcrumb\n\n1 !== 0\n"
+    },
+    {
+      "name": "livePreview: full item scope still covers continuation paragraphs",
+      "passed": true
+    },
+    {
+      "name": "source: full item scope still covers continuation paragraphs",
+      "passed": true
+    },
+    {
+      "name": "paragraphs in a breadcrumb retain the same spacing as rendered note paragraphs",
+      "passed": false,
+      "error": "{\"note\":24,\"breadcrumb\":0}"
+    },
+    {
+      "name": "nested callout native bullet: connector uses the outer marker (LTR)",
+      "passed": false,
+      "error": "{\"previous\":{\"x\":134,\"y\":136.1875,\"width\":10.8,\"height\":28,\"top\":136.1875,\"right\":144.8,\"bottom\":164.1875,\"left\":134},\"marker\":{\"x\":158,\"y\":265.765625,\"width\":10.8,\"height\":28,\"top\":265.765625,\"right\":168.8,\"bottom\":293.765625,\"left\":158},\"title\":{\"x\":176,\"y\":205.578125,\"width\":516,\"height\":31.1875,\"top\":205.578125,\"right\":692,\"bottom\":236.765625,\"left\":176},\"paths\":[{\"d\":\"M 92 120.19 V 259.77 M 92 130.19 H 110 M 92 259.77 H 134\",\"cls\":\"ltig-guide-path\",\"stroke\":\"rgb(136, 136, 136)\"},{\"d\":\"M 103.5 116.00019075470411 V 251.76569596694327 Q 103.5 259.76569596694327 111.5 259.76569596694327 H 131.5\",\"cls\":\"ltig-thread-path ltig-thread-depth-1\",\"stroke\":\"rgb(255, 90, 0)\"}]}"
+    },
+    {
+      "name": "nested callout native bullet: connector uses the outer marker (RTL)",
+      "passed": false,
+      "error": "{\"previous\":{\"x\":675.2,\"y\":136.1875,\"width\":10.8,\"height\":28,\"top\":136.1875,\"right\":686,\"bottom\":164.1875,\"left\":675.2},\"marker\":{\"x\":279.2,\"y\":265.765625,\"width\":10.8,\"height\":28,\"top\":265.765625,\"right\":290,\"bottom\":293.765625,\"left\":279.2},\"title\":{\"x\":128,\"y\":205.578125,\"width\":516,\"height\":31.1875,\"top\":205.578125,\"right\":644,\"bottom\":236.765625,\"left\":128},\"paths\":[{\"d\":\"M 688 120.19 V 259.77 M 688 130.19 H 670 M 688 259.77 H 274\",\"cls\":\"ltig-guide-path\",\"stroke\":\"rgb(136, 136, 136)\"},{\"d\":\"M 304.5 116.00019075470411 V 251.76569596694327 Q 304.5 259.76569596694327 296.5 259.76569596694327 H 276.5\",\"cls\":\"ltig-thread-path ltig-thread-depth-1\",\"stroke\":\"rgb(255, 90, 0)\"}]}"
+    },
+    {
+      "name": "livePreview: footnotes keep source context and superscript links",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n0 !== 1\n"
+    },
+    {
+      "name": "source: footnotes keep source context and superscript links",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n0 !== 1\n"
+    },
+    {
+      "name": "reading: footnotes keep source context and superscript links",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n\n0 !== 1\n"
+    }
+  ]
+}

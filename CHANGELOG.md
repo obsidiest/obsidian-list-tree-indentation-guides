@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## 2.0.3
+
+- Preserve paragraph spacing inside List Hover Breadcrumbs using editor blank-line metrics for Live Preview/Source and the originating note's paragraph-margin variable for Reading mode. This replaces the insufficient margin-only change in the first 2.0.3 candidate.
+- Redraw breadcrumb guides when individual rows or labels resize, even if the popup's total size is unchanged. Place the popup before measuring and start static branches below the full padded parent row.
+- Supply breadcrumb rendering with the originating note's footnote definitions and reference numbering. Keep superscript links navigable to that note, omit the appended definition section from the popup, and preserve unresolved references as literal superscripts.
+- Measure an editor item's marker on its opening source line. Continuation paragraphs no longer become false marker hit areas when full-item activation is disabled; full-item activation still includes those paragraphs.
+- Anchor native list markers before nested callouts to the list item's content edge and the callout's title line, including icon-only titles and right-to-left layouts. Static guides and threads share this corrected geometry.
+- Add baseline failure evidence, browser regressions, and an optional check using Obsidian 1.14.4's parser. See [2.0.3 validation notes](docs/validation-2.0.3.md) for the distinction between automated evidence and desktop checks that remain unverified.
+
 ## 2.0.2
 
 - Render breadcrumb labels with Obsidian's Markdown renderer, preserving math, SVG, links, formatting, and each item's own multiline content. Exclude descendant items from ancestor labels and retain the originating note path for links and embeds.

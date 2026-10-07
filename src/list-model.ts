@@ -1,4 +1,5 @@
 import { parser } from "@lezer/markdown";
+import { footnoteContext, type FootnoteContext } from "./footnote-context";
 
 export type ListKind = "ordered" | "unordered" | "task" | "head";
 export interface ListNode {
@@ -8,6 +9,7 @@ export interface ListNode {
   text: string;
   /** Own Markdown blocks, without descendant list items or their indentation. */
   markdown?: string;
+  footnotes?: FootnoteContext;
   /** DOM fallback text is already rendered; do not interpret it as Markdown again. */
   plainText?: boolean;
   marker: string;
@@ -20,6 +22,7 @@ export interface ListNode {
 
 /** Source positions, rather than labels, identify repeated list items. */
 export function parseListDocument(text: string): ListNode[] {
+  const footnotes = footnoteContext(text);
   const lines = text.split(/\r?\n/);
   const offsets = [0];
   for (const match of text.matchAll(/\n/g)) offsets.push(match.index + 1);
@@ -125,6 +128,7 @@ export function parseListDocument(text: string): ListNode[] {
           line: row.line - 1,
           endLine: row.line - 1,
           text: before.replace(/^>\s*/, ""),
+          footnotes,
           marker: "",
           kind: "head",
           parent: null,
@@ -151,6 +155,7 @@ export function parseListDocument(text: string): ListNode[] {
       endLine: row.end,
       text: match[3] || "(Empty list item)",
       markdown: row.markdown || match[3] || "(Empty list item)",
+      footnotes,
       marker:
         match[2] !== undefined
           ? match[2] === " "

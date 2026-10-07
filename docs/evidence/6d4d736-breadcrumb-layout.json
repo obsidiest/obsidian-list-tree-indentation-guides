@@ -1,0 +1,34 @@
+{
+  "host": "Chromium with Obsidian 1.14.4 parser; host desktop and postprocessors omitted",
+  "results": [
+    {
+      "name": "livePreview: authored blank lines survive a zero Reading-mode paragraph margin",
+      "passed": false,
+      "error": "{\"sourceGap\":{\"height\":48,\"font\":24},\"popup\":{\"gap\":0,\"font\":13}}"
+    },
+    {
+      "name": "source: authored blank lines survive a zero Reading-mode paragraph margin",
+      "passed": false,
+      "error": "{\"sourceGap\":{\"height\":48,\"font\":24},\"popup\":{\"gap\":0,\"font\":13}}"
+    },
+    {
+      "name": "Reading: preserve the originating note's 0px paragraph spacing",
+      "passed": true
+    },
+    {
+      "name": "Reading: preserve the originating note's 36px paragraph spacing",
+      "passed": false,
+      "error": "{\"note\":36,\"popup\":{\"gap\":0,\"font\":13}}"
+    },
+    {
+      "name": "late wrapped-parent growth clears guides when total popup size is unchanged (LTR)",
+      "passed": false,
+      "error": "{\"textBottom\":516.515625,\"startY\":305.95562744140625,\"path\":\"M 47 76.19 V 94.69 M 47 94.69 H 65\",\"stroke\":\"rgb(170, 170, 170)\",\"growth\":210.5625,\"totalBefore\":719.734375,\"totalAfter\":719.734375}"
+    },
+    {
+      "name": "late wrapped-parent growth clears guides when total popup size is unchanged (RTL)",
+      "passed": false,
+      "error": "{\"textBottom\":516.515625,\"startY\":305.95562744140625,\"path\":\"M 470 76.19 V 94.69 M 470 94.69 H 452\",\"stroke\":\"rgb(170, 170, 170)\",\"growth\":210.5625,\"totalBefore\":719.734375,\"totalAfter\":719.734375}"
+    }
+  ]
+}

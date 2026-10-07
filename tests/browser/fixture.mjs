@@ -44,7 +44,13 @@ function decorations(state) {
   for (let i = 1; i <= state.doc.lines; i++) {
     const line = state.doc.line(i),
       m = line.text.match(/^(\s*)([-+*]|\d+[.)])\s/);
-    if (!m) continue;
+    if (!m) {
+      // Obsidian puts continuation indentation in its own token. Keeping the
+      // spaces in the same text node hid the text-as-marker fallback bug.
+      const indent = /^\s+(?=\S)/.exec(line.text);
+      if (indent) result.push(Decoration.mark({class:"cm-indent"}).range(line.from, line.from + indent[0].length));
+      continue;
+    }
     while (indents.length && indents.at(-1) >= m[1].length) indents.pop();
     indents.push(m[1].length);
     result.push(

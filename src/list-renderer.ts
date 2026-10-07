@@ -277,7 +277,8 @@ export function renderedMarkerGeometry(element: HTMLElement): MarkerGeometry {
   // Embed-only items have no own text. Their native marker belongs on the
   // first line, never at the vertical midpoint of the entire embedded block.
   const lineHeight = (Number.parseFloat(style.lineHeight) || font * 1.5) * scale.y;
-  const rect = firstTextRect(element) ?? new DOMRect(box.left, box.top, box.width, Math.min(box.height, lineHeight));
+  const calloutLine = leadingCalloutLine(element);
+  const rect = calloutLine ?? firstTextRect(element) ?? new DOMRect(box.left, box.top, box.width, Math.min(box.height, lineHeight));
   if (element.tagName !== "LI") return markerGeometry(rect);
   const siblings = element.parentElement
     ? Array.from(element.parentElement.children).filter(
@@ -312,12 +313,39 @@ export function renderedMarkerGeometry(element: HTMLElement): MarkerGeometry {
   const width = (ordered
     ? font * (String(number).length * 0.6 + 0.3)
     : font * 0.45) * scale.x;
+  // A block callout's title/icon supplies the first line's vertical position,
+  // while its padding belongs to its contents, not to the outside list marker.
+  const padding = Number.parseFloat(rtl ? style.paddingRight : style.paddingLeft) || 0;
+  const border = Number.parseFloat(rtl ? style.borderRightWidth : style.borderLeftWidth) || 0;
+  const edge = calloutLine
+    ? rtl ? box.right - (padding + border) * scale.x : box.left + (padding + border) * scale.x
+    : rtl ? rect.right : rect.left;
   return markerGeometry(new DOMRect(
-    rtl ? rect.right + font * 0.3 * scale.x : rect.left - font * 0.3 * scale.x - width,
+    rtl ? edge + font * 0.3 * scale.x : edge - font * 0.3 * scale.x - width,
     rect.top,
     width,
     rect.height,
   ), control);
+}
+
+function leadingCalloutLine(element: HTMLElement): DOMRect | null {
+  if (element.tagName !== "LI") return null;
+  // Stop at the first own content. A callout later in an ordinary item must
+  // never displace the marker from that item's opening paragraph.
+  for (const node of Array.from(element.childNodes)) {
+    if (node.nodeType === 3) { if (node.textContent?.trim()) return null; continue; }
+    if (node.nodeType !== 1) continue;
+    const child = node as HTMLElement;
+    if (child.matches(".list-bullet, .list-collapse-indicator, .ltig-rendered-overlay")) continue;
+    const callout = child.matches(".callout") ? child : child.matches(".el-blockquote") ? child.querySelector<HTMLElement>(".callout") : null;
+    if (!callout || callout.closest("li") !== element) return null;
+    const title = callout.querySelector<HTMLElement>(":scope > .callout-title") ?? callout;
+    const box = title.getBoundingClientRect();
+    const style = element.ownerDocument.defaultView!.getComputedStyle(title);
+    const height = (Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.5) * elementScale(element).y;
+    return new DOMRect(box.left, box.top, box.width, Math.min(box.height, height));
+  }
+  return null;
 }
 
 const markerCanvases = new WeakMap<Document, HTMLCanvasElement>();

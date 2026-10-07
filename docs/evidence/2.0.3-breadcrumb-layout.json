@@ -1,0 +1,29 @@
+{
+  "host": "Chromium with Obsidian 1.14.4 parser; host desktop and postprocessors omitted",
+  "results": [
+    {
+      "name": "livePreview: authored blank lines survive a zero Reading-mode paragraph margin",
+      "passed": true
+    },
+    {
+      "name": "source: authored blank lines survive a zero Reading-mode paragraph margin",
+      "passed": true
+    },
+    {
+      "name": "Reading: preserve the originating note's 0px paragraph spacing",
+      "passed": true
+    },
+    {
+      "name": "Reading: preserve the originating note's 36px paragraph spacing",
+      "passed": true
+    },
+    {
+      "name": "late wrapped-parent growth clears guides when total popup size is unchanged (LTR)",
+      "passed": true
+    },
+    {
+      "name": "late wrapped-parent growth clears guides when total popup size is unchanged (RTL)",
+      "passed": true
+    }
+  ]
+}
