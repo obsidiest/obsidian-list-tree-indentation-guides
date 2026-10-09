@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { build } from "esbuild";
 import { chromium } from "playwright";
+import { parse as parseYaml } from "yaml";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const output = resolve(root, "release/browser");
@@ -214,6 +215,23 @@ test("both height controls commit and reopen above the slider range", async page
   }
   await page.evaluate(() => globalThis.mountHeightControls()); await frames(page);
   assert.deepEqual(await page.locator(".ltig-style-settings-number-input").evaluateAll(inputs => inputs.map(i => i.value)), ["725.25", "725.25"]);
+});
+
+test("Paragraph Spacing accepts a precise value between slider ticks", async page => {
+  const setting=parseYaml(css.match(/\/\* @settings([\s\S]*?)\*\//)[1]).settings.find(s=>s.id==='ltig-breadcrumb-paragraph-spacing');
+  await page.evaluate(setting=>{
+    const row=document.body.createDiv({cls:'setting-item',attr:{'data-id':setting.id}});
+    row.createDiv({cls:'setting-item-name',text:setting.title});
+    const control=row.createDiv({cls:'setting-item-control'});
+    const slider=control.createEl('input',{attr:{type:'range',min:String(setting.min),max:String(setting.max),step:String(setting.step)}});
+    slider.value=String(setting.default);
+    slider.addEventListener('input',()=>document.body.style.setProperty('--'+setting.id,slider.value+setting.format));
+    ltigTest.precision.start([document]);
+  },setting);
+  const input=page.getByRole('textbox',{name:'Paragraph Spacing precise value'});
+  await input.fill('1.375');await input.blur();
+  assert.equal(await input.inputValue(),'1.375');
+  assert.equal(await page.evaluate(()=>document.body.style.getPropertyValue('--ltig-breadcrumb-paragraph-spacing')),'1.375em');
 });
 
 try {
