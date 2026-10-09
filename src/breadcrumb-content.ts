@@ -1,7 +1,7 @@
 import { Component, MarkdownRenderer, sanitizeHTMLToDom, type App } from "obsidian";
 import { listLabel } from "./list-label";
 import type { ListNode } from "./list-model";
-import { withFootnoteContext } from "./footnote-context";
+import { sourceFootnoteLabels, withFootnoteContext } from "./footnote-context";
 
 /** Obsidian can register cleanup after an asynchronous render has completed.
  * A closed scope must release those late registrations immediately. */
@@ -44,9 +44,16 @@ export class BreadcrumbContent extends RenderScope {
       // Definitions give the isolated renderer its missing context; only the
       // item's own content belongs in its breadcrumb row.
       label.querySelectorAll(":scope > .footnotes").forEach(section => section.remove());
-      for (const link of Array.from(label.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a[data-footref]"))) {
-        const number = node.footnotes?.numbers.get(link.dataset.footref!.toLowerCase());
-        if (number !== undefined) link.textContent = link.textContent?.replace(/^\[\d+/, `[${number}`) ?? `[${number}]`;
+      // A fragment's renderer starts numbering at one. Do not replace that
+      // with our own document recount: editor labels are source identifiers,
+      // while a rendered note already has authoritative labels and suffixes.
+      const sourceLabels = sourceFootnoteLabels(markdown);
+      const renderedLabels = renderedElement ? renderedFootnoteLabels(renderedElement) : undefined;
+      for (const link of Array.from(label.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a"))) {
+        const key = footnoteKey(link);
+        const sourceLabel = sourceLabels.get(key)?.shift();
+        const displayed = renderedLabels?.get(key)?.shift() ?? sourceLabel;
+        if (displayed !== undefined) link.textContent = displayed;
       }
     } catch (error) {
       if (!this.disposed) {
@@ -62,6 +69,28 @@ export class BreadcrumbContent extends RenderScope {
       }
     }
   }
+}
+
+function footnoteKey(link: HTMLAnchorElement): string {
+  const id = link.dataset.footref?.toLowerCase() ?? "";
+  // Obsidian assigns fragment-local synthetic IDs to inline notes. Match
+  // those by occurrence, independently of named references.
+  return id.startsWith("[inline") ? "" : id;
+}
+
+function renderedFootnoteLabels(source: HTMLElement): Map<string, string[]> {
+  const labels = new Map<string, string[]>();
+  for (const link of Array.from(source.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a"))) {
+    let own = true;
+    for (let parent = link.parentElement; parent && parent !== source; parent = parent.parentElement) {
+      if (parent.matches("ul, ol, .footnotes, .internal-embed")) { own = false; break; }
+    }
+    if (!own) continue;
+    const key = footnoteKey(link), values = labels.get(key) ?? [];
+    values.push(link.textContent ?? "");
+    labels.set(key, values);
+  }
+  return labels;
 }
 
 function copyRenderedLabel(source: HTMLElement, label: HTMLElement): void {

@@ -409,7 +409,7 @@ export class ListBreadcrumb implements BreadcrumbEditorHost {
       cls: "ltig-breadcrumb-popover",
       attr: { role: "dialog", "aria-label": "List hierarchy" },
     });
-    element.style.setProperty("--ltig-breadcrumb-paragraph-spacing", paragraphSpacing(target));
+    element.style.setProperty("--ltig-breadcrumb-source-paragraph-spacing", paragraphSpacing(target));
     element.classList.toggle(
       "ltig-breadcrumb-expand",
       this.plugin.settings.breadcrumbExpandTitles,

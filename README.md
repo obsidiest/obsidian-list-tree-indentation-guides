@@ -146,6 +146,10 @@ Version 2.0.0 measures rendered markers and sibling positions directly. The old 
 
 Every numerical Style Settings slider receives a synchronized editable field. Typed in-range decimals are preserved exactly, including transient input such as `1.` while editing; invalid or incomplete values revert only when editing finishes.
 
+**Paragraph Spacing** is under **List Hover Breadcrumb → Breadcrumb Geometry and Typography**. Turn on **Custom paragraph spacing** to set the gap between paragraphs within each item, from 0 to 4 em (`1em` is the item's font size). The default custom value is 1 em; zero removes the gap. With the toggle off, breadcrumbs continue to follow the originating editor's blank-line spacing or the rendered note's paragraph spacing.
+
+Named footnotes in editor breadcrumbs retain source identifiers such as `[^11]` and `[^2]`. Breadcrumbs opened from rendered notes or embeds reuse their displayed footnote labels, including repeat-reference suffixes. When an originating rendered label is unavailable, the source identifier is retained instead of assigning a new number.
+
 Themed colors have separate **Light** and **Dark** buttons. Choose a color or enter a hex value, then click **Save** to persist and apply it. The dialog closes after saving succeeds; a failed save leaves it open with an error. **Default** fills the declared default for that theme, and **Cancel** or Escape discards the draft. Existing color preferences retain their Style Settings keys. Saving also repairs malformed hex/non-finite values in this plugin's themed colors that would otherwise prevent Style Settings from generating CSS.
 
 ## Installation

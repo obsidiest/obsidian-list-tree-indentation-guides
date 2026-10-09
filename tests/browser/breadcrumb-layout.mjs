@@ -14,19 +14,19 @@ const browser=await chromium.launch({executablePath:process.env.LTIG_CHROMIUM_PA
 const frames=page=>page.evaluate(()=>new Promise(r=>window.requestAnimationFrame(()=>window.requestAnimationFrame(r))));
 const tests=[],results=[];
 const test=(name,run)=>tests.push({name,run});
-async function hover(page,selector){const box=await page.locator(selector).boundingBox();await page.mouse.move(box.x+4,box.y+Math.min(12,box.height/2));await frames(page);}
+async function hover(page,selector){const box=await page.locator(selector).last().boundingBox();await page.mouse.move(box.x+4,box.y+Math.min(12,box.height/2));await frames(page);}
 async function paragraphGap(page){return page.locator('.ltig-breadcrumb-label').last().evaluate(label=>{
   const [first,second]=label.querySelectorAll(':scope > p');
   return{gap:second.getBoundingClientRect().top-first.getBoundingClientRect().bottom,font:Number.parseFloat(getComputedStyle(label).fontSize)};
 });}
-async function firstGuideBounds(page){return page.evaluate(()=>{
+async function firstGuideBounds(page,last=false){return page.evaluate(last=>{
   const c=document.querySelector('.ltig-breadcrumb-content'),label=c.querySelector('.ltig-breadcrumb-label'),svg=c.querySelector('svg');
   const range=document.createRange();range.selectNodeContents(label);
   const textBottom=Math.max(...[...range.getClientRects()].filter(r=>r.height>0).map(r=>r.bottom));
-  const path=svg.querySelector('.ltig-breadcrumb-guide-path'),point=path.getPointAtLength(0);
+  const paths=[...svg.querySelectorAll('.ltig-breadcrumb-guide-path')],path=last?paths.at(-1):paths[0],point=path.getPointAtLength(0);
   const start=new DOMPoint(point.x,point.y).matrixTransform(svg.getScreenCTM());
   return{textBottom,startY:start.y,path:path.getAttribute('d'),stroke:getComputedStyle(path).stroke};
-});}
+},last);}
 const source='1. First paragraph with its own text.\n\n   A second paragraph with a separate thought.';
 
 for(const mode of ['livePreview','source'])test(`${mode}: authored blank lines survive a zero Reading-mode paragraph margin`,async page=>{
@@ -51,6 +51,36 @@ for(const spacing of [0,36])test(`Reading: preserve the originating note's ${spa
   const popup=await paragraphGap(page);
   assert.equal(gap,spacing);
   assert(Math.abs(popup.gap-gap)<.1,JSON.stringify({note:gap,popup}));
+});
+
+for(const mode of ['livePreview','source','reading'])test(`${mode}: custom paragraph spacing supports zero and precise values, then restores automatic spacing`,async page=>{
+  await page.evaluate(({source,mode})=>{
+    ltigTest.setSettings({breadcrumbFieldActivation:true});
+    const text=source+'\n   1. Child';
+    if(mode==='reading')ltigTest.addSurface({id:'list',text,html:'<ol><li><p>First paragraph with its own text.</p><p>A second paragraph with a separate thought.</p><ol><li id="leaf">Child</li></ol></li></ol>'});
+    else ltigTest.setupEditor(text,mode);
+  },{source,mode});
+  await frames(page);await hover(page,mode==='reading'?'#leaf':'.cm-formatting-list');
+  const metrics=()=>page.locator('.ltig-breadcrumb-label').first().evaluate(label=>{
+    const [first,second]=label.querySelectorAll(':scope > p');
+    return{gap:second.getBoundingClientRect().top-first.getBoundingClientRect().bottom,
+      font:parseFloat(getComputedStyle(label).fontSize),start:getComputedStyle(first).marginBlockStart,end:getComputedStyle(second).marginBlockEnd};
+  });
+  const automatic=await metrics();
+  for(const value of [0,1.375,4]){
+    await page.evaluate(value=>{document.body.classList.add('ltig-breadcrumb-custom-paragraph-spacing');document.body.style.setProperty('--ltig-breadcrumb-paragraph-spacing',value+'em');},value);
+    await frames(page);await frames(page);
+    const custom=await metrics();
+    assert(Math.abs(custom.gap-custom.font*value)<.1,JSON.stringify({value,custom}));
+    assert.equal(custom.start,'0px');assert.equal(custom.end,'0px');
+    // The first path is the root's own marker connector. The last branch
+    // belongs to its child and must start below the multi-paragraph parent.
+    const bounds=await firstGuideBounds(page,true);
+    assert(bounds.startY>=bounds.textBottom-.1,JSON.stringify(bounds));
+  }
+  await page.evaluate(()=>document.body.classList.remove('ltig-breadcrumb-custom-paragraph-spacing'));
+  await frames(page);
+  assert(Math.abs((await metrics()).gap-automatic.gap)<.1);
 });
 
 for(const rtl of [false,true])test(`late wrapped-parent growth clears guides when total popup size is unchanged (${rtl?'RTL':'LTR'})`,async page=>{
