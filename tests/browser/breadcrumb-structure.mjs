@@ -121,14 +121,14 @@ for (const mode of ['livePreview','source','reading']) test(`${mode}: footnotes 
         : '<p>First paragraphb.</p><p>Second paragraph.</p>';
     };
     ltigTest.setSettings({breadcrumbFieldActivation:true});
-    if(mode==='reading')ltigTest.addSurface({id:'list',file:'Folder/Note.md',text,html:'<ul><li>First paragraph<sup class="footnote-ref">[2]</sup>.<p>Second paragraph.</p></li></ul>'});
+    if(mode==='reading')ltigTest.addSurface({id:'list',file:'Folder/Note.md',text,html:'<ul><li>First paragraph<sup class="footnote-ref"><a class="footnote-link" data-footref="b">[2]</a></sup>.<p>Second paragraph.</p></li></ul>'});
     else ltigTest.setupEditor(text,mode);
   },{text,mode});
   await frames(page);
   const box=await page.locator(mode==='reading'?'#list li':'.cm-formatting-list').first().boundingBox();
   await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await frames(page);
   assert.equal(await page.locator('.ltig-breadcrumb-label sup.footnote-ref').count(),1);
-  assert.equal(await page.locator('.ltig-breadcrumb-label sup.footnote-ref').innerText(),'[2]');
+  assert.equal(await page.locator('.ltig-breadcrumb-label sup.footnote-ref').innerText(),mode==='reading'?'[2]':'[^b]');
   assert.equal(await page.locator('.ltig-breadcrumb-label .footnotes').count(),0);
   await page.locator('.ltig-breadcrumb-label a.footnote-link').click();
   assert.deepEqual((await page.evaluate(()=>ltigTest.navigations)).at(-1),['#[^b]',mode==='reading'?'Folder/Note.md':'Fixture.md',false]);
