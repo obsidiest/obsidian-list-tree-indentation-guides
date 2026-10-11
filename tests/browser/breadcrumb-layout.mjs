@@ -83,6 +83,27 @@ for(const mode of ['livePreview','source','reading'])test(`${mode}: custom parag
   assert(Math.abs((await metrics()).gap-automatic.gap)<.1);
 });
 
+for(const shape of ['wrapped','nested-wrapper','margin-reset'])test(`custom paragraph gaps survive ${shape} renderer output`,async page=>{
+  await page.evaluate(({source,shape})=>{
+    globalThis.ltigRenderMarkdown=async(_app,text,el)=>{
+      const paragraphs=text.split(/\n\s*\n/).map(text=>`<p${shape==='margin-reset'?' style="margin-block:0!important"':''}>${text}</p>`);
+      el.innerHTML=shape==='wrapped'?paragraphs.map(p=>'<div class="el-p">'+p+'</div>').join('')
+        :shape==='nested-wrapper'?'<div class="renderer-wrapper">'+paragraphs.join('')+'</div>':paragraphs.join('');
+    };
+    ltigTest.setSettings({breadcrumbFieldActivation:true});ltigTest.setupEditor(source,'livePreview');
+    document.body.classList.add('ltig-breadcrumb-custom-paragraph-spacing');
+  },{source,shape});
+  await frames(page);await hover(page,'.cm-formatting-list');
+  for(const value of [0,1.375,4]){
+    await page.evaluate(value=>document.body.style.setProperty('--ltig-breadcrumb-paragraph-spacing',value+'em'),value);
+    await frames(page);
+    const actual=await page.locator('.ltig-breadcrumb-label').evaluate(label=>{
+      const [a,b]=label.querySelectorAll('p');return{gap:b.getBoundingClientRect().top-a.getBoundingClientRect().bottom,font:parseFloat(getComputedStyle(a).fontSize)};
+    });
+    assert(Math.abs(actual.gap-actual.font*value)<.1,JSON.stringify({shape,value,actual}));
+  }
+});
+
 for(const rtl of [false,true])test(`late wrapped-parent growth clears guides when total popup size is unchanged (${rtl?'RTL':'LTR'})`,async page=>{
   await page.evaluate(rtl=>{
     document.body.style.direction=rtl?'rtl':'ltr';

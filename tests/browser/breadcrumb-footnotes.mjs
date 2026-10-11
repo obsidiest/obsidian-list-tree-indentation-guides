@@ -65,6 +65,41 @@ test('rendered surface: inline notes retain the host label alongside named refer
   assert.deepEqual(await labels(page),['[6]','[7]']);
 });
 
+for(const mode of ['livePreview','source','reading'])for(const lateInsertion of [false,true])test(`${mode}: footnotes are correct before a math postprocessor finishes (${lateInsertion?'late':'synchronous'} insertion)`,async page=>{
+  await page.evaluate(({mode,lateInsertion})=>{
+    const original=globalThis.ltigRenderMarkdown;
+    globalThis.ltigRenderMarkdown=async(...args)=>{
+      const [,source,el]=args;
+      if(!source.includes('\\approx'))return original(...args);
+      const render=async()=>{
+        await original(...args);
+        if(!el.querySelector('.footnotes'))el.createEl('section',{cls:'footnotes',text:'Appended definition'});
+        globalThis.mathInserted=true;
+      };
+      if(lateInsertion)await new Promise(resolve=>{globalThis.insertMathRow=()=>render().then(resolve);});
+      else await render();
+      // Models MarkdownRenderer's async math/postprocessor promise, held
+      // unresolved while assertions inspect painted frames.
+      await new Promise(resolve=>{globalThis.finishMath=resolve;});
+    };
+    const text='- Parent[^11]\n  - test $\\approx$ test[^13]\n    - Child[^12]\n\n[^11]: Eleven.\n[^13]: Thirteen.\n[^12]: Twelve.';
+    ltigTest.setSettings({breadcrumbFieldActivation:true});
+    if(mode==='reading')ltigTest.addSurface({id:'list',text,html:'<ul><li>Parent<sup class="footnote-ref"><a data-footref="11">[8]</a></sup><ul><li>test ≈ test<sup class="footnote-ref"><a data-footref="13">[9]</a></sup><ul><li id="leaf">Child<sup class="footnote-ref"><a data-footref="12">[10]</a></sup></li></ul></li></ul></li></ul>'});
+    else ltigTest.setupEditor(text,mode);
+  },{mode,lateInsertion});
+  await frames(page);await hover(page,mode==='reading'?'#leaf':'.cm-formatting-list');
+  if(lateInsertion)await page.evaluate(()=>globalThis.insertMathRow());
+  await page.waitForFunction(()=>globalThis.mathInserted&&typeof globalThis.finishMath==='function');
+  const expected=mode==='reading'?['[8]','[9]','[10]']:['[^11]','[^13]','[^12]'];
+  for(let frame=0;frame<3;frame++){
+    await frames(page);
+    assert.deepEqual(await labels(page),expected,'a pending renderer exposed temporary footnote numbers');
+    assert.equal(await page.locator('.ltig-breadcrumb-label .footnotes').count(),0,'appended definitions were painted while math was pending');
+  }
+  await page.evaluate(()=>globalThis.finishMath());await frames(page);
+  assert.deepEqual(await labels(page),expected);
+});
+
 try{
   for(const {name,run} of tests){
     const page=await browser.newPage({viewport:{width:1100,height:1000}});page.setDefaultTimeout(5000);

@@ -5,7 +5,7 @@ Earlier[^a]. Earlier[^b]. Earlier[^c]. Earlier[^d]. Earlier[^e]. Earlier[^f]. Ea
 - Testing paragraph 1[^11], sentence test[^2]. Sentence 2. Sentence 3.
 
   Testing another paragraph. Compare this gap with the originating view, then enable Custom paragraph spacing and try 0, 1.375, and 4 em.
-  - test[^13]
+  - test $\approx$ test[^13]
     - book[^12]
       - Hover this item to include all ancestor references.
 

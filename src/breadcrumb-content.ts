@@ -38,26 +38,39 @@ export class BreadcrumbContent extends RenderScope {
         // rendered inline content without interpreting literal text a second time.
         if (renderedElement) copyRenderedLabel(renderedElement, label);
         else label.textContent = node.text;
+        groupParagraphs(label);
         return;
       }
-      await MarkdownRenderer.render(app, withFootnoteContext(markdown, node.footnotes), label, sourcePath, child);
-      // Definitions give the isolated renderer its missing context; only the
-      // item's own content belongs in its breadcrumb row.
-      label.querySelectorAll(":scope > .footnotes").forEach(section => section.remove());
-      // A fragment's renderer starts numbering at one. Do not replace that
-      // with our own document recount: editor labels are source identifiers,
-      // while a rendered note already has authoritative labels and suffixes.
       const sourceLabels = sourceFootnoteLabels(markdown);
       const renderedLabels = renderedElement ? renderedFootnoteLabels(renderedElement) : undefined;
-      for (const link of Array.from(label.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a"))) {
-        const key = footnoteKey(link);
-        const sourceLabel = sourceLabels.get(key)?.shift();
-        const displayed = renderedLabels?.get(key)?.shift() ?? sourceLabel;
-        if (displayed !== undefined) link.textContent = displayed;
-      }
+      const normalize = (): void => {
+        if (this.disposed) return;
+        // Only the item's content belongs in the row. Remove the definition
+        // section before it can be painted, even while math is still pending.
+        label.querySelectorAll(":scope > .footnotes").forEach(section => section.remove());
+        const occurrences = new Map<string, number>();
+        for (const link of Array.from(label.querySelectorAll<HTMLAnchorElement>("sup.footnote-ref a"))) {
+          const key = footnoteKey(link), occurrence = occurrences.get(key) ?? 0;
+          occurrences.set(key, occurrence + 1);
+          const displayed = renderedLabels?.get(key)?.[occurrence] ?? sourceLabels.get(key)?.[occurrence];
+          if (displayed !== undefined && link.textContent !== displayed) link.textContent = displayed;
+        }
+        groupParagraphs(label);
+      };
+      // MarkdownRenderer inserts HTML before its async postprocessors settle.
+      // Observe first: a late renderer may insert or replace content on another
+      // turn. Mutation observers normalize those writes before the next paint.
+      const observer = new label.ownerDocument.defaultView!.MutationObserver(normalize);
+      observer.observe(label, {childList:true, subtree:true, characterData:true});
+      child.register(() => observer.disconnect());
+      const pending = MarkdownRenderer.render(app, withFootnoteContext(markdown, node.footnotes), label, sourcePath, child);
+      normalize();
+      await pending;
+      normalize();
     } catch (error) {
       if (!this.disposed) {
         label.textContent = node.plainText ? node.text : listLabel(markdown, entity => entity);
+        groupParagraphs(label);
         console.error("List Tree Indentation Guides: breadcrumb rendering failed", error);
       }
     } finally {
@@ -68,6 +81,42 @@ export class BreadcrumbContent extends RenderScope {
         this.removeChild(child);
       }
     }
+  }
+}
+
+/** Give paragraph-only runs a real layout gap. Margins alone are vulnerable
+ * to theme resets and to postprocessors wrapping each paragraph in a div.
+ * Keep the renderer's nodes in place, and leave inline text and widgets alone. */
+function groupParagraphs(label: HTMLElement): void {
+  const groups = new Set<Element>(), blocks = new Set<Element>();
+  const hasOnlyElements = (element: Element): boolean => Array.from(element.childNodes)
+    .every(node => node.nodeType === 1 || node.nodeType === 8 || !node.textContent?.trim());
+  const isWrapper = (element: Element): boolean => element.tagName === "DIV"
+    && !element.matches(".internal-embed, .callout, .math-block, [contenteditable]");
+  const paragraphChain = (element: Element): Element[] | undefined => {
+    if (element.tagName === "P") return [element];
+    if (!isWrapper(element) || element.children.length !== 1 || !hasOnlyElements(element)) return;
+    const child = paragraphChain(element.children[0]);
+    return child && [element, ...child];
+  };
+  const visit = (container: Element): void => {
+    const children = Array.from(container.children);
+    const chains = children.map(paragraphChain);
+    if (children.length > 1 && hasOnlyElements(container) && chains.every(chain => chain !== undefined)) {
+      groups.add(container);
+      for (const chain of chains) for (const block of chain) blocks.add(block);
+    } else {
+      for (const child of children) if (isWrapper(child)) visit(child);
+    }
+  };
+  visit(label);
+  for (const [name, desired] of [["ltig-breadcrumb-paragraphs", groups], ["ltig-breadcrumb-paragraph-block", blocks]] as const) {
+    // A postprocessor may replace a paragraph or wrap an existing run later.
+    // Remove obsolete markers without changing the renderer's structure.
+    for (const element of [label, ...Array.from(label.querySelectorAll(`.${name}`))]) {
+      if (!desired.has(element)) element.classList.remove(name);
+    }
+    for (const element of desired) element.classList.add(name);
   }
 }
 

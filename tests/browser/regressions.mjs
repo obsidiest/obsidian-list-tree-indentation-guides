@@ -217,7 +217,7 @@ test("both height controls commit and reopen above the slider range", async page
   assert.deepEqual(await page.locator(".ltig-style-settings-number-input").evaluateAll(inputs => inputs.map(i => i.value)), ["725.25", "725.25"]);
 });
 
-test("Paragraph Spacing accepts a precise value between slider ticks", async page => {
+test("Paragraph Spacing is subordinate to its toggle and accepts a precise value between slider ticks", async page => {
   const setting=parseYaml(css.match(/\/\* @settings([\s\S]*?)\*\//)[1]).settings.find(s=>s.id==='ltig-breadcrumb-paragraph-spacing');
   await page.evaluate(setting=>{
     const row=document.body.createDiv({cls:'setting-item',attr:{'data-id':setting.id}});
@@ -228,10 +228,18 @@ test("Paragraph Spacing accepts a precise value between slider ticks", async pag
     slider.addEventListener('input',()=>document.body.style.setProperty('--'+setting.id,slider.value+setting.format));
     ltigTest.precision.start([document]);
   },setting);
+  const row=page.locator('[data-id="ltig-breadcrumb-paragraph-spacing"]');
+  assert.equal(await row.isVisible(),false);
+  await page.evaluate(()=>document.body.classList.add('ltig-breadcrumb-custom-paragraph-spacing'));
+  assert.equal(await row.isVisible(),true);
   const input=page.getByRole('textbox',{name:'Paragraph Spacing precise value'});
   await input.fill('1.375');await input.blur();
   assert.equal(await input.inputValue(),'1.375');
   assert.equal(await page.evaluate(()=>document.body.style.getPropertyValue('--ltig-breadcrumb-paragraph-spacing')),'1.375em');
+  await page.evaluate(()=>document.body.classList.remove('ltig-breadcrumb-custom-paragraph-spacing'));
+  assert.equal(await row.isVisible(),false);
+  await page.evaluate(()=>document.body.classList.add('ltig-breadcrumb-custom-paragraph-spacing'));
+  assert.equal(await input.inputValue(),'1.375');
 });
 
 try {

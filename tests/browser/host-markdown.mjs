@@ -17,7 +17,7 @@ export async function loadHostMarkdown(page, directory) {
   const boundary = '!function(){y(this,void 0,void 0,(function(){var e,t,n,i,r,o,a,s,l,c,u,h,p,d;return';
   const offset = app.lastIndexOf(boundary);
   if (offset < 0) throw new Error('Expected Obsidian 1.14.4 startup boundary');
-  app = app.slice(0,offset) + 'globalThis.ltigHostMarkdown=(source)=>fm(cm(source));})()})();';
+  app = app.slice(0,offset) + 'globalThis.ltigHostMarkdown=(source)=>fm(cm(source));globalThis.ltigHostRender=(source,el)=>$j.render(null,source,el,"Fixture.md",new bM());})()})();';
   await page.addScriptTag({content:app});
   if (!(await page.evaluate(()=>typeof globalThis.ltigHostMarkdown === 'function')))
     throw new Error('Obsidian parser did not initialize');

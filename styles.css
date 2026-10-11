@@ -573,7 +573,7 @@ settings:
   -
     id: ltig-breadcrumb-paragraph-spacing
     title: Paragraph Spacing
-    description: Gap between paragraphs within a list item, relative to its font size. Enable Custom paragraph spacing to use this value; zero removes the gap.
+    description: Gap between paragraphs within a list item, relative to its font size. Zero removes the gap.
     type: variable-number-slider
     default: 1
     min: 0
@@ -2213,6 +2213,25 @@ body.theme-light {
 }
 body.ltig-breadcrumb-custom-paragraph-spacing .ltig-breadcrumb-popover {
   --ltig-breadcrumb-effective-paragraph-spacing: var(--ltig-breadcrumb-paragraph-spacing, 1em);
+}
+/* Own the space between paragraph blocks instead of relying on collapsing
+   margins. Rendered paragraphs and neutral wrappers keep their DOM identity. */
+.ltig-breadcrumb-label.markdown-rendered.ltig-breadcrumb-paragraphs,
+.ltig-breadcrumb-label.markdown-rendered .ltig-breadcrumb-paragraphs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: var(--ltig-breadcrumb-effective-paragraph-spacing, var(--ltig-breadcrumb-source-paragraph-spacing, var(--p-spacing, 1em)));
+}
+.ltig-breadcrumb-label.markdown-rendered .ltig-breadcrumb-paragraph-block {
+  margin-block: 0 !important;
+}
+/* Style Settings has no toggle children: expose the indented value row only
+   while its parent toggle is enabled, without changing its persisted key. */
+.setting-item:is([data-id="ltig-breadcrumb-paragraph-spacing"], [data-id$="@@ltig-breadcrumb-paragraph-spacing"]) {
+  padding-inline-start: 1.5em;
+}
+body:not(.ltig-breadcrumb-custom-paragraph-spacing) .setting-item:is([data-id="ltig-breadcrumb-paragraph-spacing"], [data-id$="@@ltig-breadcrumb-paragraph-spacing"]) {
+  display: none;
 }
 .ltig-breadcrumb-label.markdown-rendered > :first-child { margin-block-start: 0; }
 .ltig-breadcrumb-label.markdown-rendered > :last-child { margin-block-end: 0; }
