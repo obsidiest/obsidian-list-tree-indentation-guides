@@ -82,7 +82,6 @@ describe("release metadata", () => {
       "ltig-thread-connector-length",
       "ltig-thread-connector-height",
       "ltig-breadcrumb-thread-connector-height",
-      "ltig-breadcrumb-paragraph-spacing",
       "ltig-thread-marker-gap",
       "ltig-thread-vertical-offset",
     ];
@@ -93,14 +92,6 @@ describe("release metadata", () => {
         "type: variable-number-slider",
       );
     }
-  });
-
-  it("places Paragraph Spacing within Breadcrumb Geometry and Typography", async () => {
-    const styles = await readProjectFile("styles.css");
-    const geometry = styles.indexOf("title: Breadcrumb Geometry and Typography");
-    const spacing = styles.indexOf("title: Paragraph Spacing");
-    expect(spacing).toBeGreaterThan(geometry);
-    expect(styles.slice(styles.indexOf("collapsed: true", geometry), spacing)).not.toContain("type: heading");
   });
 
   it("defaults list markers to visible and exposes every thread color", async () => {

@@ -3,7 +3,7 @@ import { parser } from "@lezer/markdown";
 /** Reference definitions are document-scoped, even when a popup renders one item. */
 export interface FootnoteContext {
   definitions: string;
-  identifiers: ReadonlySet<string>;
+  numbers: ReadonlyMap<string, number>;
 }
 
 const referenceParser = parser.configure({
@@ -65,7 +65,7 @@ function references(source: string): { from: number; to: number; id: string | nu
   referenceParser.parse(source).iterate({ enter(node) {
     if (node.name === "FootnoteReference" || node.name === "InlineFootnote")
       result.push({from: node.from, to: node.to,
-        id: node.name === "InlineFootnote" ? null : source.slice(node.from + 2, node.to - 1)});
+        id: node.name === "InlineFootnote" ? null : source.slice(node.from + 2, node.to - 1).toLowerCase()});
   }});
   return result;
 }
@@ -81,25 +81,20 @@ export function footnoteContext(source: string): FootnoteContext | undefined {
   const yaml = /^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/.exec(source);
   if (yaml) excluded.push({from:0, to:yaml[0].length});
   const definitions: string[] = [], ids = new Set<string>();
+  const ranges: { from: number; to: number }[] = [];
   for (const match of source.matchAll(/^ {0,3}\[\^([^\]\s]+)\]:[^\r\n]*(?:\r?\n(?:(?: {4}|\t)[^\r\n]*|[ \t]*(?=\r?\n)))*$/gm)) {
     if (excluded.some(r => match.index >= r.from && match.index < r.to)) continue;
     ids.add(match[1].toLowerCase()); definitions.push(match[0]);
+    ranges.push({from:match.index, to:match.index+match[0].length});
   }
-  return {definitions:definitions.join("\n\n"), identifiers:ids};
-}
-
-/** Editor footnotes show their source identifiers, not Reading-mode ordinals.
- * Keep each occurrence's spelling even when the renderer folds identifiers. */
-export function sourceFootnoteLabels(markdown: string): Map<string, string[]> {
-  const labels = new Map<string, string[]>();
-  if (!markdown.includes("[^")) return labels;
-  for (const {id} of references(markdown)) {
-    if (id === null) continue;
-    const key = id.toLowerCase(), values = labels.get(key) ?? [];
-    values.push(`[^${id}]`);
-    labels.set(key, values);
+  const numbers = new Map<string, number>();
+  let next = 1;
+  for (const ref of references(source)) {
+    if ([...excluded, ...ranges].some(r => ref.from >= r.from && ref.from < r.to)) continue;
+    if (ref.id === null) next++;
+    else if (ids.has(ref.id) && !numbers.has(ref.id)) numbers.set(ref.id, next++);
   }
-  return labels;
+  return {definitions:definitions.join("\n\n"), numbers};
 }
 
 export function withFootnoteContext(markdown: string, context?: FootnoteContext): string {
@@ -110,7 +105,7 @@ export function withFootnoteContext(markdown: string, context?: FootnoteContext)
   // Preserve that source as superscript without inventing a definition/link.
   let result = markdown;
   for (const ref of refs.slice().reverse()) {
-    if (context?.identifiers.has(ref.id!.toLowerCase())) continue;
+    if (context?.numbers.has(ref.id!)) continue;
     const literal = markdown.slice(ref.from, ref.to).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     result = result.slice(0, ref.from) + `<sup class="footnote-ref">${literal}</sup>` + result.slice(ref.to);
   }

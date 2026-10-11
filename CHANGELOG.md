@@ -2,14 +2,6 @@
 
 All notable changes to this project are documented in this file.
 
-## 2.0.4
-
-- Preserve named footnote identifiers in Live Preview and Source breadcrumbs, including nonsequential numbers, spelling, and repeated references. Rendered-note breadcrumbs reuse the note's displayed footnote labels and repeat suffixes. Remove the independent reference-order counter that caused the reported mismatch.
-- Add **Paragraph Spacing** under Style Settings → List Hover Breadcrumb → Breadcrumb Geometry and Typography, with a slider and precise input from 0 to 4 em. Enable **Custom paragraph spacing** to apply it; automatic spacing from the originating note remains the default.
-- Correct footnote labels and remove appended definitions before asynchronous Markdown rendering finishes, so a pending math postprocessor does not expose temporary numbers.
-- Use explicit gaps for paragraph-only content, including neutral wrappers, and show the indented Paragraph Spacing value only when Custom paragraph spacing is enabled. This replaces reliance on direct-paragraph margins.
-- Add regressions reproducing the screenshot's footnote mismatch, delayed-render labels, rendered-reference repeats, and wrapped/reset paragraph-spacing failures. See [2.0.4 validation notes](docs/validation-2.0.4.md) for automated evidence and the checks still needed inside Obsidian desktop.
-
 ## 2.0.3
 
 - Preserve paragraph spacing inside List Hover Breadcrumbs using editor blank-line metrics for Live Preview/Source and the originating note's paragraph-margin variable for Reading mode. This replaces the insufficient margin-only change in the first 2.0.3 candidate.
